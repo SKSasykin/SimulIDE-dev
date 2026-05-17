@@ -16,7 +16,7 @@ public:
 
     void setHeight( int h ) override;
 
-    void endTransaction() override;
+    //void endTransaction() override;
 
     void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
@@ -24,5 +24,5 @@ public:
     static LibraryItem* libraryItem();
 
 protected:
-    void displayReset() override;
+    //void displayReset() override;
 };
