@@ -10,27 +10,29 @@
 
 class LibraryItem;
 
-class VoltReg : public Component, public eResistor
-{
-    public:
-        VoltReg( QString type, QString id );
-        ~VoltReg();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class VoltReg : public Component, public eResistor {
+public:
+    VoltReg( QString type, QString id );
+    ~VoltReg();
 
-        void stamp() override;
-        void updateStep() override;
-        void voltChanged() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double outVolt() { return m_vRef; }
-        void setOutVolt( double v ) { m_vRef = v; m_changed = true; }
+    void stamp() override;
+    void updateStep() override;
+    void voltChanged() override;
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w );
+    double outVolt() { return m_vRef; }
+    void setOutVolt( double v ) {
+        m_vRef = v;
+        m_changed = true;
+    }
 
-    private:
-        double m_vRef;
-        double m_lastCurrent;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w );
 
-        bool m_connected;
+private:
+    double m_vRef;
+    double m_lastCurrent;
+
+    bool m_connected;
 };

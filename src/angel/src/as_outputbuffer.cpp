@@ -40,56 +40,53 @@
 
 BEGIN_AS_NAMESPACE
 
-asCOutputBuffer::~asCOutputBuffer()
-{
-	Clear();
+asCOutputBuffer::~asCOutputBuffer() {
+    Clear();
 }
 
-void asCOutputBuffer::Clear()
-{
-	for( asUINT n = 0; n < messages.GetLength(); n++ )
-        if( messages[n] )  asDELETE(messages[n],message_t);
+void asCOutputBuffer::Clear() {
+    for ( asUINT n = 0; n < messages.GetLength(); n++ )
+        if ( messages[n] )
+            asDELETE( messages[n], message_t );
 
-	messages.SetLength(0);
+    messages.SetLength( 0 );
 }
 
-void asCOutputBuffer::Callback(asSMessageInfo *msg)
-{
-	message_t *msgInfo = asNEW(message_t);
-    if( msgInfo == 0 ) return;
+void asCOutputBuffer::Callback( asSMessageInfo* msg ) {
+    message_t* msgInfo = asNEW( message_t );
+    if ( msgInfo == 0 )
+        return;
 
-	msgInfo->section = msg->section;
-	msgInfo->row = msg->row;
-	msgInfo->col = msg->col;
-	msgInfo->type = msg->type;
-	msgInfo->msg = msg->message;
+    msgInfo->section = msg->section;
+    msgInfo->row = msg->row;
+    msgInfo->col = msg->col;
+    msgInfo->type = msg->type;
+    msgInfo->msg = msg->message;
 
-	messages.PushLast(msgInfo);
+    messages.PushLast( msgInfo );
 }
 
-void asCOutputBuffer::Append(asCOutputBuffer &in)
-{
-	for( asUINT n = 0; n < in.messages.GetLength(); n++ )
-		messages.PushLast(in.messages[n]);
-	in.messages.SetLength(0);
+void asCOutputBuffer::Append( asCOutputBuffer& in ) {
+    for ( asUINT n = 0; n < in.messages.GetLength(); n++ )
+        messages.PushLast( in.messages[n] );
+    in.messages.SetLength( 0 );
 }
 
-void asCOutputBuffer::SendToCallback(asCScriptEngine *engine, asSSystemFunctionInterface *func, void *obj)
-{
-	for( asUINT n = 0; n < messages.GetLength(); n++ )
-	{
-		asSMessageInfo msg;
-		msg.section = messages[n]->section.AddressOf();
-		msg.row     = messages[n]->row;
-		msg.col     = messages[n]->col;
-		msg.type    = messages[n]->type;
-		msg.message = messages[n]->msg.AddressOf();
+void asCOutputBuffer::SendToCallback( asCScriptEngine* engine, asSSystemFunctionInterface* func, void* obj ) {
+    for ( asUINT n = 0; n < messages.GetLength(); n++ ) {
+        asSMessageInfo msg;
+        msg.section = messages[n]->section.AddressOf();
+        msg.row = messages[n]->row;
+        msg.col = messages[n]->col;
+        msg.type = messages[n]->type;
+        msg.message = messages[n]->msg.AddressOf();
 
-		if( func->callConv < ICC_THISCALL )
-			engine->CallGlobalFunction(&msg, obj, func, 0);
-        else engine->CallObjectMethod(obj, &msg, func, 0);
-	}
-	Clear();
+        if ( func->callConv < ICC_THISCALL )
+            engine->CallGlobalFunction( &msg, obj, func, 0 );
+        else
+            engine->CallObjectMethod( obj, &msg, func, 0 );
+    }
+    Clear();
 }
 
 END_AS_NAMESPACE

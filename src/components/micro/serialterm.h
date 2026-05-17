@@ -14,49 +14,48 @@ class CustomButton;
 class Terminal;
 class QGraphicsProxyWidget;
 
-class SerialTerm : public Component, public UsartModule, public eElement
-{
-    public:
-        SerialTerm( QString type, QString id );
-        ~SerialTerm();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class SerialTerm : public Component, public UsartModule, public eElement {
+public:
+    SerialTerm( QString type, QString id );
+    ~SerialTerm();
 
-        virtual void stamp() override;
-        virtual void updateStep() override;
-        virtual void runEvent() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void setSerialMon( bool s );
+    virtual void stamp() override;
+    virtual void updateStep() override;
+    virtual void runEvent() override;
 
-        void sendByteArray( QByteArray data );
-        virtual void sendByte( uint8_t data ) override;
+    void setSerialMon( bool s );
 
-        virtual void setIdLabel( QString id ) override;
+    void sendByteArray( QByteArray data );
+    virtual void sendByte( uint8_t data ) override;
 
-        virtual void byteReceived( uint8_t byte ) override;
-        virtual void frameSent( uint8_t data ) override;
+    virtual void setIdLabel( QString id ) override;
 
-        virtual void monitorClosed() override;
-        void TerminalClosed();
+    virtual void byteReceived( uint8_t byte ) override;
+    virtual void frameSent( uint8_t data ) override;
 
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void monitorClosed() override;
+    void TerminalClosed();
 
-        void onbuttonclicked();
-        void slotOpenTerm();
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    protected:
-        virtual void setflip() override;
-        virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+    void onbuttonclicked();
+    void slotOpenTerm();
 
-    private:
-        bool m_receiving;
-        bool m_sending;
+protected:
+    virtual void setflip() override;
+    virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        Terminal* m_terminal;
+private:
+    bool m_receiving;
+    bool m_sending;
 
-        CustomButton* m_button;
-        QGraphicsProxyWidget* m_proxy;
+    Terminal* m_terminal;
 
-        QByteArray m_uartData;
+    CustomButton* m_button;
+    QGraphicsProxyWidget* m_proxy;
+
+    QByteArray m_uartData;
 };

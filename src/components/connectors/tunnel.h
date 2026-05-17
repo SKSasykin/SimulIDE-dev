@@ -11,66 +11,64 @@ class LibraryItem;
 class eNode;
 class Pin;
 
-class Tunnel : public Component
-{
-    public:
-        Tunnel( QString type, QString id );
-        ~Tunnel();
+class Tunnel : public Component {
+public:
+    Tunnel( QString type, QString id );
+    ~Tunnel();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        QRectF boundingRect() const override;
+    QRectF boundingRect() const override;
 
-        QString name() { return m_name; }
-        void setName( QString name );
+    QString name() { return m_name; }
+    void setName( QString name );
 
-        bool isBus();
-        void setIsbus( bool b );
+    bool isBus();
+    void setIsbus( bool b );
 
-        bool rotated() { return m_rotated; }
-        void setRotated( bool rot );
+    bool rotated() { return m_rotated; }
+    void setRotated( bool rot );
 
-        virtual void remove() override;
+    virtual void remove() override;
 
-        virtual void registerEnode( eNode* enode, int n=-1 ) override;
+    virtual void registerEnode( eNode* enode, int n = -1 ) override;
 
-        QString tunnelUid() { return m_tunUid; }
-        void setTunnelUid( QString uid ) { m_tunUid = uid; }
+    QString tunnelUid() { return m_tunUid; }
+    void setTunnelUid( QString uid ) { m_tunUid = uid; }
 
-        void setEnode( eNode* node, int n=-1 );
-        void setPacked( bool p );
-        void removeTunnel();
-        bool m_show;
+    void setEnode( eNode* node, int n = -1 );
+    void setPacked( bool p );
+    void removeTunnel();
+    bool m_show;
 
-        Pin* getPin() { return m_pin[0]; }
- static eNode* getEnode( QString n );
+    Pin* getPin() { return m_pin[0]; }
+    static eNode* getEnode( QString n );
 
- static void clearTunnels();
+    static void clearTunnels();
 
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    public slots:
-        void showGroup();
-        void hideGroup() { showHide( false ); }
-        void renameGroup();
+public slots:
+    void showGroup();
+    void hideGroup() { showHide( false ); }
+    void renameGroup();
 
-    protected:
-        void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
-        void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+protected:
+    void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
+    void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        void showHide( bool show );
-        void setGroupName( QString name, bool single );
+    void showHide( bool show );
+    void setGroupName( QString name, bool single );
 
-        int m_size;
+    int m_size;
 
-        QString m_name;
-        QString m_tunUid;
+    QString m_name;
+    QString m_tunUid;
 
-        bool m_rotated;
-        bool m_blocked;
-        bool m_packed;
+    bool m_rotated;
+    bool m_blocked;
+    bool m_packed;
 
-
- static QMap<QString, QList<Tunnel*>*> m_tunnels;
+    static QMap<QString, QList<Tunnel*>*> m_tunnels;
 };

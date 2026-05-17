@@ -10,68 +10,60 @@
 
 #include <QVector>
 
-enum cond_t{
-    C_NONE=0,
-    C_LOW,
-    C_RISING,
-    C_HIGH,
-    C_FALLING
-};
+enum cond_t { C_NONE = 0, C_LOW, C_RISING, C_HIGH, C_FALLING };
 
 class PlotBase;
 class Pin;
 
-class DataChannel : public eElement, public Updatable
-{
-        friend class PlotBase;
-        friend class Oscope;
-        friend class LAnalizer;
-        friend class PlotDisplay;
+class DataChannel : public eElement, public Updatable {
+    friend class PlotBase;
+    friend class Oscope;
+    friend class LAnalizer;
+    friend class PlotDisplay;
 
-    public:
+public:
+    DataChannel( PlotBase* plotBase, QString id );
+    ~DataChannel();
 
-        DataChannel( PlotBase* plotBase, QString id );
-        ~DataChannel();
+    virtual void stamp() override;
 
-        virtual void stamp() override;
+    virtual void setFilter( double f ) { ; }
 
-        virtual void setFilter( double f ) {;}
+    bool isBus();
+    virtual void setIsBus( bool b ) { ; }
 
-        bool isBus();
-        virtual void setIsBus( bool b ){;}
+    QString getChName() { return m_chTunnel; }
 
-        QString getChName() { return m_chTunnel; }
+    bool doTest( bool test );
 
-        bool doTest( bool test );
+    QString testData();
+    void setTestData( QString td );
 
-        QString testData();
-        void setTestData( QString td );
+protected:
+    QVector<double> m_buffer;
+    QVector<uint64_t> m_time;
 
-    protected:
-        QVector<double> m_buffer;
-        QVector<uint64_t> m_time;
+    QVector<double> m_bufferTest;
+    QVector<uint64_t> m_timeTest;
 
-        QVector<double> m_bufferTest;
-        QVector<uint64_t> m_timeTest;
+    bool m_connected;
+    bool m_rising;
+    bool m_falling;
+    bool m_trigger;
+    int m_trigIndex;
 
-        bool m_connected;
-        bool m_rising;
-        bool m_falling;
-        bool m_trigger;
-        int m_trigIndex;
+    uint64_t m_risEdge;
+    uint64_t m_period;
 
-        uint64_t m_risEdge;
-        uint64_t m_period;
+    int m_channel;
+    int m_bufferCounter;
 
-        int m_channel;
-        int m_bufferCounter;
+    bool m_pauseOnCond;
+    cond_t m_lastCond;
 
-        bool m_pauseOnCond;
-        cond_t m_lastCond;
+    QString m_chTunnel;
 
-        QString m_chTunnel;
+    Pin* m_pin;
 
-        Pin* m_pin;
-
-        PlotBase* m_plotBase;
+    PlotBase* m_plotBase;
 };

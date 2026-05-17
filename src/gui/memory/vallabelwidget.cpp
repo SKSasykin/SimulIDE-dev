@@ -6,22 +6,22 @@
 //#include <math.h>
 
 #include "vallabelwidget.h"
-#include "watched.h"
 #include "utils.h"
+#include "watched.h"
 
 ValLabelWidget::ValLabelWidget( QString name, QString type, QString unit, Watched* core, QWidget* parent )
-              : QWidget( parent )
-{
-    setupUi(this);
+    : QWidget( parent ) {
+    setupUi( this );
 
     m_name = name;
     m_type = type.toLower();
     m_watched = core;
 
-    if( unit.isEmpty() ) unit = m_type;
+    if ( unit.isEmpty() )
+        unit = m_type;
 
     QFont font;
-    font.setFamily("Ubuntu Mono");
+    font.setFamily( "Ubuntu Mono" );
     font.setBold( true );
     font.setPixelSize( 9 );
 
@@ -37,31 +37,31 @@ ValLabelWidget::ValLabelWidget( QString name, QString type, QString unit, Watche
     valueLabel->setFont( font );
     valueLabel->setFixedWidth( 50 );
     valueLabel->setFixedHeight( 11 );
-    valueLabel->setText("...");
+    valueLabel->setText( "..." );
 }
 
-void ValLabelWidget::updateValue()
-{
-    if( !m_watched ) return;
+void ValLabelWidget::updateValue() {
+    if ( !m_watched )
+        return;
 
-    if( m_type == "string" ) setValueStr( m_watched->getStrReg( m_name ) );
-    if( m_type == "double" ) setValueDbl( m_watched->getDblReg( m_name ) );
-    else                     setValueInt( m_watched->getIntReg( m_name ) );
+    if ( m_type == "string" )
+        setValueStr( m_watched->getStrReg( m_name ) );
+    if ( m_type == "double" )
+        setValueDbl( m_watched->getDblReg( m_name ) );
+    else
+        setValueInt( m_watched->getIntReg( m_name ) );
 }
 
-void ValLabelWidget::setValueDbl( double val )
-{
-    m_strVal = QString::number(val);
+void ValLabelWidget::setValueDbl( double val ) {
+    m_strVal = QString::number( val );
     valueLabel->setText( m_strVal );
 }
 
-void ValLabelWidget::setValueInt( int val )
-{
-    m_strVal = QString::number(val);
+void ValLabelWidget::setValueInt( int val ) {
+    m_strVal = QString::number( val );
     valueLabel->setText( m_strVal );
 }
 
-void ValLabelWidget::setValueStr( QString str )
-{
+void ValLabelWidget::setValueStr( QString str ) {
     valueLabel->setText( str );
 }

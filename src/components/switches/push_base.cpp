@@ -7,36 +7,35 @@
 #include "circuit.h"
 #include "custombutton.h"
 
-PushBase::PushBase( QString type, QString id )
-        : SwitchBase( type, id )
-{
-    QObject::connect( m_button, &CustomButton::pressed , [=](){ onbuttonPressed(); } );
-    QObject::connect( m_button, &CustomButton::released, [=](){ onbuttonReleased(); } );
+PushBase::PushBase( QString type, QString id ) : SwitchBase( type, id ) {
+    QObject::connect( m_button, &CustomButton::pressed, [=]() { onbuttonPressed(); } );
+    QObject::connect( m_button, &CustomButton::released, [=]() { onbuttonReleased(); } );
 }
-PushBase::~PushBase(){}
+PushBase::~PushBase() { }
 
-void PushBase::onbuttonPressed()
-{
+void PushBase::onbuttonPressed() {
     m_closed = true;
-    if( m_nClose ) m_closed = !m_closed;
+    if ( m_nClose )
+        m_closed = !m_closed;
     m_button->setChecked( true );
     m_changed = true;
     update();
 }
 
-void PushBase::onbuttonReleased()
-{
+void PushBase::onbuttonReleased() {
     m_closed = false;
-    if( m_nClose ) m_closed = !m_closed;
+    if ( m_nClose )
+        m_closed = !m_closed;
     m_button->setChecked( false );
     m_changed = true;
     update();
 }
 
-void PushBase::keyEvent( QString key, bool pressed )
-{
-    if( key == m_key )
-    {
-        if( pressed ) onbuttonPressed();
-        else          onbuttonReleased();
-}   }
+void PushBase::keyEvent( QString key, bool pressed ) {
+    if ( key == m_key ) {
+        if ( pressed )
+            onbuttonPressed();
+        else
+            onbuttonReleased();
+    }
+}

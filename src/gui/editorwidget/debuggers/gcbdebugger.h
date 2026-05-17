@@ -7,18 +7,16 @@
 
 #include "basedebugger.h"
 
-class GcbDebugger : public BaseDebugger
-{
-    public:
-        GcbDebugger( CodeEditor* parent, OutPanelText* outPane );
-        ~GcbDebugger();
+class GcbDebugger : public BaseDebugger {
+public:
+    GcbDebugger( CodeEditor* parent, OutPanelText* outPane );
+    ~GcbDebugger();
 
-    protected:
-        virtual int getErrorLine( QString txt ) override;
-        virtual bool postProcess() override;
+protected:
+    virtual int getErrorLine( QString txt ) override;
+    virtual bool postProcess() override;
 
-
-    private:
-        bool mapFlashToSource();
-        void getSubs();
+private:
+    bool mapFlashToSource();
+    void getSubs();
 };

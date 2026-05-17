@@ -3,229 +3,216 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-#include <QMenu>
 #include <QFileDialog>
-#include <QInputDialog>
 #include <QGraphicsProxyWidget>
+#include <QInputDialog>
+#include <QMenu>
 
-#include "function.h"
-#include "mainwindow.h"
-#include "connector.h"
 #include "circuit.h"
-#include "simulator.h"
 #include "circuitwidget.h"
-#include "itemlibrary.h"
-#include "utils.h"
-#include "iopin.h"
+#include "connector.h"
 #include "custombutton.h"
+#include "function.h"
+#include "iopin.h"
+#include "itemlibrary.h"
+#include "mainwindow.h"
+#include "simulator.h"
+#include "utils.h"
 
-#include "stringprop.h"
 #include "boolprop.h"
 #include "intprop.h"
+#include "stringprop.h"
 
-#define tr(str) simulideTr("Function",str)
+#define tr( str ) simulideTr( "Function", str )
 
-Component* Function::construct( QString type, QString id )
-{ return new Function( type, id ); }
-
-LibraryItem* Function::libraryItem()
-{
-    return new LibraryItem(
-        tr("Function"),
-        "Arithmetic",
-        "subc.png",
-        "Function",
-        Function::construct );
+Component* Function::construct( QString type, QString id ) {
+    return new Function( type, id );
 }
 
-Function::Function( QString type, QString id )
-        : IoComponent( type, id )
-        , ScriptBase( id )
-{
+LibraryItem* Function::libraryItem() {
+    return new LibraryItem( tr( "Function" ), "Arithmetic", "subc.png", "Function", Function::construct );
+}
+
+Function::Function( QString type, QString id ) : IoComponent( type, id ), ScriptBase( id ) {
     m_lastDir = Circuit::self()->getFilePath();
     m_width = 4;
 
     m_compiled = false;
 
     m_voltChanged = nullptr;
-    m_aEngine->RegisterObjectType("Function",0, asOBJ_REF | asOBJ_NOCOUNT );
-    m_aEngine->RegisterGlobalProperty("Function fu", this );
+    m_aEngine->RegisterObjectType( "Function", 0, asOBJ_REF | asOBJ_NOCOUNT );
+    m_aEngine->RegisterGlobalProperty( "Function fu", this );
 
-    int r=0;
-    r += m_aEngine->RegisterObjectMethod("Function", "bool getInputState(int pin)"
-                                       , asMETHODPR( Function, getInputState, (int), bool)
-                                       , asCALL_THISCALL );
+    int r = 0;
+    r += m_aEngine->RegisterObjectMethod( "Function", "bool getInputState(int pin)",
+                                          asMETHODPR( Function, getInputState, (int), bool ), asCALL_THISCALL );
 
-    r += m_aEngine->RegisterObjectMethod("Function", "double getInputVoltage(int pin)"
-                                       , asMETHODPR( Function, getInputVoltage, (int), double)
-                                       , asCALL_THISCALL );
+    r += m_aEngine->RegisterObjectMethod( "Function", "double getInputVoltage(int pin)",
+                                          asMETHODPR( Function, getInputVoltage, (int), double ), asCALL_THISCALL );
 
-    r += m_aEngine->RegisterObjectMethod("Function", "void setOutputState(int pin, bool s)"
-                                       , asMETHODPR( Function, setOutputState, (int,bool), void)
-                                       , asCALL_THISCALL );
+    r += m_aEngine->RegisterObjectMethod( "Function", "void setOutputState(int pin, bool s)",
+                                          asMETHODPR( Function, setOutputState, (int, bool), void ), asCALL_THISCALL );
 
-    r += m_aEngine->RegisterObjectMethod("Function", "void setOutputVoltage(int pin, double v)"
-                                       , asMETHODPR( Function, setOutputVoltage, (int,double), void)
-                                       , asCALL_THISCALL );
+    r += m_aEngine->RegisterObjectMethod( "Function", "void setOutputVoltage(int pin, double v)",
+                                          asMETHODPR( Function, setOutputVoltage, (int, double), void ),
+                                          asCALL_THISCALL );
 
-    r += m_aEngine->RegisterObjectMethod("Function", "double getOutputVoltage(int pin)"
-                                       , asMETHODPR( Function, getOutputVoltage, (int), double)
-                                       , asCALL_THISCALL );
-    if( r < 0 ) qDebug() << "Function::Function error Registering Function";
+    r += m_aEngine->RegisterObjectMethod( "Function", "double getOutputVoltage(int pin)",
+                                          asMETHODPR( Function, getOutputVoltage, (int), double ), asCALL_THISCALL );
+    if ( r < 0 )
+        qDebug() << "Function::Function error Registering Function";
 
-    setNumInputs( 2 );                           // Create Input Pins
+    setNumInputs( 2 ); // Create Input Pins
     setNumOutputs( 1 );
     setFunctions( "i0 | i1" );
 
-    addPropGroup( { tr("Main"), {
-        new StrProp<Function>("Functions", tr("Functions"),""
-                             , this, &Function::functions, &Function::setFunctions ),
-    }, groupNoCopy } );
+    addPropGroup( { tr( "Main" ),
+                    {
+                        new StrProp<Function>( "Functions", tr( "Functions" ), "", this, &Function::functions,
+                                               &Function::setFunctions ),
+                    },
+                    groupNoCopy } );
 
-    appendPropGroup( tr("Main"), IoComponent::familyProps() );
+    appendPropGroup( tr( "Main" ), IoComponent::familyProps() );
 
-    addPropGroup( { tr("Inputs"),
-        IoComponent::inputProps()
+    addPropGroup( { tr( "Inputs" ),
+                    IoComponent::inputProps()
 
-        +QList<ComProperty*>({
-        new IntProp<Function>("Num_Inputs" , tr("Input Size") ,"_Pins"
-                             , this, &Function::numInps, &Function::setNumInputs, propNoCopy ,"uint" ),
+                        + QList<ComProperty*>(
+                            { new IntProp<Function>( "Num_Inputs", tr( "Input Size" ), "_Pins", this,
+                                                     &Function::numInps, &Function::setNumInputs, propNoCopy, "uint" ),
 
-        new BoolProp<Function>( "Invert_Inputs", tr("Invert Inputs"),""
-                              , this, &Function::invertInps, &Function::setInvertInps, propNoCopy )})
-    ,0 } );
+                              new BoolProp<Function>( "Invert_Inputs", tr( "Invert Inputs" ), "", this,
+                                                      &Function::invertInps, &Function::setInvertInps, propNoCopy ) } ),
+                    0 } );
 
-    addPropGroup( { tr("Outputs")
-        , IoComponent::outputProps()
+    addPropGroup( { tr( "Outputs" ),
+                    IoComponent::outputProps()
 
-        + QList<ComProperty*>({
-            new IntProp<Function>("Num_Outputs", tr("Output Size"),"_Pins"
-                                 , this, &Function::numOuts, &Function::setNumOutputs, propNoCopy ,"uint" ) })
+                        + QList<ComProperty*>( { new IntProp<Function>(
+                            "Num_Outputs", tr( "Output Size" ), "_Pins", this, &Function::numOuts,
+                            &Function::setNumOutputs, propNoCopy, "uint" ) } )
 
-        + IoComponent::outputType()
-    ,0 } );
+                        + IoComponent::outputType(),
+                    0 } );
 
-    addPropGroup( { tr("Timing"), IoComponent::edgeProps(),0 } );
+    addPropGroup( { tr( "Timing" ), IoComponent::edgeProps(), 0 } );
 }
-Function::~Function(){}
+Function::~Function() { }
 
-void Function::stamp()
-{
+void Function::stamp() {
     IoComponent::initState();
 
-    for( uint i=0; i<m_inpPin.size(); ++i ) m_inpPin[i]->changeCallBack( this );
+    for ( uint i = 0; i < m_inpPin.size(); ++i )
+        m_inpPin[i]->changeCallBack( this );
 
-    if( !m_compiled )
-    {
+    if ( !m_compiled ) {
         createScript();
         int r = compileScript();
-        if( r < 0 ) return;
+        if ( r < 0 )
+            return;
 
         m_compiled = true;
 
-        m_voltChanged = m_aEngine->GetModule(0)->GetFunctionByDecl("void voltChanged()");
+        m_voltChanged = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void voltChanged()" );
     }
 }
 
-void Function::voltChanged()
-{
-    if( !m_voltChanged ) return;
+void Function::voltChanged() {
+    if ( !m_voltChanged )
+        return;
     m_nextOutVal = 0;
 
     callFunction( m_voltChanged );
     scheduleOutPuts( this );
 }
 
-bool Function::getInputState( int pin )
-{
-    if( (uint)pin >= m_inpPin.size() ) return false;
+bool Function::getInputState( int pin ) {
+    if ( (uint) pin >= m_inpPin.size() )
+        return false;
     return m_inpPin[pin]->getInpState();
 }
 
-double Function::getInputVoltage( int pin )
-{
-    if( (uint)pin >= m_inpPin.size() ) return 0;
+double Function::getInputVoltage( int pin ) {
+    if ( (uint) pin >= m_inpPin.size() )
+        return 0;
     return m_inpPin[pin]->getVoltage();
 }
 
-void Function::setOutputState( int pin, bool s )
-{
-    if( (uint)pin >= m_outPin.size() ) return;
-    if( s ) m_nextOutVal |= 1<<pin;
+void Function::setOutputState( int pin, bool s ) {
+    if ( (uint) pin >= m_outPin.size() )
+        return;
+    if ( s )
+        m_nextOutVal |= 1 << pin;
 }
 
-void Function::setOutputVoltage( int pin, double v )
-{
-    if( (uint)pin >= m_outPin.size() ) return;
+void Function::setOutputVoltage( int pin, double v ) {
+    if ( (uint) pin >= m_outPin.size() )
+        return;
     m_outPin[pin]->setOutHighV( v );
-    m_nextOutVal |= 1<<pin;
-    m_outValue   &= ~(1<<pin); // Force Pin update
+    m_nextOutVal |= 1 << pin;
+    m_outValue &= ~( 1 << pin ); // Force Pin update
     m_outPin[pin]->m_nextState = false; // Force Pin update
 }
 
-double Function::getOutputVoltage( int pin )
-{
-    if( (uint)pin >= m_outPin.size() ) return 0;
+double Function::getOutputVoltage( int pin ) {
+    if ( (uint) pin >= m_outPin.size() )
+        return 0;
     return m_outPin[pin]->getVoltage();
 }
 
-void Function::setFunctions( QString f )
-{
-    if( Simulator::self()->isRunning() ) CircuitWidget::self()->powerCircOff();
-    m_funcList = f.split(",");
+void Function::setFunctions( QString f ) {
+    if ( Simulator::self()->isRunning() )
+        CircuitWidget::self()->powerCircOff();
+    m_funcList = f.split( "," );
     m_compiled = false;
 }
 
-void Function::createScript()
-{
-    m_script = "\n// "+m_id+" Script --------;\n";
+void Function::createScript() {
+    m_script = "\n// " + m_id + " Script --------;\n";
 
     m_script += "\n// Declaring Variables:\n";
-    for( uint i=0; i<m_inpPin.size(); ++i )
-    {
-        QString n = QString::number(i);
-        m_script += "double vi"+n+" = 0;\n";
-        m_script += "bool   i"+n+"  = false;\n";
+    for ( uint i = 0; i < m_inpPin.size(); ++i ) {
+        QString n = QString::number( i );
+        m_script += "double vi" + n + " = 0;\n";
+        m_script += "bool   i" + n + "  = false;\n";
     }
-    for( uint i=0; i<m_outPin.size(); ++i )
-    {
-        QString n = QString::number(i);
-        m_script += "double vo"+n+" = 0;\n";
-        m_script += "bool   o"+n+"  = false;\n";
+    for ( uint i = 0; i < m_outPin.size(); ++i ) {
+        QString n = QString::number( i );
+        m_script += "double vo" + n + " = 0;\n";
+        m_script += "bool   o" + n + "  = false;\n";
     }
     m_script += "\nvoid voltChanged()\n{\n";
     m_script += "  // Getting data:\n";
-    for( uint i=0; i<m_inpPin.size(); ++i )
-    {
-        QString n = QString::number(i);
-        m_script += "  vi"+n+" = fu.getInputVoltage("+n+");\n";
-        m_script += "  i"+n+"  = fu.getInputState("+n+");\n";
+    for ( uint i = 0; i < m_inpPin.size(); ++i ) {
+        QString n = QString::number( i );
+        m_script += "  vi" + n + " = fu.getInputVoltage(" + n + ");\n";
+        m_script += "  i" + n + "  = fu.getInputState(" + n + ");\n";
         m_script += "\n";
     }
-    for( uint i=0; i<m_outPin.size(); ++i )
-    {
-        QString n = QString::number(i);
-        m_script += "  vo"+n+" = fu.getOutputVoltage("+n+");\n";
+    for ( uint i = 0; i < m_outPin.size(); ++i ) {
+        QString n = QString::number( i );
+        m_script += "  vo" + n + " = fu.getOutputVoltage(" + n + ");\n";
     }
     m_script += "\n  // Setting Outputs:\n";
-    for( int i=0; i<m_funcList.size(); ++i )
-    {
-        if( i >= (int)m_outPin.size() ) break;
-        QString n = QString::number(i);
+    for ( int i = 0; i < m_funcList.size(); ++i ) {
+        if ( i >= (int) m_outPin.size() )
+            break;
+        QString n = QString::number( i );
 
         QString func = m_funcList.at( i );
-        if( func.isEmpty() ) continue;
+        if ( func.isEmpty() )
+            continue;
 
-        func = func.replace("&","&&").replace("|","||").replace("^","^^");
-        func = func.remove(" ").toLower();
-        if( func.startsWith("vo") )
-        {
-            func = func.replace("vo=", "");
-            m_script += "  vo"+n+" = "+func+";\n";
-            m_script += "  fu.setOutputVoltage( "+n+", vo"+n+" );\n";
-        }else{
-            m_script += "  o"+n+" = "+func+";\n";
-            m_script += "  fu.setOutputState( "+n+", o"+n+" );\n";
+        func = func.replace( "&", "&&" ).replace( "|", "||" ).replace( "^", "^^" );
+        func = func.remove( " " ).toLower();
+        if ( func.startsWith( "vo" ) ) {
+            func = func.replace( "vo=", "" );
+            m_script += "  vo" + n + " = " + func + ";\n";
+            m_script += "  fu.setOutputVoltage( " + n + ", vo" + n + " );\n";
+        } else {
+            m_script += "  o" + n + " = " + func + ";\n";
+            m_script += "  fu.setOutputState( " + n + ", o" + n + " );\n";
         }
         m_script += "\n";
     }
@@ -234,167 +221,167 @@ void Function::createScript()
     //qDebug() << m_script.toLocal8Bit().data();
 }
 
-void Function::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu )
-{
+void Function::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) {
     menu->addSeparator();
-    QAction* loadDaAction = menu->addAction( QIcon(":/load.svg"),tr("Load Functions") );
-    QObject::connect( loadDaAction, &QAction::triggered, [=](){ loadData(); } );
+    QAction* loadDaAction = menu->addAction( QIcon( ":/load.svg" ), tr( "Load Functions" ) );
+    QObject::connect( loadDaAction, &QAction::triggered, [=]() { loadData(); } );
 
-    QAction* saveDaAction = menu->addAction(QIcon(":/save.png"), tr("Save Functions") );
-    QObject::connect( saveDaAction, &QAction::triggered, [=](){ saveData(); } );
+    QAction* saveDaAction = menu->addAction( QIcon( ":/save.png" ), tr( "Save Functions" ) );
+    QObject::connect( saveDaAction, &QAction::triggered, [=]() { saveData(); } );
     menu->addSeparator();
     Component::contextMenu( event, menu );
 }
 
-void Function::loadData()
-{
+void Function::loadData() {
     QString fileName = QFileDialog::getOpenFileName( 0l, "Function::loadData", m_lastDir, "" );
 
-    if( fileName.isEmpty() ) return; // User cancels loading
+    if ( fileName.isEmpty() )
+        return; // User cancels loading
     m_lastDir = fileName;
     QStringList lines = fileToStringList( fileName, "MemData::loadData" );
 
-    int i=0;
-    for( QString line : lines )
-    {
-        if( line.remove(" ").isEmpty() ) continue;
-        if( i >= m_funcList.size() ) break;
+    int i = 0;
+    for ( QString line : lines ) {
+        if ( line.remove( " " ).isEmpty() )
+            continue;
+        if ( i >= m_funcList.size() )
+            break;
         m_funcList[i++] = line;
-}   }
+    }
+}
 
-void Function::saveData()
-{
+void Function::saveData() {
     QString fileName = QFileDialog::getSaveFileName( MainWindow::self(), "Function::saveData", m_lastDir, "" );
 
-    if( fileName.isEmpty() ) return; // User cancels saving
+    if ( fileName.isEmpty() )
+        return; // User cancels saving
     m_lastDir = fileName;
     QFile outFile( fileName );
     QString output = "";
-    for( QString func : m_funcList ) output.append( func+"\n");
+    for ( QString func : m_funcList )
+        output.append( func + "\n" );
 
-    if( !outFile.open( QFile::WriteOnly | QFile::Text ) )
-    {
-          MessageBoxNB( "MemData::saveData",
-                        tr("Cannot write file %1:\n%2.").arg(fileName).arg(outFile.errorString()));
-    }else {
+    if ( !outFile.open( QFile::WriteOnly | QFile::Text ) ) {
+        MessageBoxNB( "MemData::saveData",
+                      tr( "Cannot write file %1:\n%2." ).arg( fileName ).arg( outFile.errorString() ) );
+    } else {
         QTextStream toFile( &outFile );
         toFile << output;
         outFile.close();
-}   }
+    }
+}
 
-void Function::remove()
-{
-    for( CustomButton* button : m_buttons )
-    {
-       delete button;
+void Function::remove() {
+    for ( CustomButton* button : m_buttons ) {
+        delete button;
     }
     m_buttons.clear();
     IoComponent::remove();
 }
 
-void Function::updateArea( uint ins, uint outs )
-{
-    uint inSize = ins+1;
-    m_height = outs*2;
-    if( inSize > m_height ) m_height = inSize;
-    int halfH = (m_height/2)*8;
-    m_area = QRect(-16,-halfH, m_width*8, m_height*8 );
+void Function::updateArea( uint ins, uint outs ) {
+    uint inSize = ins + 1;
+    m_height = outs * 2;
+    if ( inSize > m_height )
+        m_height = inSize;
+    int halfH = ( m_height / 2 ) * 8;
+    m_area = QRect( -16, -halfH, m_width * 8, m_height * 8 );
 }
 
-void Function::setNumInputs( int inputs )
-{
-    if( (uint)inputs == m_inpPin.size() ) return;
-    if( inputs < 1 ) return;
+void Function::setNumInputs( int inputs ) {
+    if ( (uint) inputs == m_inpPin.size() )
+        return;
+    if ( inputs < 1 )
+        return;
 
-    m_height = m_outPin.size()*2-1;
-    if((uint) inputs > m_height ) m_height = inputs;
-    
+    m_height = m_outPin.size() * 2 - 1;
+    if ( (uint) inputs > m_height )
+        m_height = inputs;
+
     IoComponent::setNumInps( inputs, "I" );
 
     updateArea( inputs, m_outPin.size() );
 }
 
-void Function::setNumOutputs( int outs )
-{
-    if( (uint)outs == m_outPin.size() ) return;
-    if( outs < 1 ) return;
-    
+void Function::setNumOutputs( int outs ) {
+    if ( (uint) outs == m_outPin.size() )
+        return;
+    if ( outs < 1 )
+        return;
+
     updateArea( m_inpPin.size(), outs );
-    int halfH = (m_height/2)*8;
+    int halfH = ( m_height / 2 ) * 8;
 
     uint oldSize = m_outPin.size();
-    if( (uint)outs < oldSize )
-    {
-        int dif = m_outPin.size()-outs;
+    if ( (uint) outs < oldSize ) {
+        int dif = m_outPin.size() - outs;
 
         IoComponent::deletePins( &m_outPin, dif );
 
-        for( uint i=0; i<oldSize; ++i )
-        {
-            if( i < (uint)outs )
-            {
-                m_outPin[i]->setY( -halfH+(int)i*16+8 );
-                m_proxys.at(i)->setPos( QPoint( 0, -halfH+(int)i*16+1 ) );
-            }else{
+        for ( uint i = 0; i < oldSize; ++i ) {
+            if ( i < (uint) outs ) {
+                m_outPin[i]->setY( -halfH + (int) i * 16 + 8 );
+                m_proxys.at( i )->setPos( QPoint( 0, -halfH + (int) i * 16 + 1 ) );
+            } else {
                 CustomButton* button = m_buttons.takeLast();
                 //QObject::disconnect( button, &CustomButton::released, this, &Function::onbuttonclicked );
                 delete button;
 
                 m_proxys.removeLast();
                 m_funcList.removeLast();
-    }   }   }
-    else{
+            }
+        }
+    } else {
         m_outPin.resize( outs );
 
-        for( uint i=0; i<(uint)outs; ++i )
-        {
-            if( i<oldSize )
-            {
-                m_outPin[i]->setY( -halfH+(int)i*16+8 );
-                m_proxys.at(i)->setPos( QPoint( 0, -halfH+i*16+1 ) );
-            }else{
-                QString num = QString::number(i);
-                m_outPin[i] = new IoPin( 0, QPoint(24, -halfH+i*16+8 ), m_id+"-out"+num, i, this, output );
+        for ( uint i = 0; i < (uint) outs; ++i ) {
+            if ( i < oldSize ) {
+                m_outPin[i]->setY( -halfH + (int) i * 16 + 8 );
+                m_proxys.at( i )->setPos( QPoint( 0, -halfH + i * 16 + 1 ) );
+            } else {
+                QString num = QString::number( i );
+                m_outPin[i] = new IoPin( 0, QPoint( 24, -halfH + i * 16 + 8 ), m_id + "-out" + num, i, this, output );
                 initPin( m_outPin[i] );
                 m_outPin[i]->setInverted( m_invOutputs );
 
-                CustomButton* button = new CustomButton( );
-                button->setMaximumSize( 14,14 );
-                button->setGeometry(-14,-14,14,14);
+                CustomButton* button = new CustomButton();
+                button->setMaximumSize( 14, 14 );
+                button->setGeometry( -14, -14, 14, 14 );
                 QFont font = button->font();
-                font.setPixelSize(7);
-                button->setFont(font);
-                button->setText( "O"+num );
-//                button->setCheckable( true );
+                font.setPixelSize( 7 );
+                button->setFont( font );
+                button->setText( "O" + num );
+                //                button->setCheckable( true );
                 m_buttons.append( button );
 
                 QGraphicsProxyWidget* proxy = Circuit::self()->addWidget( button );
                 proxy->setParentItem( this );
-                proxy->setPos( QPoint( 0, -halfH+i*16+1 ) );
+                proxy->setPos( QPoint( 0, -halfH + i * 16 + 1 ) );
 
                 m_proxys.append( proxy );
                 m_funcList.append( "" );
 
-                QObject::connect( button, &CustomButton::released, [=](){ onbuttonclicked( i ); } );
-    }   }   }
-    
+                QObject::connect( button, &CustomButton::released, [=]() { onbuttonclicked( i ); } );
+            }
+        }
+    }
+
     Circuit::self()->update();
 }
 
-void Function::onbuttonclicked( int  i )
-{
-//    int i = 0;
-//    for( CustomButton* button : m_buttons ){
-//       if( button->isChecked()  ){ button->setChecked( false ); break; }
-//       ++i;
-//    }
+void Function::onbuttonclicked( int i ) {
+    //    int i = 0;
+    //    for( CustomButton* button : m_buttons ){
+    //       if( button->isChecked()  ){ button->setChecked( false ); break; }
+    //       ++i;
+    //    }
     bool ok;
-    QString text = QInputDialog::getText(0l, tr("Set Function"),
-                                             "Output "+QString::number(i)+tr(" Function:"),
-                                             QLineEdit::Normal,
-                                             m_funcList[i], &ok);
-    if( ok ){
-        if( Simulator::self()->isRunning() ) CircuitWidget::self()->powerCircOff();
+    QString text
+        = QInputDialog::getText( 0l, tr( "Set Function" ), "Output " + QString::number( i ) + tr( " Function:" ),
+                                 QLineEdit::Normal, m_funcList[i], &ok );
+    if ( ok ) {
+        if ( Simulator::self()->isRunning() )
+            CircuitWidget::self()->powerCircOff();
         m_funcList[i] = text;
         m_compiled = false;
     }

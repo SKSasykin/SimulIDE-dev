@@ -34,89 +34,78 @@
 
 BEGIN_AS_NAMESPACE
 
-asCGlobalProperty::asCGlobalProperty() 
-{ 
-	memory          = &storage; 
-	memoryAllocated = false; 
-	realAddress     = 0; 
-	initFunc        = 0;
-	accessMask      = 0xFFFFFFFF;
+asCGlobalProperty::asCGlobalProperty() {
+    memory = &storage;
+    memoryAllocated = false;
+    realAddress = 0;
+    initFunc = 0;
+    accessMask = 0xFFFFFFFF;
 
-	refCount.set(1);
+    refCount.set( 1 );
 }
 
-asCGlobalProperty::~asCGlobalProperty()
-{
-	if( memoryAllocated ) { asDELETEARRAY(memory); } 
+asCGlobalProperty::~asCGlobalProperty() {
+    if ( memoryAllocated ) {
+        asDELETEARRAY( memory );
+    }
 
-    if( initFunc ) initFunc->ReleaseInternal();
+    if ( initFunc )
+        initFunc->ReleaseInternal();
 }
 
-void asCGlobalProperty::AddRef()
-{
-	refCount.atomicInc();
+void asCGlobalProperty::AddRef() {
+    refCount.atomicInc();
 }
 
-void asCGlobalProperty::Release()
-{
-	if( refCount.atomicDec() == 0 )
-		asDELETE(this, asCGlobalProperty);
+void asCGlobalProperty::Release() {
+    if ( refCount.atomicDec() == 0 )
+        asDELETE( this, asCGlobalProperty );
 }
 
-void asCGlobalProperty::DestroyInternal()
-{
-	if( initFunc )
-	{
-		initFunc->ReleaseInternal();
-		initFunc = 0;
-	}
+void asCGlobalProperty::DestroyInternal() {
+    if ( initFunc ) {
+        initFunc->ReleaseInternal();
+        initFunc = 0;
+    }
 }
 
-void *asCGlobalProperty::GetAddressOfValue()
-{ 
-	return memory;
+void* asCGlobalProperty::GetAddressOfValue() {
+    return memory;
 }
 
 // The global property structure is responsible for allocating the storage
 // method for script declared variables. Each allocation is independent of
 // other global properties, so that variables can be added and removed at
 // any time.
-void asCGlobalProperty::AllocateMemory() 
-{ 
-	if( type.GetSizeOnStackDWords() > 2 ) 
-    {
-		memory = asNEWARRAY(asDWORD, type.GetSizeOnStackDWords()); 
-		memoryAllocated = true; 
-	} 
+void asCGlobalProperty::AllocateMemory() {
+    if ( type.GetSizeOnStackDWords() > 2 ) {
+        memory = asNEWARRAY( asDWORD, type.GetSizeOnStackDWords() );
+        memoryAllocated = true;
+    }
 }
 
-void asCGlobalProperty::SetRegisteredAddress(void *p) 
-{ 
-	realAddress = p;
-	if( type.IsObject() && !type.IsReference() && !type.IsObjectHandle() )
-    {
+void asCGlobalProperty::SetRegisteredAddress( void* p ) {
+    realAddress = p;
+    if ( type.IsObject() && !type.IsReference() && !type.IsObjectHandle() ) {
         memory = &realAddress; // The global property is a pointer to a pointer
-	} 
-    else memory = p;
+    } else
+        memory = p;
 }
 
-void *asCGlobalProperty::GetRegisteredAddress() const
-{
-	return realAddress;
+void* asCGlobalProperty::GetRegisteredAddress() const {
+    return realAddress;
 }
 
-void asCGlobalProperty::SetInitFunc(asCScriptFunction *in_initFunc)
-{
-	// This should only be done once
-	asASSERT( initFunc == 0 );
+void asCGlobalProperty::SetInitFunc( asCScriptFunction* in_initFunc ) {
+    // This should only be done once
+    asASSERT( initFunc == 0 );
 
-	initFunc = in_initFunc;
-	initFunc->AddRefInternal();
+    initFunc = in_initFunc;
+    initFunc->AddRefInternal();
 }
 
-asCScriptFunction *asCGlobalProperty::GetInitFunc()
-{
-	return initFunc;
+asCScriptFunction* asCGlobalProperty::GetInitFunc() {
+    return initFunc;
 }
 
 END_AS_NAMESPACE

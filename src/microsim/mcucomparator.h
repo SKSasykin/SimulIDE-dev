@@ -5,38 +5,37 @@
 
 #pragma once
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
 class McuPin;
 
-class McuComp : public McuModule, public eElement
-{
-        friend class McuCreator;
+class McuComp : public McuModule, public eElement {
+    friend class McuCreator;
 
-    public:
-        McuComp( eMcu* mcu, QString name );
-        ~McuComp();
+public:
+    McuComp( eMcu* mcu, QString name );
+    ~McuComp();
 
-        virtual void initialize() override;
+    virtual void initialize() override;
 
-        virtual void setPinN( McuPin* ){;}
+    virtual void setPinN( McuPin* ) { ; }
 
-        virtual void callBackDoub( double vref ) override;
+    virtual void callBackDoub( double vref ) override;
 
-    protected:
-        virtual void setMode( uint8_t mode ) { m_mode = mode; }
+protected:
+    virtual void setMode( uint8_t mode ) { m_mode = mode; }
 
-        bool m_fixVref;
-        bool m_enabled;
-        bool m_compOut;
+    bool m_fixVref;
+    bool m_enabled;
+    bool m_compOut;
 
-        double m_vref;
+    double m_vref;
 
-        uint8_t m_mode;
+    uint8_t m_mode;
 
-        std::vector<McuPin*> m_pins;
-        McuPin* m_pinP;
-        McuPin* m_pinN;
-        McuPin* m_pinOut;
+    std::vector<McuPin*> m_pins;
+    McuPin* m_pinP;
+    McuPin* m_pinN;
+    McuPin* m_pinOut;
 };

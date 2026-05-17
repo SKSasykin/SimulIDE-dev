@@ -6,25 +6,24 @@
 #pragma once
 
 #include "component.h"
-#include "iocomponent.h"
 #include "e-element.h"
+#include "iocomponent.h"
 
 class LibraryItem;
 
-class Comparator : public IoComponent, public eElement
-{
-    public:
-        Comparator( QString type, QString id );
-        ~Comparator();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class Comparator : public IoComponent, public eElement {
+public:
+    Comparator( QString type, QString id );
+    ~Comparator();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override { IoComponent::runOutputs(); }
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        QPainterPath shape() const override;
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    QPainterPath shape() const override;
+
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 };

@@ -9,18 +9,16 @@
 
 class LibraryItem;
 
-class Ssd1306 : public OledController
-{
-    public:
-        Ssd1306( QString type, QString id );
-        ~Ssd1306();
+class Ssd1306 : public OledController {
+public:
+    Ssd1306( QString type, QString id );
+    ~Ssd1306();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-
-    protected:
-        void proccessCommand() override;
-        void parameter() override;
-        void configScroll( uint8_t command );
+protected:
+    void proccessCommand() override;
+    void parameter() override;
+    void configScroll( uint8_t command );
 };

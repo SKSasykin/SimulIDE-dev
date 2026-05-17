@@ -9,27 +9,26 @@
 
 class LibraryItem;
 
-class DAC : public LogicComponent
-{
-    public:
-        DAC( QString type, QString id );
-        ~DAC();
+class DAC : public LogicComponent {
+public:
+    DAC( QString type, QString id );
+    ~DAC();
 
- static Component* construct( QString type, QString id );
- static LibraryItem *libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override;
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override;
 
-        double maxVolt() { return m_maxVolt; }
-        void setMaxVolt( double v ) { m_maxVolt = v; }
+    double maxVolt() { return m_maxVolt; }
+    void setMaxVolt( double v ) { m_maxVolt = v; }
 
-        void setNumInputs( int pins );
-        
-    protected:
-        double m_maxVolt;
-        double m_maxValue;
+    void setNumInputs( int pins );
 
-        int m_val;
+protected:
+    double m_maxVolt;
+    double m_maxValue;
+
+    int m_val;
 };

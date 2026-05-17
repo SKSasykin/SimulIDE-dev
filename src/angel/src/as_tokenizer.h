@@ -28,52 +28,48 @@
    andreas@angelcode.com
 */
 
-
 //
 // as_tokenizer.cpp
 //
 // This class identifies tokens from the script code
 //
 
-
-
 #ifndef AS_TOKENIZER_H
 #define AS_TOKENIZER_H
 
 #include "as_config.h"
-#include "as_tokendef.h"
 #include "as_map.h"
 #include "as_string.h"
+#include "as_tokendef.h"
 
 BEGIN_AS_NAMESPACE
 
-class asCTokenizer
-{
+class asCTokenizer {
 public:
-	eTokenType GetToken(const char *source, size_t sourceLength, size_t *tokenLength, asETokenClass *tc = 0) const;
-	
-	static const char *GetDefinition(int tokenType);
+    eTokenType GetToken( const char* source, size_t sourceLength, size_t* tokenLength, asETokenClass* tc = 0 ) const;
+
+    static const char* GetDefinition( int tokenType );
 
 protected:
-	friend class asCScriptEngine;
+    friend class asCScriptEngine;
 
-	asCTokenizer();
-	~asCTokenizer();
+    asCTokenizer();
+    ~asCTokenizer();
 
-	asETokenClass ParseToken(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsWhiteSpace(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsComment(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsConstant(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsKeyWord(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsIdentifier(const char *source, size_t sourceLength, size_t &tokenLength, eTokenType &tokenType) const;
-	bool IsDigitInRadix(char ch, int radix) const;
+    asETokenClass ParseToken( const char* source, size_t sourceLength, size_t& tokenLength,
+                              eTokenType& tokenType ) const;
+    bool IsWhiteSpace( const char* source, size_t sourceLength, size_t& tokenLength, eTokenType& tokenType ) const;
+    bool IsComment( const char* source, size_t sourceLength, size_t& tokenLength, eTokenType& tokenType ) const;
+    bool IsConstant( const char* source, size_t sourceLength, size_t& tokenLength, eTokenType& tokenType ) const;
+    bool IsKeyWord( const char* source, size_t sourceLength, size_t& tokenLength, eTokenType& tokenType ) const;
+    bool IsIdentifier( const char* source, size_t sourceLength, size_t& tokenLength, eTokenType& tokenType ) const;
+    bool IsDigitInRadix( char ch, int radix ) const;
 
-	const asCScriptEngine *engine;
+    const asCScriptEngine* engine;
 
-	const sTokenWord **keywordTable[256];
+    const sTokenWord** keywordTable[256];
 };
 
 END_AS_NAMESPACE
 
 #endif
-

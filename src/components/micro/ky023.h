@@ -9,42 +9,41 @@
 
 #pragma once
 
-#include "e-element.h"
 #include "component.h"
+#include "e-element.h"
 #include "joystickwidget.h"
 
 class LibraryItem;
 class IoPin;
 class QToolButton;
 
-class KY023 : public Component, public eElement
-{
-    public:
-        KY023( QString type, QString id );
-        ~KY023();
+class KY023 : public Component, public eElement {
+public:
+    KY023( QString type, QString id );
+    ~KY023();
 
-        static Component* construct( QString type, QString id );
-        static LibraryItem* libraryItem();
-        
-        virtual void updateStep() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void paint( QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *w ) override;
-        
-    public slots:
-        void onbuttonpressed();
-        void onbuttonreleased();
-        
-    private:
-        JoystickWidget m_joystickW;
-        QGraphicsProxyWidget* m_proxy;
-        
-        QToolButton* m_button;
-        QGraphicsProxyWidget* m_proxy_button;
-        
-        bool m_changed;
-        bool m_closed;
+    virtual void updateStep() override;
 
-        IoPin* m_vrx;
-        IoPin* m_vry;
-        IoPin* m_sw;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+
+public slots:
+    void onbuttonpressed();
+    void onbuttonreleased();
+
+private:
+    JoystickWidget m_joystickW;
+    QGraphicsProxyWidget* m_proxy;
+
+    QToolButton* m_button;
+    QGraphicsProxyWidget* m_proxy_button;
+
+    bool m_changed;
+    bool m_closed;
+
+    IoPin* m_vrx;
+    IoPin* m_vry;
+    IoPin* m_sw;
 };

@@ -12,33 +12,32 @@ class PropDialog;
 class QComboBox;
 class ComProperty;
 
-class PropVal : public QWidget
-{
-    public:
-        PropVal( PropDialog* parent, CompBase* comp, ComProperty* prop );
-        ~PropVal();
+class PropVal : public QWidget {
+public:
+    PropVal( PropDialog* parent, CompBase* comp, ComProperty* prop );
+    ~PropVal();
 
-        virtual void setup( bool isComp )=0;
-        virtual void updtValues() {;}
+    virtual void setup( bool isComp ) = 0;
+    virtual void updtValues() { ; }
 
-        virtual QString getValWithUnit() { return ""; }
+    virtual QString getValWithUnit() { return ""; }
 
-        QString propName() { return m_propName; }
+    QString propName() { return m_propName; }
 
-    protected:
-        void addDividers( QComboBox* unitBox, QString unit );
-        void addMultipliers( QComboBox* unitBox, QString unit );
+protected:
+    void addDividers( QComboBox* unitBox, QString unit );
+    void addMultipliers( QComboBox* unitBox, QString unit );
 
-        void prepareChange();
-        void saveChanges();
+    void prepareChange();
+    void saveChanges();
 
-        bool m_blocked;
-        bool m_undo;
-        QString m_oldValue;
+    bool m_blocked;
+    bool m_undo;
+    QString m_oldValue;
 
-        QString m_propName;
+    QString m_propName;
 
-        CompBase*    m_component;
-        ComProperty* m_property;
-        PropDialog*  m_propDialog;
+    CompBase* m_component;
+    ComProperty* m_property;
+    PropDialog* m_propDialog;
 };

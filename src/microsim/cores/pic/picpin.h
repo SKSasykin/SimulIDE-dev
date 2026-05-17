@@ -11,15 +11,14 @@ class Component;
 class McuPort;
 class eMcu;
 
-class PicPin : public McuPin
-{
+class PicPin : public McuPin {
     friend class McuPort;
 
-    public:
-        PicPin( McuPort* port, int i, QString id , Component* mcu );
-        ~PicPin();
+public:
+    PicPin( McuPort* port, int i, QString id, Component* mcu );
+    ~PicPin();
 
-        virtual void ConfExtInt( uint8_t bits ) override;
+    virtual void ConfExtInt( uint8_t bits ) override;
 
-        virtual void setAnalog( bool an ) override;
+    virtual void setAnalog( bool an ) override;
 };

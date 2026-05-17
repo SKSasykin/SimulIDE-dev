@@ -9,117 +9,109 @@
 
 class LibraryItem;
 
-class WaveGen : public ClockBase
-{
-    public:
-        WaveGen( QString type, QString id );
-        ~WaveGen();
-        
-        enum waveType_t {
-            Sine = 0,
-            Saw,
-            Triangle,
-            Square,
-            Random,
-            Wav
-        };
+class WaveGen : public ClockBase {
+public:
+    WaveGen( QString type, QString id );
+    ~WaveGen();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    enum waveType_t { Sine = 0, Saw, Triangle, Square, Random, Wav };
 
-        bool propNotFound( QString prop, QString val ) override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void updateStep() override{;}
-        void initialize() override;
-        void stamp() override;
-        void runEvent() override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        int minSteps() { return m_minSteps; }
-        void setMinSteps( int steps );
+    void updateStep() override { ; }
+    void initialize() override;
+    void stamp() override;
+    void runEvent() override;
 
-        double duty() { return m_duty; }
-        void setDuty( double duty );
+    int minSteps() { return m_minSteps; }
+    void setMinSteps( int steps );
 
-        double phaseShift() { return m_phaseShift; }
-        void setPhaseShift( double p ) { m_phaseShift = p; }
+    double duty() { return m_duty; }
+    void setDuty( double duty );
 
-        QString waveType() { return m_waveTypeStr; }
-        void setWaveType( QString type );
+    double phaseShift() { return m_phaseShift; }
+    void setPhaseShift( double p ) { m_phaseShift = p; }
 
-        double semiAmpli() { return m_voltage/2; }
-        void setSemiAmpli( double v );
+    QString waveType() { return m_waveTypeStr; }
+    void setWaveType( QString type );
 
-        double midVolt() { return m_voltMid; }
-        void setMidVolt( double v );
+    double semiAmpli() { return m_voltage / 2; }
+    void setSemiAmpli( double v );
 
-        QString fileName() { return m_fileName; }
-        void setFile( QString fileName );
+    double midVolt() { return m_voltMid; }
+    void setMidVolt( double v );
 
-        bool bipolar() { return m_bipolar; }
-        void setBipolar( bool b );
+    QString fileName() { return m_fileName; }
+    void setFile( QString fileName );
 
-        bool floating() { return m_floating; }
-        void setFloating( bool f );
+    bool bipolar() { return m_bipolar; }
+    void setBipolar( bool b );
 
-        void setFreq( double freq ) override;
+    bool floating() { return m_floating; }
+    void setFloating( bool f );
 
-        void setLinkedValue( double v, int i=0 ) override;
-        
-        void slotLoad();
+    void setFreq( double freq ) override;
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )override;
-        void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+    void setLinkedValue( double v, int i = 0 ) override;
 
-    protected:
-        void slotProperties() override;
+    void slotLoad();
 
-    private:
-        void genSine();
-        void genSaw();
-        void genTriangle();
-        void genSquare();
-        void genRandom();
-        void genWav();
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        void updtProperties();
+protected:
+    void slotProperties() override;
 
-        double normalize( double data );
-        
-        bool m_bipolar;
-        bool m_floating;
+private:
+    void genSine();
+    void genSaw();
+    void genTriangle();
+    void genSquare();
+    void genRandom();
+    void genWav();
 
-        QString m_waveTypeStr;
-        waveType_t m_waveType;
+    void updtProperties();
 
-        double m_duty;
-        double m_vOut;
-        double m_voltMid;
-        double m_voltBase;
-        double m_lastVout;
-        double m_halfW;
-        double m_time;
-        double m_phaseShift;
-        double m_phaseTime;
-        
-        //int      m_steps;
-        uint64_t m_minSteps;
-        uint64_t m_eventTime;
+    double normalize( double data );
 
-        uint m_index;
-        uint16_t m_audioFormat;
-        uint16_t m_numChannels;
-        uint32_t m_sampleRate;
-        uint16_t m_blockSize;
-        uint16_t m_bitsPerSample;
+    bool m_bipolar;
+    bool m_floating;
 
-        double m_maxValue;
-        double m_minValue;
-        double m_mult;
-        std::vector<double> m_data;
-        QString m_fileName;
+    QString m_waveTypeStr;
+    waveType_t m_waveType;
 
-        IoPin* m_gndpin;
+    double m_duty;
+    double m_vOut;
+    double m_voltMid;
+    double m_voltBase;
+    double m_lastVout;
+    double m_halfW;
+    double m_time;
+    double m_phaseShift;
+    double m_phaseTime;
 
-        QStringList m_waves;
-        QPixmap* m_wavePixmap;
+    //int      m_steps;
+    uint64_t m_minSteps;
+    uint64_t m_eventTime;
+
+    uint m_index;
+    uint16_t m_audioFormat;
+    uint16_t m_numChannels;
+    uint32_t m_sampleRate;
+    uint16_t m_blockSize;
+    uint16_t m_bitsPerSample;
+
+    double m_maxValue;
+    double m_minValue;
+    double m_mult;
+    std::vector<double> m_data;
+    QString m_fileName;
+
+    IoPin* m_gndpin;
+
+    QStringList m_waves;
+    QPixmap* m_wavePixmap;
 };

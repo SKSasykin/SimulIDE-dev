@@ -5,23 +5,22 @@
 
 #include "boolval.h"
 #include "component.h"
-#include "propdialog.h"
 #include "comproperty.h"
+#include "propdialog.h"
 //#include "mainwindow.h"
 
-BoolVal::BoolVal( PropDialog* parent, CompBase* comp, ComProperty* prop )
-       : PropVal( parent, comp, prop )
-{
-    setupUi(this);
+BoolVal::BoolVal( PropDialog* parent, CompBase* comp, ComProperty* prop ) : PropVal( parent, comp, prop ) {
+    setupUi( this );
 }
-BoolVal::~BoolVal() {;}
+BoolVal::~BoolVal() {
+    ;
+}
 
-void BoolVal::setup( bool )
-{
+void BoolVal::setup( bool ) {
     trueVal->setText( m_property->capt() );
     m_blocked = true;
 
-    bool checked = (m_property->getValStr() == "true");
+    bool checked = ( m_property->getValStr() == "true" );
     trueVal->setChecked( checked );
     m_blocked = false;
 
@@ -33,19 +32,18 @@ void BoolVal::setup( bool )
     this->adjustSize();
 }
 
-void BoolVal::on_trueVal_toggled( bool checked )
-{
-    if( m_blocked ) return;
+void BoolVal::on_trueVal_toggled( bool checked ) {
+    if ( m_blocked )
+        return;
 
     prepareChange();
     m_property->setValStr( checked ? "true" : "false" );
     saveChanges();
 }
 
-void BoolVal::updtValues()
-{
+void BoolVal::updtValues() {
     m_blocked = true;
-    bool checked = (m_property->getValStr() == "true");
+    bool checked = ( m_property->getValStr() == "true" );
     trueVal->setChecked( checked );
     m_blocked = false;
 }

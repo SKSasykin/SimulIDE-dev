@@ -7,17 +7,16 @@
 
 #include "reactive.h"
 
-class CapacitorBase : public Reactive
-{
-    public:
-        CapacitorBase( QString type, QString id );
-        ~CapacitorBase();
+class CapacitorBase : public Reactive {
+public:
+    CapacitorBase( QString type, QString id );
+    ~CapacitorBase();
 
-        void setCurrentValue( double c ) override;
+    void setCurrentValue( double c ) override;
 
-    protected:
-        double updtRes()  override { return m_tStep/m_capacitance; }
-        double updtCurr() override { return m_volt*m_admit; }
+protected:
+    double updtRes() override { return m_tStep / m_capacitance; }
+    double updtCurr() override { return m_volt * m_admit; }
 
-        double m_capacitance;
+    double m_capacitance;
 };

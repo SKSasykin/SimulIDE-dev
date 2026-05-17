@@ -5,21 +5,20 @@
 
 #pragma once
 
-#include "e-jfet.h"
 #include "component.h"
+#include "e-jfet.h"
 
 class LibraryItem;
 
-class Jfet : public Component, public eJfet
-{
-    public:
-        Jfet( QString type, QString id );
-        ~Jfet();
+class Jfet : public Component, public eJfet {
+public:
+    Jfet( QString type, QString id );
+    ~Jfet();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void updateStep() override;
+    virtual void updateStep() override;
 
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 };

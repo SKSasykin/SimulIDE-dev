@@ -9,15 +9,14 @@
 
 class LibraryItem;
 
-class Ellipse : public Shape
-{
-    public:
-        Ellipse( QString type, QString id );
-        ~Ellipse();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class Ellipse : public Shape {
+public:
+    Ellipse( QString type, QString id );
+    ~Ellipse();
 
-        QPainterPath shape() const override;
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
+
+    QPainterPath shape() const override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 };

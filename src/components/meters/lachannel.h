@@ -11,29 +11,28 @@
 class eNode;
 class Pin;
 
-class LaChannel : public DataChannel
-{
-        friend class LAnalizer;
+class LaChannel : public DataChannel {
+    friend class LAnalizer;
 
-    public:
-        LaChannel( LAnalizer* la, QString id );
-        ~LaChannel();
+public:
+    LaChannel( LAnalizer* la, QString id );
+    ~LaChannel();
 
-        void initialize() override;
-        void stamp() override;
-        void voltChanged() override;
+    void initialize() override;
+    void stamp() override;
+    void voltChanged() override;
 
-        void setPin( Pin* p );
+    void setPin( Pin* p );
 
-        void setIsBus( bool b ) override;
-        void registerEnode( eNode* enode, int n=-1 );
+    void setIsBus( bool b ) override;
+    void registerEnode( eNode* enode, int n = -1 );
 
-    private:
-        void addReading( double v );
+private:
+    void addReading( double v );
 
-        double m_busValue;
+    double m_busValue;
 
-        QMap<int, eNode*> m_busNodes;
+    QMap<int, eNode*> m_busNodes;
 
-        LAnalizer* m_analizer;
+    LAnalizer* m_analizer;
 };

@@ -11,21 +11,19 @@ class Component;
 class McuPort;
 class eMcu;
 
-class I51Pin : public McuPin
-{
+class I51Pin : public McuPin {
     friend class McuPort;
 
-    public:
-        I51Pin( McuPort* port, int i, QString id , Component* mcu );
-        ~I51Pin();
+public:
+    I51Pin( McuPort* port, int i, QString id, Component* mcu );
+    ~I51Pin();
 
-        //virtual void initialize() override;
+    //virtual void initialize() override;
 
-        virtual void setOutState( bool state ) override;
-        virtual void scheduleState( bool state, uint64_t time ) override;
+    virtual void setOutState( bool state ) override;
+    virtual void scheduleState( bool state, uint64_t time ) override;
 
-        virtual void ConfExtInt( uint8_t bits ) override;
+    virtual void ConfExtInt( uint8_t bits ) override;
 
-    protected:
-
+protected:
 };

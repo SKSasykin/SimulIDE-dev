@@ -10,76 +10,68 @@
 #include <QPainter>
 #include <iostream>
 
-#include "strain.h"
-#include "connector.h"
 #include "circuit.h"
+#include "connector.h"
 #include "itemlibrary.h"
+#include "strain.h"
 
 #include "doubleprop.h"
 #include "propdialog.h"
 
-#define tr(str) simulideTr("Strain",str)
+#define tr( str ) simulideTr( "Strain", str )
 
-Component *Strain::construct( QString type, QString id)
-{ return new Strain ( type, id); }
-
-LibraryItem* Strain::libraryItem()
-{
-    return new LibraryItem(
-        tr("Force Strain Gauge"),
-        "Resistive Sensors",
-        "strain.png",
-        "Strain",
-        Strain::construct );
+Component* Strain::construct( QString type, QString id ) {
+    return new Strain( type, id );
 }
 
-Strain::Strain( QString type, QString id )
-      : VarResBase( type, id )
-{
-    m_area = QRectF(-12,-20, 24, 24 );
+LibraryItem* Strain::libraryItem() {
+    return new LibraryItem( tr( "Force Strain Gauge" ), "Resistive Sensors", "strain.png", "Strain",
+                            Strain::construct );
+}
+
+Strain::Strain( QString type, QString id ) : VarResBase( type, id ) {
+    m_area = QRectF( -12, -20, 24, 24 );
     Dialed::m_areaComp = m_area;
 
     VarResBase::setVal( 0 );
 
-    addPropGroup( { tr("Main"), {
-        new DoubProp<Strain>("Force_N", tr("Current Value"), "N"
-                            , this, &Strain::getVal, &Strain::setVal ),
+    addPropGroup(
+        { tr( "Main" ),
+          { new DoubProp<Strain>( "Force_N", tr( "Current Value" ), "N", this, &Strain::getVal, &Strain::setVal ),
 
-        new DoubProp<Strain>("Min_Force_N", tr("Minimum Value"), "N"
-                            , this, &Strain::minVal,  &Strain::setMinVal ),
+            new DoubProp<Strain>( "Min_Force_N", tr( "Minimum Value" ), "N", this, &Strain::minVal,
+                                  &Strain::setMinVal ),
 
-        new DoubProp<Strain>("Max_Force_N", tr("Maximum Value"), "N"
-                            , this, &Strain::maxVal, &Strain::setMaxVal ),
+            new DoubProp<Strain>( "Max_Force_N", tr( "Maximum Value" ), "N", this, &Strain::maxVal,
+                                  &Strain::setMaxVal ),
 
-        new DoubProp<Strain>("Dial_Step", tr("Dial Step"), "N"
-                            , this, &Strain::getStep, &Strain::setStep )
-    }, 0} );
+            new DoubProp<Strain>( "Dial_Step", tr( "Dial Step" ), "N", this, &Strain::getStep, &Strain::setStep ) },
+          0 } );
 
-    addPropGroup( { tr("Parameters"), {
-        new DoubProp<Strain>("Ref_Temp", tr("Ref. Temperature"), "ºC"
-                            , this, &Strain::refTemp, &Strain::setRefTemp ),
+    addPropGroup(
+        { tr( "Parameters" ),
+          { new DoubProp<Strain>( "Ref_Temp", tr( "Ref. Temperature" ), "ºC", this, &Strain::refTemp,
+                                  &Strain::setRefTemp ),
 
-        new DoubProp<Strain>("Temp", tr("Temperature"), "ºC"
-                            , this, &Strain::getTemp, &Strain::setTemp )
-    }, 0} );
-    addPropGroup( { tr("Dial"), Dialed::dialProps(), groupNoCopy } );
+            new DoubProp<Strain>( "Temp", tr( "Temperature" ), "ºC", this, &Strain::getTemp, &Strain::setTemp ) },
+          0 } );
+    addPropGroup( { tr( "Dial" ), Dialed::dialProps(), groupNoCopy } );
 }
 Strain::~Strain() { }
 
-void Strain::initialize()
-{
-  //m_last_step =  Simulator::self()->step();
-  //m_resist = sensorFunction (m_sense);
-  m_last_resist = 1/m_admit;
-  m_new_resist = m_last_resist;
+void Strain::initialize() {
+    //m_last_step =  Simulator::self()->step();
+    //m_resist = sensorFunction (m_sense);
+    m_last_resist = 1 / m_admit;
+    m_new_resist = m_last_resist;
 
-  //setResist ( m_resist);
-  updateStep ();
+    //setResist ( m_resist);
+    updateStep();
 }
 
-void Strain::updateStep()
-{
-    if( !m_needUpdate ) return;
+void Strain::updateStep() {
+    if ( !m_needUpdate )
+        return;
     m_needUpdate = false;
 
     /*m_step = Simulator::self()->step();
@@ -100,8 +92,10 @@ void Strain::updateStep()
     double res = sensorFunction( m_value );
     eResistor::setResistance( res );
 
-    if( m_propDialog ) m_propDialog->updtValues();
-    else setValLabelText( getPropStr( showProp() ) );
+    if ( m_propDialog )
+        m_propDialog->updtValues();
+    else
+        setValLabelText( getPropStr( showProp() ) );
 }
 
 /*void Strain::senseChanged( int val ) // Called when dial is rotated
@@ -116,60 +110,50 @@ void Strain::updateStep()
     //m_last_resist = m_resist;
 }*/
 
+double Strain::sensorFunction( double forceN ) {
+    double resistance;
 
-double Strain::sensorFunction( double forceN )
-{
-  double resistance;
+    m_delta_r = m_drPrecalc * forceN;
 
-  m_delta_r = m_drPrecalc*forceN;
-
-  resistance = m_r0 + m_delta_r + m_delta_r_t;
-  return resistance;
+    resistance = m_r0 + m_delta_r + m_delta_r_t;
+    return resistance;
 }
 
-void Strain::updateParameters()
-{
-    m_k_long = 1+2.0*m_coef_poisson+m_cste_bridgman*(1-2*m_coef_poisson);
+void Strain::updateParameters() {
+    m_k_long = 1 + 2.0 * m_coef_poisson + m_cste_bridgman * ( 1 - 2 * m_coef_poisson );
     //qDebug() << "K = " << m_k_long;
-    m_k = m_k_long * (1 - m_coef_transverse);
+    m_k = m_k_long * ( 1 - m_coef_transverse );
     m_section_body = m_h_body * m_w_body;
-    m_delta_r_t = (m_alpha_r+m_k*(m_lambda_s - m_lambda_j)) * (m_temp - m_ref_temp) * m_r0;
-    m_drPrecalc = m_r0*m_k/(m_young_modulus*m_section_body);
+    m_delta_r_t = ( m_alpha_r + m_k * ( m_lambda_s - m_lambda_j ) ) * ( m_temp - m_ref_temp ) * m_r0;
+    m_drPrecalc = m_r0 * m_k / ( m_young_modulus * m_section_body );
 }
 
-void Strain::setRefTemp( double t )
-{
+void Strain::setRefTemp( double t ) {
     m_ref_temp = t;
     updateParameters();
 }
 
-void Strain::setTemp( double t)
-{
-    m_temp= t;
+void Strain::setTemp( double t ) {
+    m_temp = t;
     updateParameters();
 }
 
-void Strain::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
-    if( m_hidden ) return;
+void Strain::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
+    if ( m_hidden )
+        return;
 
     Component::paint( p, o, w );
-    p->drawRect(-11,-20, 22, 24 );
-    p->fillRect(-8,-2, 4, 4, Qt::black );
-    p->fillRect( 8,-2,-4, 4, Qt::black );
+    p->drawRect( -11, -20, 22, 24 );
+    p->fillRect( -8, -2, 4, 4, Qt::black );
+    p->fillRect( 8, -2, -4, 4, Qt::black );
 
-    QPen pen(Qt::black, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen( Qt::black, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin );
     p->setPen( pen );
 
     const QPointF points[8] = {
-        QPointF(-6, 0 ),
-        QPointF(-6,-16 ),
-        QPointF(-2,-16 ),
-        QPointF(-2,-4 ),
-        QPointF( 2,-4 ),
-        QPointF( 2,-16 ),
-        QPointF( 6,-16 ),
-        QPointF( 6, 0 ), };
+        QPointF( -6, 0 ), QPointF( -6, -16 ), QPointF( -2, -16 ), QPointF( -2, -4 ),
+        QPointF( 2, -4 ), QPointF( 2, -16 ),  QPointF( 6, -16 ),  QPointF( 6, 0 ),
+    };
 
     p->drawPolyline( points, 8 );
 

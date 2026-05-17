@@ -5,30 +5,28 @@
 
 #pragma once
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
-class McuEeprom : public McuModule, public eElement
-{
-        friend class McuCreator;
+class McuEeprom : public McuModule, public eElement {
+    friend class McuCreator;
 
-    public:
-        McuEeprom( eMcu* mcu, QString name );
-        virtual ~McuEeprom();
+public:
+    McuEeprom( eMcu* mcu, QString name );
+    virtual ~McuEeprom();
 
-        virtual void initialize() override;
+    virtual void initialize() override;
 
-        virtual void readEeprom();
-        virtual void writeEeprom();
+    virtual void readEeprom();
+    virtual void writeEeprom();
 
-        virtual void addrWriteL( uint8_t val );
-        virtual void addrWriteH( uint8_t val );
+    virtual void addrWriteL( uint8_t val );
+    virtual void addrWriteH( uint8_t val );
 
-    protected:
+protected:
+    uint8_t* m_addressL; // Actual ram for counter Low address byte
+    uint8_t* m_addressH; // Actual ram for counter High address byte
 
-        uint8_t* m_addressL; // Actual ram for counter Low address byte
-        uint8_t* m_addressH; // Actual ram for counter High address byte
-
-        uint32_t m_address;
-        uint8_t* m_dataReg;
+    uint32_t m_address;
+    uint8_t* m_dataReg;
 };

@@ -5,94 +5,91 @@
 
 #include <QDebug>
 
-#include "scriptmodule.h"
 #include "mcu.h"
+#include "scriptmodule.h"
 
 ScriptModule::ScriptModule( eMcu* mcu, QString name )
-            : ScriptBase( mcu->getId()+"-"+"ScriptModule" )
-            , McuModule( mcu, name )
-{
-    m_configureA   = nullptr;
-    m_configureB   = nullptr;
-    m_configureC   = nullptr;
+    : ScriptBase( mcu->getId() + "-" + "ScriptModule" ), McuModule( mcu, name ) {
+    m_configureA = nullptr;
+    m_configureB = nullptr;
+    m_configureC = nullptr;
     m_callBackDoub = nullptr;
-    m_callBack     = nullptr;
+    m_callBack = nullptr;
 }
-ScriptModule::~ScriptModule()
-{
-}
+ScriptModule::~ScriptModule() { }
 
-void ScriptModule::setScriptFile( QString scriptFile, bool compile )
-{
+void ScriptModule::setScriptFile( QString scriptFile, bool compile ) {
     ScriptBase::setScriptFile( scriptFile, compile );
-    if( compile ) compileScript();
+    if ( compile )
+        compileScript();
 }
 
-void ScriptModule::setScript( QString script )
-{
-    ScriptBase::setScript( script  );
+void ScriptModule::setScript( QString script ) {
+    ScriptBase::setScript( script );
 }
 
-int ScriptModule::compileScript()
-{
-    if( !m_aEngine ) return -1;
+int ScriptModule::compileScript() {
+    if ( !m_aEngine )
+        return -1;
 
     int r = ScriptBase::compileScript();
-    if( r < 0 ) return r;
+    if ( r < 0 )
+        return r;
 
-    m_configureA   = m_aEngine->GetModule(0)->GetFunctionByDecl("void configureA( uint v )");
-    m_configureB   = m_aEngine->GetModule(0)->GetFunctionByDecl("void configureB( uint v )");
-    m_configureC   = m_aEngine->GetModule(0)->GetFunctionByDecl("void configureC( uint v )");
-    m_callBackDoub = m_aEngine->GetModule(0)->GetFunctionByDecl("void callBackDoub( double v )");
-    m_callBack     = m_aEngine->GetModule(0)->GetFunctionByDecl("void callBack()");
+    m_configureA = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void configureA( uint v )" );
+    m_configureB = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void configureB( uint v )" );
+    m_configureC = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void configureC( uint v )" );
+    m_callBackDoub = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void callBackDoub( double v )" );
+    m_callBack = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void callBack()" );
 
     //m_vChangedCtx = m_voltChanged ? m_aEngine->CreateContext() : nullptr;
 
-    asIScriptFunction* func = m_aEngine->GetModule(0)->GetFunctionByDecl("void setup()");
-    if( func ) callFunction( func );
+    asIScriptFunction* func = m_aEngine->GetModule( 0 )->GetFunctionByDecl( "void setup()" );
+    if ( func )
+        callFunction( func );
 
     return 0;
 }
 
-void ScriptModule::configureA( uint8_t v )
-{
-    if( !m_configureA ) return;
+void ScriptModule::configureA( uint8_t v ) {
+    if ( !m_configureA )
+        return;
 
     prepare( m_configureA );
     m_context->SetArgDWord( 0, v );
     execute();
 }
 
-void ScriptModule::configureB( uint8_t v )
-{
-    if( !m_configureB ) return;
+void ScriptModule::configureB( uint8_t v ) {
+    if ( !m_configureB )
+        return;
 
     prepare( m_configureB );
     m_context->SetArgDWord( 0, v );
     execute();
 }
 
-void ScriptModule::configureC( uint8_t v )
-{
-    if( !m_configureC ) return;
+void ScriptModule::configureC( uint8_t v ) {
+    if ( !m_configureC )
+        return;
 
     prepare( m_configureC );
     m_context->SetArgDWord( 0, v );
     execute();
 }
 
-void ScriptModule::callBackDoub( double v )
-{
-    if( !m_callBackDoub ) return;
+void ScriptModule::callBackDoub( double v ) {
+    if ( !m_callBackDoub )
+        return;
 
     prepare( m_callBackDoub );
     m_context->SetArgDouble( 0, v );
     execute();
 }
 
-void ScriptModule::callBack()
-{
-    if( !m_callBack ) return;
+void ScriptModule::callBack() {
+    if ( !m_callBack )
+        return;
 
     prepare( m_callBack );
     execute();

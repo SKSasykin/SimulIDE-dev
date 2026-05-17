@@ -9,21 +9,20 @@
 
 class ScriptCpu;
 
-class asDebugger : public BaseDebugger
-{
-    public:
-        asDebugger( CodeEditor* parent, OutPanelText* outPane );
-        ~asDebugger();
+class asDebugger : public BaseDebugger {
+public:
+    asDebugger( CodeEditor* parent, OutPanelText* outPane );
+    ~asDebugger();
 
-        virtual bool upload() override;
-        virtual int  compile( bool debug ) override;
+    virtual bool upload() override;
+    virtual int compile( bool debug ) override;
 
-        void scriptError( int line );
-        void scriptWarning( int line );
+    void scriptError( int line );
+    void scriptWarning( int line );
 
-    protected:
-        //virtual bool postProcess() override;
+protected:
+    //virtual bool postProcess() override;
 
-    private:
-        ScriptCpu* m_device;
+private:
+    ScriptCpu* m_device;
 };

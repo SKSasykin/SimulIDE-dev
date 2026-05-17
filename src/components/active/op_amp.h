@@ -11,60 +11,68 @@
 class LibraryItem;
 class IoPin;
 
-class OpAmp : public Component, public eElement
-{
-    public:
-        OpAmp( QString type, QString id );
-        ~OpAmp();
-        
-        static Component* construct( QString type, QString id );
-        static LibraryItem* libraryItem();
+class OpAmp : public Component, public eElement {
+public:
+    OpAmp( QString type, QString id );
+    ~OpAmp();
 
-        void initialize() override;
-        void stamp() override;
-        void updateStep() override;
-        void voltChanged() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double gain() { return m_gain; }
-        void setGain( double g ) { m_gain = g; m_changed = true; }
+    void initialize() override;
+    void stamp() override;
+    void updateStep() override;
+    void voltChanged() override;
 
-        double outImp() { return m_outImp; }
-        void setOutImp( double imp );
+    double gain() { return m_gain; }
+    void setGain( double g ) {
+        m_gain = g;
+        m_changed = true;
+    }
 
-        double voltPos() { return m_voltPosDef; }
-        void setVoltPos( double v ) { m_voltPosDef = v; m_changed = true; }
+    double outImp() { return m_outImp; }
+    void setOutImp( double imp );
 
-        double voltNeg() { return m_voltNegDef; }
-        void setVoltNeg( double v ) { m_voltNegDef = v; m_changed = true; }
+    double voltPos() { return m_voltPosDef; }
+    void setVoltPos( double v ) {
+        m_voltPosDef = v;
+        m_changed = true;
+    }
 
-        bool powerPins() {return m_powerPins; }
-        void setPowerPins( bool set );
+    double voltNeg() { return m_voltNegDef; }
+    void setVoltNeg( double v ) {
+        m_voltNegDef = v;
+        m_changed = true;
+    }
 
-        bool switchPins() { return m_switchPins; }
-        void setSwitchPins( bool s );
+    bool powerPins() { return m_powerPins; }
+    void setPowerPins( bool set );
 
-        QPainterPath shape() const override;
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    bool switchPins() { return m_switchPins; }
+    void setSwitchPins( bool s );
 
-    protected:
-        virtual void slotProperties() override;
-        void updtProperties();
+    QPainterPath shape() const override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-        bool m_powerPins;
-        bool m_switchPins;
+protected:
+    virtual void slotProperties() override;
+    void updtProperties();
 
-        double m_accuracy;
-        double m_gain;
-        double m_k;
-        double m_voltPos;
-        double m_voltNeg;
-        double m_voltPosDef;
-        double m_voltNegDef;
-        double m_lastOut;
-        double m_lastIn;
-        double m_outImp;
+    bool m_powerPins;
+    bool m_switchPins;
 
-        IoPin* m_inputP;
-        IoPin* m_inputN;
-        IoPin* m_output;
+    double m_accuracy;
+    double m_gain;
+    double m_k;
+    double m_voltPos;
+    double m_voltNeg;
+    double m_voltPosDef;
+    double m_voltNegDef;
+    double m_lastOut;
+    double m_lastIn;
+    double m_outImp;
+
+    IoPin* m_inputP;
+    IoPin* m_inputN;
+    IoPin* m_output;
 };

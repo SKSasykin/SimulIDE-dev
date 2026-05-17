@@ -12,51 +12,53 @@ class LibraryItem;
 class eResistor;
 class Pin;
 
-class ResistorDip : public Component, public eElement
-{
-    public:
-        ResistorDip( QString type, QString id );
-        ~ResistorDip();
+class ResistorDip : public Component, public eElement {
+public:
+    ResistorDip( QString type, QString id );
+    ~ResistorDip();
 
- static Component* construct( QString type, QString id );
- static LibraryItem *libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void stamp() override;
-        virtual void updateStep() override;
+    virtual void stamp() override;
+    virtual void updateStep() override;
 
-        int size() { return m_size; }
-        void setSize( int size );
+    int size() { return m_size; }
+    void setSize( int size );
 
-        double resistance() { return m_resistance; }
-        void setResistance( double resist );
+    double resistance() { return m_resistance; }
+    void setResistance( double resist );
 
-        bool pullUp() { return m_pullUp; }
-        void setPullUp( bool p );
+    bool pullUp() { return m_pullUp; }
+    void setPullUp( bool p );
 
-        double puVolt() { return m_puVolt; }
-        void setPuVolt( double pv ) { m_puVolt = pv; update(); }
+    double puVolt() { return m_puVolt; }
+    void setPuVolt( double pv ) {
+        m_puVolt = pv;
+        update();
+    }
 
-        void createResistors( int c );
-        void deleteResistors( int d );
+    void createResistors( int c );
+    void deleteResistors( int d );
 
-        virtual void remove() override;
-        
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void remove() override;
 
-    protected slots:
-        virtual void slotProperties() override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    private:
-        void updtProperties();
+protected slots:
+    virtual void slotProperties() override;
 
-        double m_resistance;
-        int m_size;
+private:
+    void updtProperties();
 
-        bool m_pullUp;
-        double m_puVolt;
+    double m_resistance;
+    int m_size;
 
-        std::vector<Pin*> m_pin;
-        std::vector<eResistor*> m_resistor;
+    bool m_pullUp;
+    double m_puVolt;
 
-        static eNode m_puEnode;
+    std::vector<Pin*> m_pin;
+    std::vector<eResistor*> m_resistor;
+
+    static eNode m_puEnode;
 };

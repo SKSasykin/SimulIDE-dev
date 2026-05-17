@@ -7,12 +7,11 @@
 
 #include "basedebugger.h"
 
-class cDebugger : public BaseDebugger
-{
-    public:
-        cDebugger( CodeEditor* parent, OutPanelText* outPane );
-        ~cDebugger();
+class cDebugger : public BaseDebugger {
+public:
+    cDebugger( CodeEditor* parent, OutPanelText* outPane );
+    ~cDebugger();
 
-    protected:
-        virtual void preProcess() override;
+protected:
+    virtual void preProcess() override;
 };

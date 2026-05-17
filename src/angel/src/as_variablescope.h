@@ -28,13 +28,11 @@
    andreas@angelcode.com
 */
 
-
 //
 // as_variablescope.h
 //
 // A manager class for variable declarations
 //
-
 
 #ifndef AS_VARIABLESCOPE_H
 #define AS_VARIABLESCOPE_H
@@ -44,40 +42,38 @@
 #ifndef AS_NO_COMPILER
 
 #include "as_array.h"
-#include "as_string.h"
 #include "as_datatype.h"
+#include "as_string.h"
 
 BEGIN_AS_NAMESPACE
 
-struct sVariable
-{
-	asCString   name;
-	asCDataType type;
-	int         stackOffset;
-	bool        isInitialized;
-	bool        isPureConstant;
-	asQWORD     constantValue;
-	bool        onHeap;
+struct sVariable {
+    asCString name;
+    asCDataType type;
+    int stackOffset;
+    bool isInitialized;
+    bool isPureConstant;
+    asQWORD constantValue;
+    bool onHeap;
 };
 
-class asCVariableScope
-{
+class asCVariableScope {
 public:
-	asCVariableScope(asCVariableScope *parent);
-	~asCVariableScope();
+    asCVariableScope( asCVariableScope* parent );
+    ~asCVariableScope();
 
-	void Reset();
+    void Reset();
 
-	int DeclareVariable(const char *name, const asCDataType &type, int stackOffset, bool isObjectOnHeap);
-	sVariable *GetVariable(const char *name);
-	sVariable *GetVariableByOffset(int offset);
+    int DeclareVariable( const char* name, const asCDataType& type, int stackOffset, bool isObjectOnHeap );
+    sVariable* GetVariable( const char* name );
+    sVariable* GetVariableByOffset( int offset );
 
-	asCVariableScope *parent;
+    asCVariableScope* parent;
 
-	bool isBreakScope;
-	bool isContinueScope;
+    bool isBreakScope;
+    bool isContinueScope;
 
-	asCArray<sVariable *> variables;
+    asCArray<sVariable*> variables;
 };
 
 END_AS_NAMESPACE

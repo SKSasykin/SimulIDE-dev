@@ -11,10 +11,9 @@
 
 class InstallItem;
 
-class InstallInfo : public QDialog, private Ui::installInfo
-{
+class InstallInfo : public QDialog, private Ui::installInfo {
     //Q_OBJECT
 
-    public:
-        InstallInfo( InstallItem* parent , QString tittle, QString author, QStringList items );
+public:
+    InstallInfo( InstallItem* parent, QString tittle, QString author, QStringList items );
 };

@@ -7,49 +7,48 @@
 
 #include "component.h"
 
-class Shape : public Component
-{
-    public:
-        Shape( QString type, QString id );
-        ~Shape();
-        
-        void updateStep() override;
+class Shape : public Component {
+public:
+    Shape( QString type, QString id );
+    ~Shape();
 
-        QRectF boundingRect() const override {
-            return QRectF( m_area.x()-m_border/2-1, m_area.y()-m_border/2-1, 
-                           m_area.width()+m_border+2, m_area.height()+m_border+2 ); 
-        }
-        int hSize() { return m_hSize; }
-        void setHSize( int size );
-        
-        int vSize() { return m_vSize; }
-        void setVSize( int size );
-        
-        int border() { return m_border; }
-        void setBorder( int border );
-        
-        QColor color() { return m_color; }
-        void setColor( QColor color );
+    void updateStep() override;
 
-        double zVal() { return zValue(); }
-        void setZVal( double v) { setZValue( v ); }
+    QRectF boundingRect() const override {
+        return QRectF( m_area.x() - m_border / 2 - 1, m_area.y() - m_border / 2 - 1, m_area.width() + m_border + 2,
+                       m_area.height() + m_border + 2 );
+    }
+    int hSize() { return m_hSize; }
+    void setHSize( int size );
 
-        double opac() { return m_opac; }
-        void setOpac( double op );
+    int vSize() { return m_vSize; }
+    void setVSize( int size );
 
-        QString colorStr() { return m_color.name(); }
-        void setColorStr( QString n ) { setColor( QColor(n) ); }
+    int border() { return m_border; }
+    void setBorder( int border );
 
-        bool freeMove( bool ) override { return true; }
-        
-    protected:
-        void changed();
+    QColor color() { return m_color; }
+    void setColor( QColor color );
 
-        int m_hSize;
-        int m_vSize;
-        int m_border;
+    double zVal() { return zValue(); }
+    void setZVal( double v ) { setZValue( v ); }
 
-        double m_opac;
+    double opac() { return m_opac; }
+    void setOpac( double op );
 
-        bool m_changed;
+    QString colorStr() { return m_color.name(); }
+    void setColorStr( QString n ) { setColor( QColor( n ) ); }
+
+    bool freeMove( bool ) override { return true; }
+
+protected:
+    void changed();
+
+    int m_hSize;
+    int m_vSize;
+    int m_border;
+
+    double m_opac;
+
+    bool m_changed;
 };

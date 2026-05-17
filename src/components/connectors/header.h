@@ -9,22 +9,21 @@
 
 class LibraryItem;
 
-class Header : public ConnBase
-{
-    public:
-        Header( QString type, QString id );
-        ~Header();
+class Header : public ConnBase {
+public:
+    Header( QString type, QString id );
+    ~Header();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        bool pointDown() { return m_pointDown; }
-        void setPointDown( bool down );
+    bool pointDown() { return m_pointDown; }
+    void setPointDown( bool down );
 
-        void updatePins() override;
+    void updatePins() override;
 
-    private:
-        void updatePixmap() override;
+private:
+    void updatePixmap() override;
 
-        bool m_pointDown;
+    bool m_pointDown;
 };

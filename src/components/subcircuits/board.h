@@ -9,22 +9,21 @@
 
 class ShieldSubc;
 
-class BoardSubc : public SubCircuit
-{
-    public:
-        BoardSubc( QString type, QString id, QString device );
-        ~BoardSubc();
+class BoardSubc : public SubCircuit {
+public:
+    BoardSubc( QString type, QString id, QString device );
+    ~BoardSubc();
 
-        virtual void setLogicSymbol( bool ls ) override;
+    virtual void setLogicSymbol( bool ls ) override;
 
-        void attachShield( ShieldSubc* shield );
-        void detachShield( ShieldSubc* shield ) { m_shields.removeAll( shield); }
+    void attachShield( ShieldSubc* shield );
+    void detachShield( ShieldSubc* shield ) { m_shields.removeAll( shield ); }
 
-        BoardSubc* parentBoard() { return m_parentBoard; }
+    BoardSubc* parentBoard() { return m_parentBoard; }
 
-        virtual QString toString() override;
+    virtual QString toString() override;
 
-    protected:
-        QList<ShieldSubc*> m_shields; // A list of shields attached to this
-        BoardSubc* m_parentBoard;     // A board this is attached to (this is a shield)
+protected:
+    QList<ShieldSubc*> m_shields; // A list of shields attached to this
+    BoardSubc* m_parentBoard; // A board this is attached to (this is a shield)
 };

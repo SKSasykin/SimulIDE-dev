@@ -10,22 +10,21 @@
 
 class LibraryItem;
 
-class Led : public LedBase, public Linker
-{
-    public:
-        Led( QString type, QString id );
-        ~Led();
+class Led : public LedBase, public Linker {
+public:
+    Led( QString type, QString id );
+    ~Led();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void voltChanged() override;
+    virtual void voltChanged() override;
 
-        void slotLinkComp() { Linker::startLinking(); }
+    void slotLinkComp() { Linker::startLinking(); }
 
-    protected:
-        virtual void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
+protected:
+    virtual void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
 
-        void drawBackground( QPainter* p ) override;
-        void drawForeground( QPainter* p ) override;
+    void drawBackground( QPainter* p ) override;
+    void drawForeground( QPainter* p ) override;
 };

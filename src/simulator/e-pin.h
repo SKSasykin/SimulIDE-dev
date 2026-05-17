@@ -12,64 +12,74 @@
 class eElement;
 class Pin;
 
-class ePin
-{
+class ePin {
     friend class eNode;
 
-    public:
-        ePin( QString id, int index );
-        virtual ~ePin();
+public:
+    ePin( QString id, int index );
+    virtual ~ePin();
 
-        bool isConnected() { return (m_enode!=nullptr); }
+    bool isConnected() { return ( m_enode != nullptr ); }
 
-        virtual double getVoltage();
+    virtual double getVoltage();
 
-        eNode* getEnode() { return m_enode; }
-        void   setEnode( eNode* enode );
-        void   setEnodeComp( eNode* enode ); // The enode at other side of component
+    eNode* getEnode() { return m_enode; }
+    void setEnode( eNode* enode );
+    void setEnodeComp( eNode* enode ); // The enode at other side of component
 
-        void changeCallBack( eElement* el , bool cb=true );
+    void changeCallBack( eElement* el, bool cb = true );
 
-        bool inverted() { return m_inverted; }
-        virtual void setInverted( bool i ) { m_inverted = i; }
+    bool inverted() { return m_inverted; }
+    virtual void setInverted( bool i ) { m_inverted = i; }
 
-        inline void stampAdmitance( double a ) { if( m_enode ) m_enode->stampAdmitance( this, a ); }
+    inline void stampAdmitance( double a ) {
+        if ( m_enode )
+            m_enode->stampAdmitance( this, a );
+    }
 
-        void addSingAdm( eNode* node, double admit );
-        void stampSingAdm( double admit );
+    void addSingAdm( eNode* node, double admit );
+    void stampSingAdm( double admit );
 
-        void createCurrent();
-        inline void stampCurrent( double c ) { if( m_enode ) { m_sourceCurrent = c; m_enode->stampCurrent( this, c ); } }
-        
-        QString getId()  { return m_id; }
-        void setId( QString id );
+    void createCurrent();
+    inline void stampCurrent( double c ) {
+        if ( m_enode ) {
+            m_sourceCurrent = c;
+            m_enode->stampCurrent( this, c );
+        }
+    }
 
-        virtual Pin* getPin(){ return nullptr; }
+    QString getId() { return m_id; }
+    void setId( QString id );
 
-        void setIndex( int i ) { m_index = i; }
+    virtual Pin* getPin() { return nullptr; }
 
-        void setCircuitPin( ePin* p ) { m_circuitPin = p; }
+    void setIndex( int i ) { m_index = i; }
 
-        virtual double getCurrent() { return m_current; }
-        void setCurrent( double c ) { m_current = c; }
+    void setCircuitPin( ePin* p ) { m_circuitPin = p; }
 
-        virtual bool hasCurrent() { return m_hasCurrent; }
-        void setHasCurrent( bool h ) { m_hasCurrent = h; }
+    virtual double getCurrent() { return m_current; }
+    void setCurrent( double c ) { m_current = c; }
 
-        void resetCurrent() { m_hasCurrent = false; m_current = 0; }
+    virtual bool hasCurrent() { return m_hasCurrent; }
+    void setHasCurrent( bool h ) { m_hasCurrent = h; }
 
-    protected:
-        eNode* m_enode;     // My eNode
-        eNode* m_enodeComp; // eNode at other side of my component
+    void resetCurrent() {
+        m_hasCurrent = false;
+        m_current = 0;
+    }
 
-        QString m_id;
-        int m_index;
+protected:
+    eNode* m_enode; // My eNode
+    eNode* m_enodeComp; // eNode at other side of my component
 
-        bool m_inverted;
-        bool m_hasCurrent;
+    QString m_id;
+    int m_index;
 
-         ePin* m_circuitPin;
+    bool m_inverted;
+    bool m_hasCurrent;
 
-        double m_current;
-        double m_sourceCurrent;
+    ePin* m_circuitPin;
+
+    double m_current;
+    double m_sourceCurrent;
 };

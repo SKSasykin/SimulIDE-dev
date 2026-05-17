@@ -4,45 +4,41 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "e_mcu.h"
-#include "mcu.h"
+#include "basedebugger.h"
 #include "cpu8bits.h"
-#include "mcuconfigword.h"
-#include "mcuport.h"
-#include "mcupin.h"
-#include "ioport.h"
+#include "editorwindow.h"
 #include "iopin.h"
+#include "ioport.h"
+#include "mcu.h"
+#include "mcuconfigword.h"
+#include "mcupin.h"
+#include "mcuport.h"
+#include "mcuvref.h"
 #include "mcuwdt.h"
+#include "simulator.h"
 #include "usartmodule.h"
 #include "usartrx.h"
-#include "mcuvref.h"
-#include "simulator.h"
-#include "basedebugger.h"
-#include "editorwindow.h"
 
 eMcu* eMcu::m_pSelf = nullptr;
 
-eMcu::eMcu( Mcu* comp, QString id )
-    : DataSpace()
-    , eIou( comp, id )
-    , m_interrupts( this )
-{
-    m_wdt        = nullptr;
-    m_intOsc     = nullptr;
+eMcu::eMcu( Mcu* comp, QString id ) : DataSpace(), eIou( comp, id ), m_interrupts( this ) {
+    m_wdt = nullptr;
+    m_intOsc = nullptr;
     m_comparator = nullptr;
-    m_cfgWord    = nullptr;
+    m_cfgWord = nullptr;
     m_vrefModule = nullptr;
     m_sleepModule = nullptr;
 
-    m_vdd= 5;
+    m_vdd = 5;
 
     m_freq = 0;
     m_cPerInst = 1;
 
-    m_wordSize  = 2;
+    m_wordSize = 2;
     m_flashSize = 0;
-    m_pgmPage  = 0;
-    m_romSize   = 0;
-    m_ramSize   = 0;
+    m_pgmPage = 0;
+    m_romSize = 0;
+    m_ramSize = 0;
 
     m_firmware = "";
     m_debugger = nullptr;
@@ -52,106 +48,118 @@ eMcu::eMcu( Mcu* comp, QString id )
     m_ramTable = new RamTable( nullptr, this, false );
 }
 
-eMcu::~eMcu()
-{
-    if( m_cpu ) delete m_cpu;
+eMcu::~eMcu() {
+    if ( m_cpu )
+        delete m_cpu;
     m_interrupts.remove();
-    for( McuModule* module : m_modules ) delete module;
-    if( m_pSelf == this ) m_pSelf = nullptr;
+    for ( McuModule* module : m_modules )
+        delete module;
+    if ( m_pSelf == this )
+        m_pSelf = nullptr;
 }
 
-void eMcu::setup()
-{
-    for( McuModule* module : m_modules ) module->setup();
+void eMcu::setup() {
+    for ( McuModule* module : m_modules )
+        module->setup();
 }
 
-void eMcu::reset()
-{
+void eMcu::reset() {
     m_component->crash( false );
     m_state = mcuStopped;
     m_cycle = 0;
     cyclesDone = 0;
 
-    for( McuModule* module : m_modules  ) { module->reset(); module->sleep(-1 ); }
-    for( IoPort*    ioPort : m_ioPorts  ) ioPort->reset();
-    for( McuPort*  mcuPort : m_mcuPorts ) mcuPort->reset();
+    for ( McuModule* module : m_modules ) {
+        module->reset();
+        module->sleep( -1 );
+    }
+    for ( IoPort* ioPort : m_ioPorts )
+        ioPort->reset();
+    for ( McuPort* mcuPort : m_mcuPorts )
+        mcuPort->reset();
 
     m_interrupts.resetInts();
     DataSpace::initialize();
 
-    if( m_cpu ) m_cpu->reset(); // Must be after all modules reset
-    else qDebug() << "ERROR: eMcu::reset NULL Cpu";
+    if ( m_cpu )
+        m_cpu->reset(); // Must be after all modules reset
+    else
+        qDebug() << "ERROR: eMcu::reset NULL Cpu";
 
-    for( McuPort* mcuPort : m_mcuPorts ) mcuPort->readPort( 0 ); // Update Pin Input register
+    for ( McuPort* mcuPort : m_mcuPorts )
+        mcuPort->readPort( 0 ); // Update Pin Input register
 
-    if( !m_saveEepr )
-        for( uint i=0; i<m_romSize; ++i ) setRomValue( i, 0xFF );
+    if ( !m_saveEepr )
+        for ( uint i = 0; i < m_romSize; ++i )
+            setRomValue( i, 0xFF );
 }
 
-void eMcu::hardReset( bool r )
-{
-    bool isReset = (m_state == mcuStopped);
-    if( r == isReset ) return;
+void eMcu::hardReset( bool r ) {
+    bool isReset = ( m_state == mcuStopped );
+    if ( r == isReset )
+        return;
 
     Simulator::self()->cancelEvents( this );
-    if( m_clkPin ) m_clkPin->changeCallBack( this, false );  // External clock
+    if ( m_clkPin )
+        m_clkPin->changeCallBack( this, false ); // External clock
 
-    if( r ) reset();
-    else    start();
+    if ( r )
+        reset();
+    else
+        start();
 }
 
-void eMcu::stamp()
-{
+void eMcu::stamp() {
     //reset();
     //m_state = mcuStopped;
     m_clkState = false;
 }
 
-void eMcu::voltChanged()  // External clock
+void eMcu::voltChanged() // External clock
 {
-    if( m_state == mcuStopped ) return;
+    if ( m_state == mcuStopped )
+        return;
 
     bool clkState = m_clkPin->getInpState();
-    if( m_clkState == clkState ) return;
+    if ( m_clkState == clkState )
+        return;
     m_clkState = clkState;
 
-    if( m_debugging )
-    {
-        if( cyclesDone > 1 ) cyclesDone -= 1;
-        else                 m_debugger->stepDebug();
-    }
-    else if( m_state >= mcuRunning /*&& m_freq > 0*/ )
-    {
+    if ( m_debugging ) {
+        if ( cyclesDone > 1 )
+            cyclesDone -= 1;
+        else
+            m_debugger->stepDebug();
+    } else if ( m_state >= mcuRunning /*&& m_freq > 0*/ ) {
         m_cpu->extClock( clkState );
     }
 }
 
-void eMcu::runEvent()
-{
-    if( m_state != mcuRunning ) return;
+void eMcu::runEvent() {
+    if ( m_state != mcuRunning )
+        return;
 
-    if( m_debugging )
-    {
-        if( cyclesDone > 1 ) cyclesDone -= 1;
-        else                 m_debugger->stepDebug();
+    if ( m_debugging ) {
+        if ( cyclesDone > 1 )
+            cyclesDone -= 1;
+        else
+            m_debugger->stepDebug();
         Simulator::self()->addEvent( m_psTick, this );
-    }
-    else if( m_state >= mcuRunning && m_freq > 0 )
-    {
+    } else if ( m_state >= mcuRunning && m_freq > 0 ) {
         stepCpu();
         uint64_t cycles = cyclesDone;
-        if( cycles == 0 ) cycles = 1;                        // 8051: 2 Read cycles per Machine cycle
-        Simulator::self()->addEvent( cycles*m_psTick, this );
+        if ( cycles == 0 )
+            cycles = 1; // 8051: 2 Read cycles per Machine cycle
+        Simulator::self()->addEvent( cycles * m_psTick, this );
     }
 }
 
-void eMcu::stepCpu()
-{
-    if( !m_flashSize || m_cpu->getPC() < m_flashSize )
-    {
-        if( m_state == mcuRunning ) m_cpu->runStep();
+void eMcu::stepCpu() {
+    if ( !m_flashSize || m_cpu->getPC() < m_flashSize ) {
+        if ( m_state == mcuRunning )
+            m_cpu->runStep();
         m_interrupts.runInterrupts();
-    }else{
+    } else {
         m_state = mcuError;
         m_component->crash( true );
         qDebug() << "eMcu::stepCpu: Error PC =" << m_cpu->getPC() << "PGM size =" << m_flashSize;
@@ -160,131 +168,140 @@ void eMcu::stepCpu()
     m_cycle += cyclesDone;
 }
 
-void eMcu::setDebugger( BaseDebugger* deb )
-{
+void eMcu::setDebugger( BaseDebugger* deb ) {
     m_debugger = deb;
     m_ramTable->setDebugger( deb );
 }
 
-void eMcu::setDebugging( bool d )
-{
+void eMcu::setDebugging( bool d ) {
     m_debugger->m_prevLine.lineNumber = -1;
     m_debugging = d;
 }
 
-void eMcu::start()
-{
-    if( m_state == mcuRunning ) return;
+void eMcu::start() {
+    if ( m_state == mcuRunning )
+        return;
     m_state = mcuRunning;
 
-    if     ( m_clkPin   ) m_clkPin->changeCallBack( this, true );  // External clock
-    else if( m_freq > 0 ) Simulator::self()->addEvent( m_psTick, this );
+    if ( m_clkPin )
+        m_clkPin->changeCallBack( this, true ); // External clock
+    else if ( m_freq > 0 )
+        Simulator::self()->addEvent( m_psTick, this );
 }
 
-void eMcu::sleep( bool s )
-{
-    if( !m_sleepModule || !m_sleepModule->enabled() ) return;
+void eMcu::sleep( bool s ) {
+    if ( !m_sleepModule || !m_sleepModule->enabled() )
+        return;
 
     int mode = -1;
-    if( s )                       // Go to Sleep
+    if ( s ) // Go to Sleep
     {
         mode = m_sleepModule->mode();
         m_state = mcuSleeping;
         qDebug() << "eMcu::sleep: Sleeping";
-    }else{
-        m_state = mcuRunning;    // Wakeup
+    } else {
+        m_state = mcuRunning; // Wakeup
         runEvent();
         qDebug() << "eMcu::sleep: Wakeup";
     }
 
-    for( McuModule* module : m_modules ) module->sleep( mode );
+    for ( McuModule* module : m_modules )
+        module->sleep( mode );
 }
 
-void eMcu::setFreq( double freq )
-{
-    if( m_component->forceFreq() ) return;
+void eMcu::setFreq( double freq ) {
+    if ( m_component->forceFreq() )
+        return;
 
     forceFreq( freq );
 }
 
-void eMcu::forceFreq( double freq )
-{
-    if     ( freq < 0       ) freq = 0;
-    else if( freq > 100*1e6 ) freq = 100*1e6;
+void eMcu::forceFreq( double freq ) {
+    if ( freq < 0 )
+        freq = 0;
+    else if ( freq > 100 * 1e6 )
+        freq = 100 * 1e6;
 
-    if( freq > 0 )
-    {
-        m_psInst = 1e12*(m_cPerInst/freq); // Set Simulation cycles per Instruction cycle
-        m_psTick = 1e12*(m_cPerTick/freq); // Set Simulation cycles per Clock cycle
-        if( m_freq == 0 && m_state >= mcuRunning )// Previously stopped by freq = 0
+    if ( freq > 0 ) {
+        m_psInst = 1e12 * ( m_cPerInst / freq ); // Set Simulation cycles per Instruction cycle
+        m_psTick = 1e12 * ( m_cPerTick / freq ); // Set Simulation cycles per Clock cycle
+        if ( m_freq == 0 && m_state >= mcuRunning ) // Previously stopped by freq = 0
         {
             Simulator::self()->cancelEvents( this );
-            if( !m_clkPin   ) Simulator::self()->addEvent( m_psTick, this );
+            if ( !m_clkPin )
+                Simulator::self()->addEvent( m_psTick, this );
         }
     }
     m_freq = freq;
 }
 
-void eMcu::setEeprom( QVector<int>* eep )
-{
+void eMcu::setEeprom( QVector<int>* eep ) {
     int size = m_romSize;
-    if( eep->size() < size ) size = eep->size();
+    if ( eep->size() < size )
+        size = eep->size();
 
-    for( int i=0; i<size; ++i ) setRomValue( i, eep->at(i) );
+    for ( int i = 0; i < size; ++i )
+        setRomValue( i, eep->at( i ) );
 }
 
-McuTimer* eMcu::getTimer( QString name )
-{
+McuTimer* eMcu::getTimer( QString name ) {
     McuTimer* timer = m_timerList.value( name );
-    if( !timer ) qDebug() << "ERROR: NULL Timer:"<< name;
+    if ( !timer )
+        qDebug() << "ERROR: NULL Timer:" << name;
     return timer;
 }
 
-McuPort* eMcu::getMcuPort( QString name )
-{
+McuPort* eMcu::getMcuPort( QString name ) {
     McuPort* port = m_mcuPorts.value( name );
     /// if( !port ) qDebug() << "ERROR: NULL Port:"<< name;
     return port;
 }
 
-McuPin* eMcu::getMcuPin( QString pinName )
-{
-    if( pinName.isEmpty() ) return nullptr;
+McuPin* eMcu::getMcuPin( QString pinName ) {
+    if ( pinName.isEmpty() )
+        return nullptr;
     McuPin* pin = nullptr;
 
-    for( McuPort* port : m_mcuPorts )
-    {
+    for ( McuPort* port : m_mcuPorts ) {
         pin = port->getPin( pinName );
-        if( pin ) break;
+        if ( pin )
+            break;
     }
-    if( !pin ) qDebug() << "ERROR: eMcu::getMcuPin NULL Pin:"<< pinName;
+    if ( !pin )
+        qDebug() << "ERROR: eMcu::getMcuPin NULL Pin:" << pinName;
     return pin;
 }
 
-IoPin*  eMcu::getIoPin( QString pinName )
-{
-    if( pinName.isEmpty() || pinName == "0" ) return nullptr;
+IoPin* eMcu::getIoPin( QString pinName ) {
+    if ( pinName.isEmpty() || pinName == "0" )
+        return nullptr;
     IoPin* pin = eIou::getIoPin( pinName );
 
-    if( !pin ) pin = getMcuPin( pinName );
-    if( !pin ) qDebug() << "ERROR: eMcu::getIoPin NULL Pin:"<< pinName;
+    if ( !pin )
+        pin = getMcuPin( pinName );
+    if ( !pin )
+        qDebug() << "ERROR: eMcu::getIoPin NULL Pin:" << pinName;
     return pin;
 }
 
-void eMcu::wdr() { if( m_wdt ) m_wdt->reset(); }
+void eMcu::wdr() {
+    if ( m_wdt )
+        m_wdt->reset();
+}
 
-void eMcu::enableInterrupts( uint8_t en )
-{
-    if( en > 1 ) en = 1;
+void eMcu::enableInterrupts( uint8_t en ) {
+    if ( en > 1 )
+        en = 1;
     m_interrupts.enableGlobal( en );
 }
 
-bool eMcu::setCfgWord( uint16_t addr, uint16_t data )
-{
-    if( m_cfgWord ) return m_cfgWord->setCfgWord( addr, data );
+bool eMcu::setCfgWord( uint16_t addr, uint16_t data ) {
+    if ( m_cfgWord )
+        return m_cfgWord->setCfgWord( addr, data );
     return false;
 }
 
-McuVref* eMcu::vrefModule() { return m_vrefModule; }
+McuVref* eMcu::vrefModule() {
+    return m_vrefModule;
+}
 //McuSleep* eMcu::sleepModule() { return m_sleepModule; }
-

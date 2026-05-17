@@ -9,23 +9,22 @@
 
 #include "ui_currentwidget.h"
 
-class CurrentWidget : public QWidget, private Ui::currentWidget
-{
+class CurrentWidget : public QWidget, private Ui::currentWidget {
     Q_OBJECT
 
-    public:
-        CurrentWidget( QWidget* parent=0 );
+public:
+    CurrentWidget( QWidget* parent = 0 );
 
- static CurrentWidget* self() { return m_pSelf; }
+    static CurrentWidget* self() { return m_pSelf; }
 
-        //void showCurrentSpeed( bool c );
-        double speed() { return m_currentSpeed; }
+    //void showCurrentSpeed( bool c );
+    double speed() { return m_currentSpeed; }
 
-    public slots:
-        void on_currSpeedSlider_valueChanged( int speed );
+public slots:
+    void on_currSpeedSlider_valueChanged( int speed );
 
-    private:
-        double m_currentSpeed;
+private:
+    double m_currentSpeed;
 
- static CurrentWidget* m_pSelf;
+    static CurrentWidget* m_pSelf;
 };

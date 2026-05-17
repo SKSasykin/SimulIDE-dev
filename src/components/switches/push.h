@@ -9,14 +9,13 @@
 
 class LibraryItem;
 
-class Push : public PushBase
-{
-    public:
-        Push( QString type, QString id );
-        ~Push();
+class Push : public PushBase {
+public:
+    Push( QString type, QString id );
+    ~Push();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget ) override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget ) override;
 };

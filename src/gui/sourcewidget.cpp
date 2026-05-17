@@ -5,14 +5,13 @@
 
 #include <QVBoxLayout>
 
-#include "sourcewidget.h"
 #include "custombutton.h"
 #include "customdial.h"
 #include "customslider.h"
 #include "mainwindow.h"
+#include "sourcewidget.h"
 
-SourceWidget::SourceWidget()
-{
+SourceWidget::SourceWidget() {
     DialWidget::setSize( 36 );
     m_dial->setValue( 0 );
 
@@ -21,7 +20,7 @@ SourceWidget::SourceWidget()
 
     QFont font;
     font.setFamily( MainWindow::self()->defaultFontName() );
-    font.setPixelSize(8);
+    font.setPixelSize( 8 );
     font.setLetterSpacing( QFont::PercentageSpacing, 100 );
 #ifdef _WIN32
     font.setLetterSpacing( QFont::PercentageSpacing, 90 );
@@ -31,4 +30,4 @@ SourceWidget::SourceWidget()
     m_verticalLayout->addWidget( pushButton );
     m_verticalLayout->setAlignment( pushButton, Qt::AlignHCenter );
 }
-SourceWidget::~SourceWidget() {}
+SourceWidget::~SourceWidget() { }

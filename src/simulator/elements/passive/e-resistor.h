@@ -7,28 +7,27 @@
 
 #include "e-element.h"
 
-class eResistor : public eElement
-{
-    public:
-        eResistor( QString id );
-        ~eResistor();
+class eResistor : public eElement {
+public:
+    eResistor( QString id );
+    ~eResistor();
 
-        virtual void stamp() override;
+    virtual void stamp() override;
 
-        virtual double resistance() { return 1/m_admit; }
-        virtual void setResistance( double resist );
+    virtual double resistance() { return 1 / m_admit; }
+    virtual void setResistance( double resist );
 
-        virtual void setResSafe( double resist );
-        
-        double admit() { return m_admit; }
-        void setAdmit( double admit );
-        void stampAdmit();
+    virtual void setResSafe( double resist );
 
-        double current();
+    double admit() { return m_admit; }
+    void setAdmit( double admit );
+    void stampAdmit();
 
-    protected:
-        virtual void updateVI();
+    double current();
 
-        double m_admit;
-        double m_current;
+protected:
+    virtual void updateVI();
+
+    double m_admit;
+    double m_current;
 };

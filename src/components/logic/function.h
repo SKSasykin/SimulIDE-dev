@@ -12,52 +12,51 @@ class LibraryItem;
 class CustomButton;
 class QGraphicsProxyWidget;
 
-class Function : public IoComponent, public ScriptBase
-{
-    public:
-        Function( QString type, QString id );
-        ~Function();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class Function : public IoComponent, public ScriptBase {
+public:
+    Function( QString type, QString id );
+    ~Function();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override { IoComponent::runOutputs(); }
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        QString functions() { return m_funcList.join(","); }
-        void setFunctions( QString f );
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        virtual void remove() override;
-        
-        void setNumInputs( int inputs );
-        void setNumOutputs( int outs );
+    QString functions() { return m_funcList.join( "," ); }
+    void setFunctions( QString f );
 
-        bool   getInputState( int pin );
-        double getInputVoltage( int pin );
-        void   setOutputState( int pin, bool s );
-        void   setOutputVoltage( int pin, double v );
-        double getOutputVoltage( int pin );
-        
-    public slots:
-        void onbuttonclicked( int i );
-        void loadData();
-        void saveData();
-        
-    protected:
-        virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+    virtual void remove() override;
 
-    private:
-        void createScript();
-        void updateArea( uint ins, uint outs );
+    void setNumInputs( int inputs );
+    void setNumOutputs( int outs );
 
-        bool m_compiled;
+    bool getInputState( int pin );
+    double getInputVoltage( int pin );
+    void setOutputState( int pin, bool s );
+    void setOutputVoltage( int pin, double v );
+    double getOutputVoltage( int pin );
 
-        asIScriptFunction* m_voltChanged;
-        QStringList m_funcList;
+public slots:
+    void onbuttonclicked( int i );
+    void loadData();
+    void saveData();
 
-        QList<CustomButton*> m_buttons;
-        QList<QGraphicsProxyWidget*> m_proxys;
+protected:
+    virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        QString m_lastDir;
+private:
+    void createScript();
+    void updateArea( uint ins, uint outs );
+
+    bool m_compiled;
+
+    asIScriptFunction* m_voltChanged;
+    QStringList m_funcList;
+
+    QList<CustomButton*> m_buttons;
+    QList<QGraphicsProxyWidget*> m_proxys;
+
+    QString m_lastDir;
 };

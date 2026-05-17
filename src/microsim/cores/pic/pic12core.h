@@ -8,21 +8,20 @@
 
 #include "picmrcore.h"
 
-class Pic12Core : public PicMrCore
-{
-    public:
-        Pic12Core( eMcu* mcu );
-        ~Pic12Core();
+class Pic12Core : public PicMrCore {
+public:
+    Pic12Core( eMcu* mcu );
+    ~Pic12Core();
 
-        virtual void runStep() override;
+    virtual void runStep() override;
 
-    protected:
-        virtual void setBank( uint8_t bank ) override { PicMrCore::setBank( bank ); }
-        virtual void decode( uint16_t instr ) override;
+protected:
+    virtual void setBank( uint8_t bank ) override { PicMrCore::setBank( bank ); }
+    virtual void decode( uint16_t instr ) override;
 
-        void TRIS();
+    void TRIS();
 
-        uint16_t m_TRISaddr;
+    uint16_t m_TRISaddr;
 };
 
 #endif

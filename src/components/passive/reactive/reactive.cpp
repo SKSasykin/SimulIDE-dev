@@ -4,69 +4,60 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "reactive.h"
-#include "simulator.h"
-#include "propdialog.h"
 #include "e-node.h"
 #include "pin.h"
+#include "propdialog.h"
+#include "simulator.h"
 
-#define tr(str) simulideTr("Reactive",str)
+#define tr( str ) simulideTr( "Reactive", str )
 
-Reactive::Reactive( QString type, QString id )
-        : Comp2Pin( type, id )
-        , eReactive( id )
-{
+Reactive::Reactive( QString type, QString id ) : Comp2Pin( type, id ), eReactive( id ) {
     // Pin0--eReactive--ePin1--midEnode--ePin2--eResistor--Pin1
     m_ePin[0] = m_pin[0];
     setNumEpins( 3 );
 
-    m_resistor = new eResistor( m_elmId+"-resistor");
+    m_resistor = new eResistor( m_elmId + "-resistor" );
     m_resistor->setResistance( 1e-6 );
     m_resistor->setEpin( 0, m_ePin[2] );
     m_resistor->setEpin( 1, m_pin[1] );
 
     Simulator::self()->addToUpdateList( this );
 }
-Reactive::~Reactive()
-{
+Reactive::~Reactive() {
     delete m_resistor;
 }
 
-void Reactive::initialize()
-{
+void Reactive::initialize() {
     m_crashed = false;
     m_warning = false;
 
-    m_midEnode = new eNode( m_elmId+"-mideNode");
+    m_midEnode = new eNode( m_elmId + "-mideNode" );
 }
 
-void Reactive::stamp()
-{
+void Reactive::stamp() {
     m_ePin[1]->setEnode( m_midEnode );
     m_ePin[2]->setEnode( m_midEnode );
 
-    if( m_pin[0]->isConnected() && m_pin[1]->isConnected() )
+    if ( m_pin[0]->isConnected() && m_pin[1]->isConnected() )
         eReactive::stamp();
 }
 
-void Reactive::updateStep()
-{
-    if( m_changed )
-    {
+void Reactive::updateStep() {
+    if ( m_changed ) {
         m_changed = false;
         updtReactStep();
-        if( m_propDialog ) m_propDialog->updtValues();
+        if ( m_propDialog )
+            m_propDialog->updtValues();
     }
     update();
 }
 
-void Reactive::setValue( double c )
-{
+void Reactive::setValue( double c ) {
     m_value = c;
     setCurrentValue( c );
 }
 
-void Reactive::setResist( double resist )
-{
+void Reactive::setResist( double resist ) {
     m_resistor->setResSafe( resist );
 }
 
@@ -76,7 +67,6 @@ void Reactive::setResist( double resist )
     m_changed = true;
 }*/
 
-void Reactive::setLinkedValue( double v, int i )
-{
-    setCurrentValue( m_value*v/1000 );
+void Reactive::setLinkedValue( double v, int i ) {
+    setCurrentValue( m_value * v / 1000 );
 }

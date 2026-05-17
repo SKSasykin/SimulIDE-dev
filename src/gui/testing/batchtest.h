@@ -9,26 +9,25 @@
 
 class Component;
 
-class BatchTest
-{
-    public:
-        static void doBatchTest( QString folder );
+class BatchTest {
+public:
+    static void doBatchTest( QString folder );
 
-        static bool isRunning() { return m_running; }
-        static void addTestUnit( Component* c );
-        static void testCompleted( Component* c, bool ok );
+    static bool isRunning() { return m_running; }
+    static void addTestUnit( Component* c );
+    static void testCompleted( Component* c, bool ok );
 
-        static void checkFinished();
+    static void checkFinished();
 
-    private:
-        static void prepareTest( QDir dir );
-        static void runNextCircuit();
+private:
+    static void prepareTest( QDir dir );
+    static void runNextCircuit();
 
-        static bool m_running;
+    static bool m_running;
 
-        static QString m_currentFile;
+    static QString m_currentFile;
 
-        static QStringList m_failedTests;
-        static QStringList m_circFiles;
-        static QList<Component*> m_testUnits;
+    static QStringList m_failedTests;
+    static QStringList m_circFiles;
+    static QList<Component*> m_testUnits;
 };

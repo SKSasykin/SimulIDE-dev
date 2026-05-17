@@ -19,100 +19,99 @@ class AppDialog;
 class InfoWidget;
 class CurrentWidget;
 
-class CircuitWidget : public QWidget
-{
+class CircuitWidget : public QWidget {
     Q_OBJECT
 
-    public:
-        CircuitWidget( QWidget *parent );
-        ~CircuitWidget();
+public:
+    CircuitWidget( QWidget* parent );
+    ~CircuitWidget();
 
- static CircuitWidget* self() { return m_pSelf; }
+    static CircuitWidget* self() { return m_pSelf; }
 
-        void clear();
-        void hideGui();
-        bool isHiddenGui() { return m_hideGui; }
+    void clear();
+    void hideGui();
+    bool isHiddenGui() { return m_hideGui; }
 
-        void setError( QString error );
-        void setMsg(QString msg , int type);
+    void setError( QString error );
+    void setMsg( QString msg, int type );
 
-        void powerCircOn();
-        void powerCircOff();
-        void powerCircDebug();
-        void pauseDebug();
-        void debugPaused();
-        void resumeDebug();
-        void updtAppDialog();
+    void powerCircOn();
+    void powerCircOff();
+    void powerCircDebug();
+    void pauseDebug();
+    void debugPaused();
+    void resumeDebug();
+    void updtAppDialog();
 
-        void simDebugMessage( QString msg ) { m_outPane.appendLine( msg.remove("\"") ); }
+    void simDebugMessage( QString msg ) { m_outPane.appendLine( msg.remove( "\"" ) ); }
 
-        QSplitter* splitter() { return m_mainSplitter; }
-        QSplitter* panelSplitter() { return m_panelSplitter; }
-        
-    public slots:
-        bool newCircuit();
-        void openRecentFile();
-        void openCirc();
-        void loadCirc( QString path );
-        void saveCirc( QString file );
-        void saveCirc();
-        void saveCircAs();
-        void powerCirc();
-        void pauseCirc();
-        void settApp();
-        void openInfo();
-        void about();
+    QSplitter* splitter() { return m_mainSplitter; }
+    QSplitter* panelSplitter() { return m_panelSplitter; }
 
-    signals:
-        void dataAvailable( int uart, const QByteArray &data );
-        
-    private:
-        void createActions();
-        void createToolBars();
+public slots:
+    bool newCircuit();
+    void openRecentFile();
+    void openCirc();
+    void loadCirc( QString path );
+    void saveCirc( QString file );
+    void saveCirc();
+    void saveCircAs();
+    void powerCirc();
+    void pauseCirc();
+    void settApp();
+    void openInfo();
+    void about();
 
- static CircuitWidget* m_pSelf;
+signals:
+    void dataAvailable( int uart, const QByteArray& data );
 
-        enum { MaxRecentFiles = 20 };
-        void updateRecentFiles();
-        void updateRecentFileActions();
+private:
+    void createActions();
+    void createToolBars();
 
-        bool m_paused;
-        bool m_hideGui;
+    static CircuitWidget* m_pSelf;
 
-        QVBoxLayout  m_verticalLayout;
-        CircuitView  m_circView;
-        OutPanelText m_outPane;
-        
-        QToolBar m_circToolBar;
+    enum { MaxRecentFiles = 20 };
+    void updateRecentFiles();
+    void updateRecentFileActions();
 
-        QLabel* m_msgLabel;
-        CurrentWidget* m_currentWidget;
-        InfoWidget* m_infoWidget;
+    bool m_paused;
+    bool m_hideGui;
 
-        QSplitter* m_mainSplitter;
-        QSplitter* m_panelSplitter;
+    QVBoxLayout m_verticalLayout;
+    CircuitView m_circView;
+    OutPanelText m_outPane;
 
-        QAction* recentFileActs[MaxRecentFiles];
-        QAction* newCircAct;
-        QAction* openCircAct;
-        QAction* saveCircAct;
-        QAction* saveCircAsAct;
-        QAction* zoomFitAct;
-        QAction* zoomSelAct;
-        QAction* zoomOneAct;
-        QAction* powerCircAct;
-        QAction* pauseSimAct;
-        QAction* settAppAct;
-        QAction* infoAct;
-        QAction* aboutAct;
-        QAction* aboutQtAct;
-        
-        QMenu m_fileMenu;
-        QMenu m_infoMenu;
-        
-        QString m_curCirc;
-        QString m_lastCircDir;
+    QToolBar m_circToolBar;
 
-        AppDialog*   m_appPropW;
-        AboutDialog* m_about;
+    QLabel* m_msgLabel;
+    CurrentWidget* m_currentWidget;
+    InfoWidget* m_infoWidget;
+
+    QSplitter* m_mainSplitter;
+    QSplitter* m_panelSplitter;
+
+    QAction* recentFileActs[MaxRecentFiles];
+    QAction* newCircAct;
+    QAction* openCircAct;
+    QAction* saveCircAct;
+    QAction* saveCircAsAct;
+    QAction* zoomFitAct;
+    QAction* zoomSelAct;
+    QAction* zoomOneAct;
+    QAction* powerCircAct;
+    QAction* pauseSimAct;
+    QAction* settAppAct;
+    QAction* infoAct;
+    QAction* aboutAct;
+    QAction* aboutQtAct;
+
+    QMenu m_fileMenu;
+    QMenu m_infoMenu;
+
+    QString m_curCirc;
+    QString m_lastCircDir;
+
+    AppDialog* m_appPropW;
+    AboutDialog* m_about;
 };

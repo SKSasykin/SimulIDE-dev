@@ -10,77 +10,78 @@
 
 class LibraryItem;
 
-class TextComponent : public LinkerComponent
-{
-    public:
-        TextComponent( QString type, QString id );
-        ~TextComponent();
-        
-        QRectF boundingRect() const override
-        { 
-            return QRectF( m_area.x()-m_border/2-1, m_area.y()-m_border/2-1, 
-                           m_area.width()+m_border+2, m_area.height()+m_border+2 ); 
-        }
+class TextComponent : public LinkerComponent {
+public:
+    TextComponent( QString type, QString id );
+    ~TextComponent();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    QRectF boundingRect() const override {
+        return QRectF( m_area.x() - m_border / 2 - 1, m_area.y() - m_border / 2 - 1, m_area.width() + m_border + 2,
+                       m_area.height() + m_border + 2 );
+    }
 
-        void updateStep() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        int  margin();
-        void setMargin( int margin );
-        
-        int  border() { return m_border; }
-        void setBorder( int border ) { m_border = border; update(); }
-        
-        QString getFont() { return m_font; }
-        void    setFont( QString font );
+    void updateStep() override;
 
-        int  fontSize() { return m_fontSize; }
-        void setFontSize( int size );
+    int margin();
+    void setMargin( int margin );
 
-        QString fontColor() { return m_fontColor; }
-        void setFontColor( QString n );
+    int border() { return m_border; }
+    void setBorder( int border ) {
+        m_border = border;
+        update();
+    }
 
-        QString colorStr() { return m_color.name(); }
-        void setColorStr( QString n );
-        
-        bool fixedW() { return m_fixedW; }
-        void setFixedW( bool fixedW );
+    QString getFont() { return m_font; }
+    void setFont( QString font );
 
-        QString getText();
-        void    setText( QString text );
+    int fontSize() { return m_fontSize; }
+    void setFontSize( int size );
 
-        qreal opac() { return m_opac; }
-        void setOpac( qreal op );
+    QString fontColor() { return m_fontColor; }
+    void setFontColor( QString n );
 
-        void createLinks( QList<Component*>*compList ) override;
-        void compSelected( Component* comp ) override;
-        void setLinkedString( QString str, int i=0 ) override;
-        void setLinkedValue( double v, int i=0 ) override;
+    QString colorStr() { return m_color.name(); }
+    void setColorStr( QString n );
 
-        void updateGeometry(int, int, int);
+    bool fixedW() { return m_fixedW; }
+    void setFixedW( bool fixedW );
 
-        bool freeMove( bool ) override { return true; }
+    QString getText();
+    void setText( QString text );
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    qreal opac() { return m_opac; }
+    void setOpac( qreal op );
 
-    private:
-        QGraphicsTextItem* m_text;
-        QString m_textString;
+    void createLinks( QList<Component*>* compList ) override;
+    void compSelected( Component* comp ) override;
+    void setLinkedString( QString str, int i = 0 ) override;
+    void setLinkedValue( double v, int i = 0 ) override;
 
-        qreal m_opac;
+    void updateGeometry( int, int, int );
 
-        bool m_changed;
-        
-        int  m_fontSize;
-        int  m_docMargin;
-        int  m_margin;
-        int  m_border;
+    bool freeMove( bool ) override { return true; }
 
-        bool m_fixedW;
-        bool m_context;
-        
-        QString m_font;
-        QString m_fontColor;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+
+private:
+    QGraphicsTextItem* m_text;
+    QString m_textString;
+
+    qreal m_opac;
+
+    bool m_changed;
+
+    int m_fontSize;
+    int m_docMargin;
+    int m_margin;
+    int m_border;
+
+    bool m_fixedW;
+    bool m_context;
+
+    QString m_font;
+    QString m_fontColor;
 };

@@ -5,34 +5,29 @@
 
 #include "avrcomparator.h"
 #include "datautils.h"
-#include "regwatcher.h"
 #include "e_mcu.h"
 #include "mcupin.h"
+#include "regwatcher.h"
 
-AvrComp::AvrComp( eMcu* mcu, QString name )
-       : McuComp( mcu, name )
-{
-}
-AvrComp::~AvrComp(){}
+AvrComp::AvrComp( eMcu* mcu, QString name ) : McuComp( mcu, name ) { }
+AvrComp::~AvrComp() { }
 
-void AvrComp::setup()
-{
-    m_ACD  = getRegBits("ACD" , m_mcu );
-    m_ACBG = getRegBits("ACBG", m_mcu );
-    m_ACO  = getRegBits("ACO" , m_mcu );
-    m_ACI  = getRegBits("ACI" , m_mcu );
-    m_ACIE = getRegBits("ACIE", m_mcu );
-    m_ACIC = getRegBits("ACIC", m_mcu );
-    m_ACIS = getRegBits("ACIS0,ACIS1", m_mcu );
+void AvrComp::setup() {
+    m_ACD = getRegBits( "ACD", m_mcu );
+    m_ACBG = getRegBits( "ACBG", m_mcu );
+    m_ACO = getRegBits( "ACO", m_mcu );
+    m_ACI = getRegBits( "ACI", m_mcu );
+    m_ACIE = getRegBits( "ACIE", m_mcu );
+    m_ACIC = getRegBits( "ACIC", m_mcu );
+    m_ACIS = getRegBits( "ACIS0,ACIS1", m_mcu );
 
-    m_AIN0D = getRegBits("AIN0D", m_mcu );
-    m_AIN1D = getRegBits("AIN1D", m_mcu );
+    m_AIN0D = getRegBits( "AIN0D", m_mcu );
+    m_AIN1D = getRegBits( "AIN1D", m_mcu );
 
-    watchRegNames("ACSR", R_READ, this, &AvrComp::readACO, m_mcu ); // Trigger a compare when ACO or ACI is read (ACSR)
+    watchRegNames( "ACSR", R_READ, this, &AvrComp::readACO, m_mcu ); // Trigger a compare when ACO or ACI is read (ACSR)
 }
 
-void AvrComp::initialize()
-{
+void AvrComp::initialize() {
     m_acie = false;
     m_acoe = false;
     m_compOut = false;
@@ -41,8 +36,7 @@ void AvrComp::initialize()
     m_pinN = m_pins[1];
 }
 
-void AvrComp::voltChanged()
-{
+void AvrComp::voltChanged() {
     compare();
 }
 
@@ -50,7 +44,7 @@ void AvrComp::configureA( uint8_t newACSR ) // ACSR is being written
 {
     m_enabled = !getRegBitsBool( newACSR, m_ACD );
 
-    m_acie = getRegBitsBool( newACSR, m_ACIE );  // Enable interrupt
+    m_acie = getRegBitsBool( newACSR, m_ACIE ); // Enable interrupt
     changeCallbacks();
 
     m_fixVref = getRegBitsVal( newACSR, m_ACBG );
@@ -59,7 +53,8 @@ void AvrComp::configureA( uint8_t newACSR ) // ACSR is being written
 
     m_mode = getRegBitsVal( newACSR, m_ACIS );
 
-    if( !m_enabled ) m_mcu->m_regOverride = newACSR & ~m_ACO.mask; // Clear ACO
+    if ( !m_enabled )
+        m_mcu->m_regOverride = newACSR & ~m_ACO.mask; // Clear ACO
 }
 
 void AvrComp::configureB( uint8_t newAIND ) // AIN0D,AIN1D being written
@@ -70,50 +65,64 @@ void AvrComp::configureB( uint8_t newAIND ) // AIN0D,AIN1D being written
 
 void AvrComp::configureC( uint8_t newACOE ) // mega328PB
 {
-    if( m_pins.size() < 3 ) return;
+    if ( m_pins.size() < 3 )
+        return;
 
-    if( newACOE ) m_pinOut = m_pins[2];
-    else          m_pinOut = nullptr;
+    if ( newACOE )
+        m_pinOut = m_pins[2];
+    else
+        m_pinOut = nullptr;
     m_pins[2]->controlPin( newACOE, newACOE );
 
     m_acoe = newACOE;
     changeCallbacks();
 }
 
-void AvrComp::readACO( uint8_t )
-{
-    if( !m_enabled ) return;
+void AvrComp::readACO( uint8_t ) {
+    if ( !m_enabled )
+        return;
     compare();
     m_mcu->m_regOverride = *m_ACO.reg; // Clear ACO
 }
 
 void AvrComp::compare( uint8_t ) //
 {
-    if( !m_enabled ) return;
+    if ( !m_enabled )
+        return;
 
     double vRef = m_fixVref ? 1.1 : m_pinP->getVoltage();
-    bool compOut = vRef > m_pinN->getVoltage() ;
+    bool compOut = vRef > m_pinN->getVoltage();
     bool rising = !m_compOut && compOut;
 
-    if( m_compOut != compOut )
-    {
-        if( compOut ) setRegBits( m_ACO );
-        else          clearRegBits( m_ACO );
+    if ( m_compOut != compOut ) {
+        if ( compOut )
+            setRegBits( m_ACO );
+        else
+            clearRegBits( m_ACO );
 
-        switch( m_mode ){
-            case 0: m_interrupt->raise();               break; // Comparator Interrupt on Output Toggle.
-            case 1:                                     break; // Reserved
-            case 2: if( !rising ) m_interrupt->raise(); break; // Comparator Interrupt on Falling Output Edge.
-            case 3: if(  rising ) m_interrupt->raise();        // Comparator Interrupt on Rising  Output Edge.
+        switch ( m_mode ) {
+        case 0:
+            m_interrupt->raise();
+            break; // Comparator Interrupt on Output Toggle.
+        case 1:
+            break; // Reserved
+        case 2:
+            if ( !rising )
+                m_interrupt->raise();
+            break; // Comparator Interrupt on Falling Output Edge.
+        case 3:
+            if ( rising )
+                m_interrupt->raise(); // Comparator Interrupt on Rising  Output Edge.
         }
         m_compOut = compOut;
-        if( m_pinOut ) m_pinOut->scheduleState( compOut, 0 );
+        if ( m_pinOut )
+            m_pinOut->scheduleState( compOut, 0 );
     }
 }
 
-void AvrComp::setPinN( McuPin* pin )
-{
-    if( !pin ) pin = m_pins[1];
+void AvrComp::setPinN( McuPin* pin ) {
+    if ( !pin )
+        pin = m_pins[1];
 
     m_pinN->changeCallBack( this, false );
     m_pinN = pin;
@@ -122,8 +131,7 @@ void AvrComp::setPinN( McuPin* pin )
     compare();
 }
 
-void AvrComp::changeCallbacks()
-{
-    m_pinP->changeCallBack( this, m_enabled && (m_acie || m_acoe) );
-    m_pinN->changeCallBack( this, m_enabled && (m_acie || m_acoe) );
+void AvrComp::changeCallbacks() {
+    m_pinP->changeCallBack( this, m_enabled && ( m_acie || m_acoe ) );
+    m_pinN->changeCallBack( this, m_enabled && ( m_acie || m_acoe ) );
 }

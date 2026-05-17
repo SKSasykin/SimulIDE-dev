@@ -9,21 +9,20 @@
 
 class LibraryItem;
 
-class GC9A01A : public St77xx
-{
-    public:
-        GC9A01A( QString type, QString id );
-        ~GC9A01A();
+class GC9A01A : public St77xx {
+public:
+    GC9A01A( QString type, QString id );
+    ~GC9A01A();
 
-        void setHeight( int h ) override;
+    void setHeight( int h ) override;
 
-        void endTransaction() override;
+    void endTransaction() override;
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-    protected:
-        void displayReset() override;
+protected:
+    void displayReset() override;
 };

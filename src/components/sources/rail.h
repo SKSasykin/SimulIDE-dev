@@ -11,26 +11,25 @@
 class LibraryItem;
 class IoPin;
 
-class Rail : public Component, public eElement
-{
-    public:
-        Rail( QString type, QString id );
-        ~Rail();
+class Rail : public Component, public eElement {
+public:
+    Rail( QString type, QString id );
+    ~Rail();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double volt() { return m_volt; }
-        void setVolt( double v );
+    double volt() { return m_volt; }
+    void setVolt( double v );
 
-        void stamp() override;
+    void stamp() override;
 
-    protected:
-        QPainterPath shape() const override;
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+protected:
+    QPainterPath shape() const override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    private:
-        double m_volt;
+private:
+    double m_volt;
 
-        IoPin* m_out;
+    IoPin* m_out;
 };

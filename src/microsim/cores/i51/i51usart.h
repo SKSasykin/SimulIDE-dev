@@ -5,44 +5,43 @@
 
 #pragma once
 
-#include "mcuuart.h"
 #include "mcutypes.h"
+#include "mcuuart.h"
 
 class McuTimer;
 
-class I51Usart : public McuUsart
-{
-    public:
-        I51Usart( eMcu* mcu, QString name, int number );
-        ~I51Usart();
+class I51Usart : public McuUsart {
+public:
+    I51Usart( eMcu* mcu, QString name, int number );
+    ~I51Usart();
 
-        virtual void setup() override;
-        virtual void reset() override;
+    virtual void setup() override;
+    virtual void reset() override;
 
-        virtual void configureA( uint8_t newSCON ) override;
-        virtual void configureB( uint8_t newPCON ) override;
+    virtual void configureA( uint8_t newSCON ) override;
+    virtual void configureB( uint8_t newPCON ) override;
 
-        virtual void sendByte( uint8_t data ) override;
-        virtual void readByte( uint8_t data ) override;
-        virtual void setRxFlags( uint16_t frame ) override;
+    virtual void sendByte( uint8_t data ) override;
+    virtual void readByte( uint8_t data ) override;
+    virtual void setRxFlags( uint16_t frame ) override;
 
-        virtual void callBack() override; // Called by Timer 1 interrupt
+    virtual void callBack() override; // Called by Timer 1 interrupt
 
-    private:
-        McuTimer* m_timer1;
+private:
+    McuTimer* m_timer1;
 
-        // SCON
-        uint8_t*  m_scon;
-        regBits_t m_SM;
-        regBits_t m_SM2;
+    // SCON
+    uint8_t* m_scon;
+    regBits_t m_SM;
+    regBits_t m_SM2;
 
-        //PCON
-        regBits_t m_SMOD;
+    //PCON
+    regBits_t m_SMOD;
 
-        int m_counter;
+    int m_counter;
 
-        uint8_t m_smodVal;
-        bool m_smodDiv;
+    uint8_t m_smodVal;
+    bool m_smodDiv;
 
-        bool m_stopBitError;
+    bool m_stopBitError;
 };

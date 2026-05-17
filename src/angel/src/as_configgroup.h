@@ -28,55 +28,51 @@
    andreas@angelcode.com
 */
 
-
 //
 // as_configgroup.h
 //
 // This class holds configuration groups for the engine
 //
 
-
-
 #ifndef AS_CONFIGGROUP_H
 #define AS_CONFIGGROUP_H
 
-#include "as_config.h"
-#include "as_string.h"
 #include "as_array.h"
+#include "as_config.h"
 #include "as_objecttype.h"
+#include "as_string.h"
 
 BEGIN_AS_NAMESPACE
 
-class asCConfigGroup
-{
+class asCConfigGroup {
 public:
-	asCConfigGroup();
-	~asCConfigGroup();
+    asCConfigGroup();
+    ~asCConfigGroup();
 
-	// Memory management
-	int AddRef();
-	int Release();
+    // Memory management
+    int AddRef();
+    int Release();
 
-	asCTypeInfo *FindType(const char *name);
-	void RefConfigGroup(asCConfigGroup *group);
+    asCTypeInfo* FindType( const char* name );
+    void RefConfigGroup( asCConfigGroup* group );
 
-	bool HasLiveObjects();
-	void RemoveConfiguration(asCScriptEngine *engine, bool notUsed = false);
+    bool HasLiveObjects();
+    void RemoveConfiguration( asCScriptEngine* engine, bool notUsed = false );
 
-	void AddReferencesForFunc(asCScriptEngine *engine, asCScriptFunction *func);
-	void AddReferencesForType(asCScriptEngine *engine, asCTypeInfo *type);
+    void AddReferencesForFunc( asCScriptEngine* engine, asCScriptFunction* func );
+    void AddReferencesForType( asCScriptEngine* engine, asCTypeInfo* type );
 
-	asCString groupName;
-	int refCount;
+    asCString groupName;
+    int refCount;
 
-	asCArray<asCTypeInfo*>       types;
-	asCArray<asCScriptFunction*> scriptFunctions;
-	asCArray<asCGlobalProperty*> globalProps;
-	asCArray<asCConfigGroup*>    referencedConfigGroups;
+    asCArray<asCTypeInfo*> types;
+    asCArray<asCScriptFunction*> scriptFunctions;
+    asCArray<asCGlobalProperty*> globalProps;
+    asCArray<asCConfigGroup*> referencedConfigGroups;
 
-	// This array holds the generated template instances that are used 
-	// by the config group as part of function signature or property
-	asCArray<asCObjectType*>     generatedTemplateInstances;
+    // This array holds the generated template instances that are used
+    // by the config group as part of function signature or property
+    asCArray<asCObjectType*> generatedTemplateInstances;
 };
 
 END_AS_NAMESPACE

@@ -8,26 +8,25 @@
 #include "e-clocked_device.h"
 #include "iopin.h"
 
-class Spi3Pins : public eClockedDevice
-{
-    public:
-        Spi3Pins( QString id, Component* comp );
-        ~Spi3Pins();
+class Spi3Pins : public eClockedDevice {
+public:
+    Spi3Pins( QString id, Component* comp );
+    ~Spi3Pins();
 
-        void stamp() override;
-        void voltChanged() override;
+    void stamp() override;
+    void voltChanged() override;
 
-        virtual void endTransaction() {;}
+    virtual void endTransaction() { ; }
 
-    protected:
-        void reset();
+protected:
+    void reset();
 
-        uint8_t m_inBit;        //How many bits have we read since last byte
-        uint8_t m_isData;
-        uint8_t m_buffer;
+    uint8_t m_inBit; //How many bits have we read since last byte
+    uint8_t m_isData;
+    uint8_t m_buffer;
 
-        IoPin m_pinRS;
-        IoPin m_pinCS;
-        IoPin m_pinDI;
-        IoPin m_pinCK;
+    IoPin m_pinRS;
+    IoPin m_pinCS;
+    IoPin m_pinDI;
+    IoPin m_pinCK;
 };

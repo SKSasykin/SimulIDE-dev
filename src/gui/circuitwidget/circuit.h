@@ -20,234 +20,236 @@ class Simulator;
 class SubCircuit;
 class Node;
 
-class Circuit : public QGraphicsScene
-{
+class Circuit : public QGraphicsScene {
     friend class SubCircuit;
     friend class Simulator;
 
     Q_OBJECT
 
-    public:
-        Circuit( int width, int height, CircuitView* parent );
-        ~Circuit();
+public:
+    Circuit( int width, int height, CircuitView* parent );
+    ~Circuit();
 
- static Circuit* self() { return m_pSelf; }
+    static Circuit* self() { return m_pSelf; }
 
-        bool drawGrid() { return !m_hideGrid; }
-        void setDrawGrid( bool draw );
+    bool drawGrid() { return !m_hideGrid; }
+    void setDrawGrid( bool draw );
 
-        bool animateLogic() { return m_animateLogic; }
-        void setAnimateLogic( bool an );
+    bool animateLogic() { return m_animateLogic; }
+    void setAnimateLogic( bool an );
 
-        bool animateCurr() { return m_animateCurr; }
-        void setAnimateCurr( bool an );
+    bool animateCurr() { return m_animateCurr; }
+    void setAnimateCurr( bool an );
 
-        bool ansiSymbols() { return m_ansiSymbols; }
-        void setAnsiSymbols( bool an );
+    bool ansiSymbols() { return m_ansiSymbols; }
+    void setAnsiSymbols( bool an );
 
-        int sceneWidth() { return m_sceneWidth; }
-        void setSceneWidth( int w );
+    int sceneWidth() { return m_sceneWidth; }
+    void setSceneWidth( int w );
 
-        int sceneHeight() { return m_sceneHeight; }
-        void setSceneHeight( int h );
+    int sceneHeight() { return m_sceneHeight; }
+    void setSceneHeight( int h );
 
-        int undoSteps() { return m_maxUndoSteps; }
-        void setUndoSteps( int steps );
+    int undoSteps() { return m_maxUndoSteps; }
+    void setUndoSteps( int steps );
 
-        int autoBck();
-        void setAutoBck( int secs );
+    int autoBck();
+    void setAutoBck( int secs );
 
-        void removeItems();
-        void removeComp( Component* comp) ;
-        void compRemoved( bool removed ) { m_compRemoved = removed; }
-        void removeNode( Node* node );
-        void removeConnector( Connector* conn );
-        void clearCircuit();
+    void removeItems();
+    void removeComp( Component* comp );
+    void compRemoved( bool removed ) { m_compRemoved = removed; }
+    void removeNode( Node* node );
+    void removeConnector( Connector* conn );
+    void clearCircuit();
 
-        //--- Undo/Redo ----------------------------------
-        void saveChanges();
-        void removeLastUndo();
-        void addCompChange(  QString component, QString property, QString undoVal );
-        void saveCompChange( QString component, QString property, QString undoVal );
-        void beginCircuitBatch();
-        void endCircuitBatch();
-        void calcCircuitChanges(); // Calculate total changes
-        void cancelUndoStep();     // Revert changes done
-        void beginUndoStep();      // Record current state
-        void endUndoStep();        // Does create/remove
-        bool undoRedo() { return m_undo || m_redo; }
-        //------------------------------------------------
+    //--- Undo/Redo ----------------------------------
+    void saveChanges();
+    void removeLastUndo();
+    void addCompChange( QString component, QString property, QString undoVal );
+    void saveCompChange( QString component, QString property, QString undoVal );
+    void beginCircuitBatch();
+    void endCircuitBatch();
+    void calcCircuitChanges(); // Calculate total changes
+    void cancelUndoStep(); // Revert changes done
+    void beginUndoStep(); // Record current state
+    void endUndoStep(); // Does create/remove
+    bool undoRedo() { return m_undo || m_redo; }
+    //------------------------------------------------
 
-        void setChanged();
+    void setChanged();
 
-        void accepKeys( bool a ) { m_acceptKeys = a; }
+    void accepKeys( bool a ) { m_acceptKeys = a; }
 
-        Pin* findPin( int x, int y, QString id );
-        Pin* findPin( QString id );
+    Pin* findPin( int x, int y, QString id );
+    Pin* findPin( QString id );
 
-        void loadCircuit( QString filePath );
-        bool saveCircuit( QString filePath );
+    void loadCircuit( QString filePath );
+    bool saveCircuit( QString filePath );
 
-        QString newSceneId() { return QString::number(++m_seqNumber); }
-        QString newConnectorId() { return QString::number(++m_conNumber); }
+    QString newSceneId() { return QString::number( ++m_seqNumber ); }
+    QString newConnectorId() { return QString::number( ++m_conNumber ); }
 
-        void newconnector( Pin* startpin, bool save=true );
-        void closeconnector( Pin* endpin, bool save=false );
-        void deleteNewConnector();
-        //void updateConnectors();
-        Connector* getNewConnector() { return m_newConnector; }
+    void newconnector( Pin* startpin, bool save = true );
+    void closeconnector( Pin* endpin, bool save = false );
+    void deleteNewConnector();
+    //void updateConnectors();
+    Connector* getNewConnector() { return m_newConnector; }
 
-        Component* createItem( QString type, QString id, bool map=true );
-        Component* createComponent( QString type, QString name, QPoint pos, bool map=true );
-        void addComponent( Component* comp );
+    Component* createItem( QString type, QString id, bool map = true );
+    Component* createComponent( QString type, QString name, QPoint pos, bool map = true );
+    void addComponent( Component* comp );
 
-        void addNode( Node* node );
+    void addNode( Node* node );
 
-        QList<Component*>* compList() { return &m_compList; }
-        QList<Connector*>* conList()  { return &m_connList; }
-        QList<Node*>*      nodeList() { return &m_nodeList; }
-        QMap<QString, CompBase*>* compMap() { return &m_compMap;}
+    QList<Component*>* compList() { return &m_compList; }
+    QList<Connector*>* conList() { return &m_connList; }
+    QList<Node*>* nodeList() { return &m_nodeList; }
+    QMap<QString, CompBase*>* compMap() { return &m_compMap; }
 
-        Component* getCompById( QString id );
-        QString origId( QString name ) { return m_idMap.value( name ); } // used by Shield
+    Component* getCompById( QString id );
+    QString origId( QString name ) { return m_idMap.value( name ); } // used by Shield
 
-        bool is_constarted() { return m_conStarted ; }
+    bool is_constarted() { return m_conStarted; }
 
-        SubPackage* getBoard() { return m_board; }
-        void setBoard( SubPackage* b ) { m_board = b; }
+    SubPackage* getBoard() { return m_board; }
+    void setBoard( SubPackage* b ) { m_board = b; }
 
-        SubCircuit* getSubcircuit() { return m_subCircuit; }
-        void setSubcircuit( SubCircuit* sc ) { m_subCircuit = sc; }
+    SubCircuit* getSubcircuit() { return m_subCircuit; }
+    void setSubcircuit( SubCircuit* sc ) { m_subCircuit = sc; }
 
-        bool pasting() { return m_pasting; }
-        bool isBusy()  { return m_busy || m_pasting | m_deleting; }
+    bool pasting() { return m_pasting; }
+    bool isBusy() { return m_busy || m_pasting | m_deleting; }
 
-        void addPin( Pin* pin, QString pinId ) { m_pinMap[ pinId ] = pin; m_LdPinMap[ pinId ] = pin; }
-        void remPin( QString pinId ) { m_pinMap.remove( pinId ); }
-        void updatePin( ePin* epin, QString oldId, QString newId );
-        Pin* getPin( QString pin ){ return m_pinMap.value( pin ); }
+    void addPin( Pin* pin, QString pinId ) {
+        m_pinMap[pinId] = pin;
+        m_LdPinMap[pinId] = pin;
+    }
+    void remPin( QString pinId ) { m_pinMap.remove( pinId ); }
+    void updatePin( ePin* epin, QString oldId, QString newId );
+    Pin* getPin( QString pin ) { return m_pinMap.value( pin ); }
 
-        QString getSeqNumber( QString name );
-        QString replaceId( QString pinName );
+    QString getSeqNumber( QString name );
+    QString replaceId( QString pinName );
 
-        const QString getFilePath() const { return m_filePath; }
-        void setFilePath( QString f ) { m_filePath = f; }
+    const QString getFilePath() const { return m_filePath; }
+    void setFilePath( QString f ) { m_filePath = f; }
 
-        bool saveString( QString fileName, QString doc );
-        QString circuitToString();
+    bool saveString( QString fileName, QString doc );
+    QString circuitToString();
 
-        int circuitRev() { return m_circRev; }
+    int circuitRev() { return m_circRev; }
 
-        void drawBackground( QPainter* painter, const QRectF &rect );
+    void drawBackground( QPainter* painter, const QRectF& rect );
 
-    signals:
-        void keyEvent( QString key, bool pressed );
+signals:
+    void keyEvent( QString key, bool pressed );
 
-    public slots:
-        void copy( QPointF eventpoint );
-        void paste( QPointF eventpoint );
-        void undo();
-        void redo();
-        void importCircuit();
-        //void bom();
-        void saveBackup();
+public slots:
+    void copy( QPointF eventpoint );
+    void paste( QPointF eventpoint );
+    void undo();
+    void redo();
+    void importCircuit();
+    //void bom();
+    void saveBackup();
 
-    protected:
-        void mousePressEvent( QGraphicsSceneMouseEvent* event );
-        void mouseReleaseEvent( QGraphicsSceneMouseEvent* event );
-        void mouseMoveEvent( QGraphicsSceneMouseEvent* event );
-        void keyPressEvent( QKeyEvent* event );
-        void keyReleaseEvent( QKeyEvent* event );
-        void dropEvent( QGraphicsSceneDragDropEvent* event );
+protected:
+    void mousePressEvent( QGraphicsSceneMouseEvent* event );
+    void mouseReleaseEvent( QGraphicsSceneMouseEvent* event );
+    void mouseMoveEvent( QGraphicsSceneMouseEvent* event );
+    void keyPressEvent( QKeyEvent* event );
+    void keyReleaseEvent( QKeyEvent* event );
+    void dropEvent( QGraphicsSceneDragDropEvent* event );
 
-    private:
- static Circuit*  m_pSelf;
+private:
+    static Circuit* m_pSelf;
 
-        void loadStrDoc( QString &doc );
+    void loadStrDoc( QString& doc );
 
-        QString circuitHeader();
-        void updatePinName( QString* name );
+    QString circuitHeader();
+    void updatePinName( QString* name );
 
-        void setSize( int width, int height );
+    void setSize( int width, int height );
 
-        QString m_filePath;
-        QString m_backupPath;
+    QString m_filePath;
+    QString m_backupPath;
 
-        QRect        m_scenerect;
-        CircuitView* m_graphicView;
-        Connector*   m_newConnector;
+    QRect m_scenerect;
+    CircuitView* m_graphicView;
+    Connector* m_newConnector;
 
-        int m_sceneWidth;
-        int m_sceneHeight;
+    int m_sceneWidth;
+    int m_sceneHeight;
 
-        int m_circRev;
-        int m_seqNumber;
-        int m_conNumber;
-        int m_error;
+    int m_circRev;
+    int m_seqNumber;
+    int m_conNumber;
+    int m_error;
 
-        bool m_pasting;
-        bool m_deleting;
-        bool m_loading;
-        bool m_conStarted;
-        bool m_hideGrid;
+    bool m_pasting;
+    bool m_deleting;
+    bool m_loading;
+    bool m_conStarted;
+    bool m_hideGrid;
 
-        bool m_compRemoved;
-        bool m_animateLogic;
-        bool m_animateCurr;
-        bool m_ansiSymbols;
-        bool m_changed;
-        bool m_busy;
-        bool m_undo;
-        bool m_redo;
-        bool m_acceptKeys;
-        int m_cicuitBatch;
+    bool m_compRemoved;
+    bool m_animateLogic;
+    bool m_animateCurr;
+    bool m_ansiSymbols;
+    bool m_changed;
+    bool m_busy;
+    bool m_undo;
+    bool m_redo;
+    bool m_acceptKeys;
+    int m_cicuitBatch;
 
-        QPointF m_eventpoint;
-        QPointF m_deltaMove;
+    QPointF m_eventpoint;
+    QPointF m_deltaMove;
 
-        QList<Component*> m_compList;   // Component list
-        QList<Connector*> m_connList;   // Connector list
-        QList<Node*>      m_nodeList;   // Node list
+    QList<Component*> m_compList; // Component list
+    QList<Connector*> m_connList; // Connector list
+    QList<Node*> m_nodeList; // Node list
 
-        SubPackage* m_board;
-        SubCircuit* m_subCircuit;
+    SubPackage* m_board;
+    SubCircuit* m_subCircuit;
 
-        QMap<QString, Pin*>      m_pinMap;   // Pin Id to Pin*
-        QMap<QString, Pin*>      m_LdPinMap; // Pin Id to Pin* while loading/pasting/importing
-        QMap<QString, QString>   m_idMap;    // Component seqNumber to new seqNumber (pasting)
-        QMap<QString, CompBase*> m_compMap;  // Component Id to Component*
+    QMap<QString, Pin*> m_pinMap; // Pin Id to Pin*
+    QMap<QString, Pin*> m_LdPinMap; // Pin Id to Pin* while loading/pasting/importing
+    QMap<QString, QString> m_idMap; // Component seqNumber to new seqNumber (pasting)
+    QMap<QString, CompBase*> m_compMap; // Component Id to Component*
 
-        QTimer m_bckpTimer;
+    QTimer m_bckpTimer;
 
-        Simulator* m_simulator;
+    Simulator* m_simulator;
 
-        //--- Undo/Redo ----------------------------------
+    //--- Undo/Redo ----------------------------------
 
-        struct compChange{      // Component Change to be performed by Undo/Redo to complete a Circuit change
-            QString component;  // Component name
-            QString property;   // Property name
-            QString undoValue;  // Property value for Undo step
-            QString redoValue;  // Property value for Redo step
-        };
-        struct circChange{       // Circuit Change to be performed by Undo/Redo to restore circuit state
-            QList<compChange> compChanges;
-            int size() { return compChanges.size(); }
-            void clear() { compChanges.clear(); }
-        };
+    struct compChange { // Component Change to be performed by Undo/Redo to complete a Circuit change
+        QString component; // Component name
+        QString property; // Property name
+        QString undoValue; // Property value for Undo step
+        QString redoValue; // Property value for Redo step
+    };
+    struct circChange { // Circuit Change to be performed by Undo/Redo to restore circuit state
+        QList<compChange> compChanges;
+        int size() { return compChanges.size(); }
+        void clear() { compChanges.clear(); }
+    };
 
-        inline void clearCircChanges() { m_circChange.clear(); }
-        void deleteRemoved();
-        void restoreState();
+    inline void clearCircChanges() { m_circChange.clear(); }
+    void deleteRemoved();
+    void restoreState();
 
-        int m_maxUndoSteps;
-        int m_undoIndex;
+    int m_maxUndoSteps;
+    int m_undoIndex;
 
-        circChange m_circChange;
-        QList<circChange> m_undoStack;
+    circChange m_circChange;
+    QList<circChange> m_undoStack;
 
-        QList<CompBase*>  m_removedComps; // removed component list;
-        QList<Connector*> m_oldConns;
-        QList<Component*> m_oldComps;
-        QList<Node*>      m_oldNodes;
-        QMap<CompBase*, QString> m_compStrMap;
+    QList<CompBase*> m_removedComps; // removed component list;
+    QList<Connector*> m_oldConns;
+    QList<Component*> m_oldComps;
+    QList<Node*> m_oldNodes;
+    QMap<CompBase*, QString> m_compStrMap;
 };

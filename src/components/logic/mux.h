@@ -9,27 +9,26 @@
 
 class LibraryItem;
 
-class Mux : public LogicComponent
-{
-    public:
-        QRectF boundingRect() const override { return m_area; }
-    
-        Mux( QString type, QString id );
-        ~Mux();
+class Mux : public LogicComponent {
+public:
+    QRectF boundingRect() const override { return m_area; }
 
-  static Component* construct( QString type, QString id );
-  static LibraryItem* libraryItem();
+    Mux( QString type, QString id );
+    ~Mux();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override{ IoComponent::runOutputs(); }
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        int addrBits() { return m_addrBits; }
-        void setAddrBits( int bits );
-        
-        QPainterPath shape() const override;
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-    private:
-        int m_addrBits;
+    int addrBits() { return m_addrBits; }
+    void setAddrBits( int bits );
+
+    QPainterPath shape() const override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+
+private:
+    int m_addrBits;
 };

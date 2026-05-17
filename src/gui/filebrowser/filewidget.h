@@ -13,43 +13,42 @@ class QListWidget;
 class QPushButton;
 class QListWidgetItem;
 
-class FileWidget : public QSplitter
-{
+class FileWidget : public QSplitter {
     Q_OBJECT
-    
-    public:
-        FileWidget( QWidget* parent );
-        ~FileWidget();
 
- static FileWidget* self() { return m_pSelf; }
+public:
+    FileWidget( QWidget* parent );
+    ~FileWidget();
 
-        void addBookMark( QString path );
-        
-        void setPath( QString path );
-        
-        void writeSettings();
+    static FileWidget* self() { return m_pSelf; }
 
-        void addEntry( QString name, QString path, bool force = false );
+    void addBookMark( QString path );
 
-    private slots:
-        void itemClicked( QListWidgetItem* );
-        void remBookMark();
-        void pathChanged();
-        void searchChanged();
+    void setPath( QString path );
 
-    protected:
-        void contextMenuEvent( QContextMenuEvent* event );
+    void writeSettings();
 
-    private:
- static FileWidget* m_pSelf;
+    void addEntry( QString name, QString path, bool force = false );
 
-        QStringList m_bookmarkList;
-        
-        FileBrowser* m_fileBrowser;
-        QListWidget* m_bookmarks;
-        //QLineEdit*   m_searchFiles;
-        QPushButton* m_cdUpButton;
-        QLineEdit*   m_path;
+private slots:
+    void itemClicked( QListWidgetItem* );
+    void remBookMark();
+    void pathChanged();
+    void searchChanged();
 
-        bool m_blocked;
+protected:
+    void contextMenuEvent( QContextMenuEvent* event );
+
+private:
+    static FileWidget* m_pSelf;
+
+    QStringList m_bookmarkList;
+
+    FileBrowser* m_fileBrowser;
+    QListWidget* m_bookmarks;
+    //QLineEdit*   m_searchFiles;
+    QPushButton* m_cdUpButton;
+    QLineEdit* m_path;
+
+    bool m_blocked;
 };

@@ -4,35 +4,31 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QApplication>
-#include <QDomDocument>
-#include <QMessageBox>
-#include <QXmlStreamReader>
-#include <QMimeData>
-#include <QSettings>
 #include <QDebug>
+#include <QDir>
+#include <QDomDocument>
 #include <QDrag>
 #include <QMenu>
-#include <QDir>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QSettings>
+#include <QXmlStreamReader>
 
-#include "componentlist.h"
-#include "treeitem.h"
-#include "mainwindow.h"
+#include "chip.h"
 #include "circuit.h"
 #include "circuitwidget.h"
+#include "componentlist.h"
 #include "installer.h"
-#include "chip.h"
+#include "mainwindow.h"
 #include "proputils.h"
+#include "treeitem.h"
 #include "utils.h"
 
 #include "esp32.h"
 
 ComponentList* ComponentList::m_pSelf = nullptr;
 
-ComponentList::ComponentList( QWidget* parent )
-             : QTreeWidget( parent )
-             , m_mcDialog( this )
-             , m_itemLibrary()
-{
+ComponentList::ComponentList( QWidget* parent ) : QTreeWidget( parent ), m_mcDialog( this ), m_itemLibrary() {
     m_pSelf = this;
 
     m_searchFilter = "";
@@ -44,21 +40,19 @@ ComponentList::ComponentList( QWidget* parent )
     viewport()->setAcceptDrops( true );
 
     float scale = MainWindow::self()->fontScale();
-    setIndentation( 6*scale );
+    setIndentation( 6 * scale );
     setRootIsDecorated( true );
     setCursor( Qt::OpenHandCursor );
     headerItem()->setHidden( true );
-    setIconSize( QSize( 30*scale, 24*scale ));
+    setIconSize( QSize( 30 * scale, 24 * scale ) );
 
     createList();
 
-    connect( this, &ComponentList::itemPressed,
-             this, &ComponentList::slotItemClicked );
+    connect( this, &ComponentList::itemPressed, this, &ComponentList::slotItemClicked );
 }
-ComponentList::~ComponentList(){}
+ComponentList::~ComponentList() { }
 
-void ComponentList::createList()
-{
+void ComponentList::createList() {
     this->clear();
     m_components.clear();
     m_categories.clear();
@@ -69,27 +63,29 @@ void ComponentList::createList()
     LoadLibraryItems();
 
     QString userDir = MainWindow::self()->userPath();
-    if( !userDir.isEmpty() && QDir( userDir ).exists() )
-    {
+    if ( !userDir.isEmpty() && QDir( userDir ).exists() ) {
         LoadCompSetAt( userDir );
-        LoadCompSetAt( userDir+"/components" );
+        LoadCompSetAt( userDir + "/components" );
         loadTest( userDir );
     }
-    QDir compSetDir = MainWindow::self()->getConfigPath("data");
-    if( compSetDir.exists() ) LoadCompSetAt( compSetDir );
+    QDir compSetDir = MainWindow::self()->getConfigPath( "data" );
+    if ( compSetDir.exists() )
+        LoadCompSetAt( compSetDir );
 
-    compSetDir.setPath("./data");          // FIXME: provisional, used by QemuDevice
+    compSetDir.setPath( "./data" ); // FIXME: provisional, used by QemuDevice
     LoadCompSetAt( compSetDir );
 
     MainWindow::self()->installer()->loadInstalled(); // Load Installed components
 
-    m_listFile  = MainWindow::self()->getConfigPath("compList.xml");
+    m_listFile = MainWindow::self()->getConfigPath( "compList.xml" );
     m_oldConfig = !QFile::exists( m_listFile ); // xml file doesn't exist: read old config
-    if( !m_oldConfig ) readConfig(); // Read new xml config file
+    if ( !m_oldConfig )
+        readConfig(); // Read new xml config file
 
-    for( TreeItem* it : m_categoryList ) // Remove empty categories
+    for ( TreeItem* it : m_categoryList ) // Remove empty categories
     {
-        if( it->childCount() ) continue;
+        if ( it->childCount() )
+            continue;
         //qDebug() << it->name();
         it->setHidden( true );
         //QTreeWidgetItem* pa = it->parent();
@@ -97,54 +93,55 @@ void ComponentList::createList()
     }
 }
 
-void ComponentList::loadTest( QString userDir )
-{
+void ComponentList::loadTest( QString userDir ) {
     QDir compSetDir( userDir );
-    if( !compSetDir.cd("test") ) return;
+    if ( !compSetDir.cd( "test" ) )
+        return;
 
     m_compSetDir.setPath( userDir );
 
-    QStringList dirList = compSetDir.entryList( {"*"}, QDir::Dirs );
-    if( dirList.isEmpty() ) return;
+    QStringList dirList = compSetDir.entryList( { "*" }, QDir::Dirs );
+    if ( dirList.isEmpty() )
+        return;
 
-    qDebug() << "\n" << tr("    Loading Component sets at:")<< "\n" << compSetDir.absolutePath()<<"\n";
+    qDebug() << "\n" << tr( "    Loading Component sets at:" ) << "\n" << compSetDir.absolutePath() << "\n";
 
-    TreeItem* catItem = getCategory("test");
-    if( !catItem ) catItem = addCategory("test","test","","" );
+    TreeItem* catItem = getCategory( "test" );
+    if ( !catItem )
+        catItem = addCategory( "test", "test", "", "" );
 
-    for( QString compName : dirList )
-    {
-        QString path = compName+"/"+compName;
+    for ( QString compName : dirList ) {
+        QString path = compName + "/" + compName;
         QString icon = getIcon( "test", compName );
         QString compFile;
         QString type;
-        QString simPath = path+".sim2";
-        if( !compSetDir.exists( simPath ) ) simPath = path+".sim1";
+        QString simPath = path + ".sim2";
+        if ( !compSetDir.exists( simPath ) )
+            simPath = path + ".sim1";
 
-        if( compSetDir.exists( simPath ) )
-        {
-            if( icon.isEmpty() ) icon = ":/subc.png";
+        if ( compSetDir.exists( simPath ) ) {
+            if ( icon.isEmpty() )
+                icon = ":/subc.png";
             type = "Subcircuit";
             compFile = compSetDir.absoluteFilePath( simPath );
-        }
-        else if( compSetDir.exists( path+".mcu") )
-        {
-            if( icon.isEmpty() ) icon = ":/ic2.png";
+        } else if ( compSetDir.exists( path + ".mcu" ) ) {
+            if ( icon.isEmpty() )
+                icon = ":/ic2.png";
             type = "MCU";
         }
-        if( !type.isEmpty() && !m_components.contains( compName ) )
-        {
+        if ( !type.isEmpty() && !m_components.contains( compName ) ) {
             addItem( compName, catItem, icon, type );
-            m_dirFileList[ compName ] = compSetDir.absoluteFilePath( compName );
-            if( !compFile.isEmpty() ) m_dataFileList[ compName ] = compFile;   // Save sim File used to create this item
+            m_dirFileList[compName] = compSetDir.absoluteFilePath( compName );
+            if ( !compFile.isEmpty() )
+                m_dataFileList[compName] = compFile; // Save sim File used to create this item
         }
     }
 }
 
-void ComponentList::LoadLibraryItems()
-{
+void ComponentList::LoadLibraryItems() {
     m_customComp = false;
-    for( LibraryItem* item : m_itemLibrary.items() ) addLibraryItem( item );
+    for ( LibraryItem* item : m_itemLibrary.items() )
+        addLibraryItem( item );
     m_customComp = true;
 
     //addCategory("AVR"  , "AVR"  , "Micro", ":/ic2.png");
@@ -158,149 +155,142 @@ void ComponentList::LoadLibraryItems()
     //addCategory("Shields", "Shields", "Micro", ":/ic2.png");
 }
 
-void ComponentList::addLibraryItem( LibraryItem* item )
-{
+void ComponentList::addLibraryItem( LibraryItem* item ) {
     QString category = item->category();
 
     QString icon = item->iconfile();
-    QString iconFile = MainWindow::self()->getDataFilePath("images/"+icon );
-    if( !QFile::exists( iconFile ) ) iconFile = ":/"+icon; // Image not in simulide data folder, use hardcoded image
+    QString iconFile = MainWindow::self()->getDataFilePath( "images/" + icon );
+    if ( !QFile::exists( iconFile ) )
+        iconFile = ":/" + icon; // Image not in simulide data folder, use hardcoded image
 
-    if( item->createItemFnPtr() )
-    {
+    if ( item->createItemFnPtr() ) {
         TreeItem* catItem = getCategory( category );
-        if( catItem ) addItem( item->name(), catItem, iconFile, item->type() );
-    }
-    else addCategory( item->name(), item->type(), category, iconFile );
+        if ( catItem )
+            addItem( item->name(), catItem, iconFile, item->type() );
+    } else
+        addCategory( item->name(), item->type(), category, iconFile );
 }
 
-void ComponentList::LoadCompSetAt( QDir compSetDir )
-{
+void ComponentList::LoadCompSetAt( QDir compSetDir ) {
     m_compSetDir = compSetDir;
 
     compSetDir.setNameFilters( QStringList( "*.xml" ) );
 
     QStringList xmlList = compSetDir.entryList( QDir::Files );
 
-    if( xmlList.isEmpty() ) return;                  // No component sets to load
+    if ( xmlList.isEmpty() )
+        return; // No component sets to load
 
-    qDebug() << "\n" << tr("    Loading Component sets at:")<< "\n" << compSetDir.absolutePath()<<"\n";
+    qDebug() << "\n" << tr( "    Loading Component sets at:" ) << "\n" << compSetDir.absolutePath() << "\n";
 
-    for( QString compSetName : xmlList )
-    {
+    for ( QString compSetName : xmlList ) {
         QString compSetFilePath = compSetDir.absoluteFilePath( compSetName );
-        if( !compSetFilePath.isEmpty() ) loadXml( compSetFilePath );
+        if ( !compSetFilePath.isEmpty() )
+            loadXml( compSetFilePath );
     }
     qDebug() << "\n";
 }
 
-void ComponentList::loadXml( QString xmlFile )
-{
+void ComponentList::loadXml( QString xmlFile ) {
     m_xmlItems.clear();
 
     QFile file( xmlFile );
-    if( !file.open( QFile::ReadOnly | QFile::Text ) ){
-          qDebug() << "ComponentList::loadXml Cannot read file"<< Qt::endl << xmlFile << Qt::endl << file.errorString();
-          return;
+    if ( !file.open( QFile::ReadOnly | QFile::Text ) ) {
+        qDebug() << "ComponentList::loadXml Cannot read file" << Qt::endl << xmlFile << Qt::endl << file.errorString();
+        return;
     }
     QXmlStreamReader reader( &file );
-    if( !reader.readNextStartElement() ) return;
+    if ( !reader.readNextStartElement() )
+        return;
 
-    if( reader.name() != QString("itemlib") ){
-        qDebug() <<  "ComponentList::loadXml Error parsing file (itemlib):"<< Qt::endl << xmlFile;
+    if ( reader.name() != QString( "itemlib" ) ) {
+        qDebug() << "ComponentList::loadXml Error parsing file (itemlib):" << Qt::endl << xmlFile;
         file.close();
         return;
     }
-    while( reader.readNextStartElement() )
-    {
-        if( reader.name() != QString("itemset") ) { reader.skipCurrentElement(); continue;}
-
-        QString icon = "";
-        if( reader.attributes().hasAttribute("icon") )
-        {
-            icon = reader.attributes().value("icon").toString();
-            if( !icon.startsWith(":/") )
-                icon = MainWindow::self()->getDataFilePath("images/"+icon);
+    while ( reader.readNextStartElement() ) {
+        if ( reader.name() != QString( "itemset" ) ) {
+            reader.skipCurrentElement();
+            continue;
         }
 
-        QString catFull = reader.attributes().value("category").toString();
-        catFull.replace( "IC 74", "Logic/IC 74");
-        QStringList catPath = catFull.split("/");
+        QString icon = "";
+        if ( reader.attributes().hasAttribute( "icon" ) ) {
+            icon = reader.attributes().value( "icon" ).toString();
+            if ( !icon.startsWith( ":/" ) )
+                icon = MainWindow::self()->getDataFilePath( "images/" + icon );
+        }
+
+        QString catFull = reader.attributes().value( "category" ).toString();
+        catFull.replace( "IC 74", "Logic/IC 74" );
+        QStringList catPath = catFull.split( "/" );
 
         TreeItem* catItem = nullptr;
-        QString parent   = "";
+        QString parent = "";
         QString category = "";
-        while( !catPath.isEmpty() )
-        {
+        while ( !catPath.isEmpty() ) {
             parent = category;
             category = catPath.takeFirst();
             catItem = getCategory( category );
-            if( !catItem /*&& !parent.isEmpty()*/ )
-            {
+            if ( !catItem /*&& !parent.isEmpty()*/ ) {
                 QString catTr = QObject::tr( category.toLocal8Bit() );
                 catItem = addCategory( catTr, category, parent, icon );
             }
         }
-        if( !catItem ) continue;
+        if ( !catItem )
+            continue;
 
-        QString type   = reader.attributes().value("type"  ).toString();
-        QString folder = reader.attributes().value("folder").toString();
+        QString type = reader.attributes().value( "type" ).toString();
+        QString folder = reader.attributes().value( "folder" ).toString();
 
+        while ( reader.readNextStartElement() ) {
+            QString compFolder = QFileInfo( xmlFile ).absolutePath() + "/" + folder;
 
-        while( reader.readNextStartElement() )
-        {
-            QString compFolder = QFileInfo( xmlFile ).absolutePath()+"/"+folder;
+            if ( reader.name() != QString( "item" ) )
+                continue;
 
-            if( reader.name() != QString("item") ) continue;
+            QString name = reader.attributes().value( "name" ).toString();
 
-            QString name = reader.attributes().value("name").toString();
-
-            if( m_components.contains( name ) ) // Component exists, move to new position
+            if ( m_components.contains( name ) ) // Component exists, move to new position
             {
                 TreeItem* item = m_components.value( name );
                 TreeItem* parentItem = item->parentItem();
-                parentItem->takeChild( parentItem->indexOfChild( item) );
+                parentItem->takeChild( parentItem->indexOfChild( item ) );
                 catItem->addChild( item );
-                if( parentItem->childCount() == 0 )
+                if ( parentItem->childCount() == 0 )
                     parentItem->parent()->removeChild( parentItem );
-            }
-            else
-            {
+            } else {
                 QIcon ico;
-                if( reader.attributes().hasAttribute("icon") )
-                {
-                    icon = reader.attributes().value("icon").toString();
-                    if( !icon.startsWith(":/") )
-                        icon = MainWindow::self()->getDataFilePath("images/"+icon);
-                }
-                else icon = getIcon( folder, name );
+                if ( reader.attributes().hasAttribute( "icon" ) ) {
+                    icon = reader.attributes().value( "icon" ).toString();
+                    if ( !icon.startsWith( ":/" ) )
+                        icon = MainWindow::self()->getDataFilePath( "images/" + icon );
+                } else
+                    icon = getIcon( folder, name );
 
-                if( type == "Subcircuit" )
-                {
-                    QString nameFolder = compFolder+"/"+name;
+                if ( type == "Subcircuit" ) {
+                    QString nameFolder = compFolder + "/" + name;
 
-                    if( !QFile::exists( nameFolder+".sim2" )
-                     && !QFile::exists( nameFolder+".sim1" ) ) compFolder = nameFolder;
+                    if ( !QFile::exists( nameFolder + ".sim2" ) && !QFile::exists( nameFolder + ".sim1" ) )
+                        compFolder = nameFolder;
 
-                    if( icon.isEmpty() )  // Get icon from Image in Circuit
+                    if ( icon.isEmpty() ) // Get icon from Image in Circuit
                     {
-                        QString subC = compFolder+"/"+name+".sim2";
-                        if( QFile::exists( subC ) )
-                        {
-                            QStringList lines = fileToStringList( subC, "ComponentList::loadXml");
-                            for( QString line : lines )
-                            {
-                                if( !line.startsWith("<item itemtype=\"Image\"") ) continue;
+                        QString subC = compFolder + "/" + name + ".sim2";
+                        if ( QFile::exists( subC ) ) {
+                            QStringList lines = fileToStringList( subC, "ComponentList::loadXml" );
+                            for ( QString line : lines ) {
+                                if ( !line.startsWith( "<item itemtype=\"Image\"" ) )
+                                    continue;
                                 QVector<propStr_t> properties = parseXmlProps( line );
-                                for( propStr_t prop : properties )
-                                {
-                                    if( prop.name != "BckGndData") continue;
+                                for ( propStr_t prop : properties ) {
+                                    if ( prop.name != "BckGndData" )
+                                        continue;
 
-                                    QStringView dataRef{prop.value};
+                                    QStringView dataRef { prop.value };
                                     QByteArray ba;
                                     bool ok;
-                                    for( int i=0; i<dataRef.size(); i+=2 )
-                                    {
+                                    for ( int i = 0; i < dataRef.size(); i += 2 ) {
                                         QStringView ch = dataRef.mid( i, 2 );
                                         ba.append( ch.toInt( &ok, 16 ) );
                                     }
@@ -313,14 +303,13 @@ void ComponentList::loadXml( QString xmlFile )
                         }
                     }
                 }
-                m_dirFileList[ name ] = compFolder;
-                m_dataFileList[ name ] = xmlFile;   // Save xml File used to create this item
+                m_dirFileList[name] = compFolder;
+                m_dataFileList[name] = xmlFile; // Save xml File used to create this item
 
-                if( reader.attributes().hasAttribute("info") )
-                    name += "???"+reader.attributes().value("info").toString();
+                if ( reader.attributes().hasAttribute( "info" ) )
+                    name += "???" + reader.attributes().value( "info" ).toString();
 
-                if( !icon.isEmpty() )
-                {
+                if ( !icon.isEmpty() ) {
                     QPixmap ic( icon );
                     ico = QIcon( ic );
                 }
@@ -331,92 +320,93 @@ void ComponentList::loadXml( QString xmlFile )
             reader.skipCurrentElement();
         }
     }
-    QString compSetName = xmlFile.split( "/").last();
+    QString compSetName = xmlFile.split( "/" ).last();
 
-    qDebug() << tr("        Loaded Component set:           ") << compSetName;
+    qDebug() << tr( "        Loaded Component set:           " ) << compSetName;
 }
 
-QString ComponentList::getIcon( QString folder, QString name )
-{
-    QString icon = folder+"/"+name+"/"+name+"_icon.png";
-    if( m_compSetDir.exists( icon ) ) icon = m_compSetDir.absoluteFilePath( icon );
-    else                              icon = "";
+QString ComponentList::getIcon( QString folder, QString name ) {
+    QString icon = folder + "/" + name + "/" + name + "_icon.png";
+    if ( m_compSetDir.exists( icon ) )
+        icon = m_compSetDir.absoluteFilePath( icon );
+    else
+        icon = "";
     return icon;
 }
 
-void ComponentList::addItem( QString caption, TreeItem* catItem, QString icon, QString type )
-{
+void ComponentList::addItem( QString caption, TreeItem* catItem, QString icon, QString type ) {
     QPixmap ic( icon );
     QIcon ico( ic );
     addItem( caption, catItem, ico, type );
 }
 
-void ComponentList::addItem( QString caption, TreeItem* catItem, QIcon &icon, QString type )
-{
-    if( !catItem ) return;
+void ComponentList::addItem( QString caption, TreeItem* catItem, QIcon& icon, QString type ) {
+    if ( !catItem )
+        return;
 
     QStringList nameFull = caption.split( "???" );
-    QString       nameTr = nameFull.first();
+    QString nameTr = nameFull.first();
     QString info = "";
-    if( nameFull.size() > 1 ) info = "   "+nameFull.last();
+    if ( nameFull.size() > 1 )
+        info = "   " + nameFull.last();
 
     QString name = ( type == "Subcircuit" || type == "MCU" || type == "QemuDevice" ) ? nameTr : type;
 
     TreeItem* item = new TreeItem( catItem, name, nameTr, type, component, icon, m_customComp );
 
-    item->setText( 0, nameTr+info );
+    item->setText( 0, nameTr + info );
 
     m_components.insert( name, item );
     catItem->setHidden( false );
     catItem->addChild( item );
 
-    if( m_oldConfig )
-    {
+    if ( m_oldConfig ) {
         //bool hidden = MainWindow::self()->compSettings()->value( name+"/hidden" ).toBool();
         //item->setItemHidden( hidden );
 
-        QString shortCut = MainWindow::self()->compSettings()->value( name+"/shortcut" ).toString();
+        QString shortCut = MainWindow::self()->compSettings()->value( name + "/shortcut" ).toString();
         item->setShortCut( shortCut );
-        if( !shortCut.isEmpty() ) m_shortCuts[name] = shortCut;
+        if ( !shortCut.isEmpty() )
+            m_shortCuts[name] = shortCut;
     }
 }
 
-TreeItem* ComponentList::getCategory( QString category )
-{
+TreeItem* ComponentList::getCategory( QString category ) {
     TreeItem* catItem = nullptr;
-    if( m_categories.contains( category ) ) catItem = m_categories.value( category );
+    if ( m_categories.contains( category ) )
+        catItem = m_categories.value( category );
     return catItem;
 }
 
-TreeItem* ComponentList::addCategory( QString nameTr, QString name, QString parent, QString icon )
-{
-    TreeItem* catItem   = nullptr;
+TreeItem* ComponentList::addCategory( QString nameTr, QString name, QString parent, QString icon ) {
+    TreeItem* catItem = nullptr;
     TreeItem* catParent = nullptr;
 
     bool expanded = false;
     //bool hidden   = false;
 
-    if( parent.isEmpty() )                              // Is Main Category
+    if ( parent.isEmpty() ) // Is Main Category
     {
-        catItem = new TreeItem( nullptr, name, nameTr, "", categ_MAIN, QIcon( QPixmap( icon ) )/*QIcon(":/null-0.png")*/, m_customComp );
+        catItem = new TreeItem( nullptr, name, nameTr, "", categ_MAIN,
+                                QIcon( QPixmap( icon ) ) /*QIcon(":/null-0.png")*/, m_customComp );
         expanded = true;
-    }else{
-        if( m_categories.contains( parent ) ) catParent = m_categories.value( parent );
+    } else {
+        if ( m_categories.contains( parent ) )
+            catParent = m_categories.value( parent );
         catItem = new TreeItem( catParent, name, nameTr, "", categ_CHILD, QIcon( QPixmap( icon ) ), m_customComp );
     }
 
-    if( parent.isEmpty() ) addTopLevelItem( catItem ); // Is root category or root category doesn't exist
-    else if( catParent )
-    {
+    if ( parent.isEmpty() )
+        addTopLevelItem( catItem ); // Is root category or root category doesn't exist
+    else if ( catParent ) {
         catParent->addChild( catItem );
         //catParent->setHidden( false );
     }
     m_categories.insert( name, catItem );
 
-    if( m_oldConfig )
-    {
-        if( MainWindow::self()->compSettings()->contains(name+"/collapsed") )
-            expanded = !MainWindow::self()->compSettings()->value( name+"/collapsed" ).toBool();
+    if ( m_oldConfig ) {
+        if ( MainWindow::self()->compSettings()->contains( name + "/collapsed" ) )
+            expanded = !MainWindow::self()->compSettings()->value( name + "/collapsed" ).toBool();
 
         //if( MainWindow::self()->compSettings()->contains(name+"/hidden") )
         //    hidden = MainWindow::self()->compSettings()->value( name+"/hidden" ).toBool();
@@ -428,93 +418,88 @@ TreeItem* ComponentList::addCategory( QString nameTr, QString name, QString pare
     return catItem;
 }
 
-void ComponentList::mousePressEvent( QMouseEvent* event )
-{
-    if( event->button() == Qt::LeftButton )
-    {
-        if( event->modifiers() & Qt::ControlModifier ) setDragDropMode( QAbstractItemView::InternalMove );
-        else                                           setDragDropMode( QAbstractItemView::DragOnly );
+void ComponentList::mousePressEvent( QMouseEvent* event ) {
+    if ( event->button() == Qt::LeftButton ) {
+        if ( event->modifiers() & Qt::ControlModifier )
+            setDragDropMode( QAbstractItemView::InternalMove );
+        else
+            setDragDropMode( QAbstractItemView::DragOnly );
 
-        for( QTreeWidgetItem* item : selectedItems() ) item->setSelected( false );
+        for ( QTreeWidgetItem* item : selectedItems() )
+            item->setSelected( false );
 
         QTreeWidget::mousePressEvent( event );
-    }
-    else if( event->button() == Qt::RightButton )
-    {
+    } else if ( event->button() == Qt::RightButton ) {
         slotContextMenu( event->pos() );
     }
 }
 
-void ComponentList::slotItemClicked( QTreeWidgetItem* item, int  )
-{
-    if( !item ) return;
-    if( dragDropMode() == QAbstractItemView::InternalMove ) return; // Moving items in the list
+void ComponentList::slotItemClicked( QTreeWidgetItem* item, int ) {
+    if ( !item )
+        return;
+    if ( dragDropMode() == QAbstractItemView::InternalMove )
+        return; // Moving items in the list
 
-    TreeItem* treeItem = (TreeItem*)item;
+    TreeItem* treeItem = (TreeItem*) item;
 
     QMimeData* mimeData = new QMimeData;
-    mimeData->setText( treeItem->name()+","+treeItem->compType() );
+    mimeData->setText( treeItem->name() + "," + treeItem->compType() );
 
     QDrag* drag = new QDrag( this );
     drag->setMimeData( mimeData );
     drag->exec( Qt::MoveAction, Qt::MoveAction );
 }
 
-void ComponentList::dropEvent( QDropEvent* event )
-{
+void ComponentList::dropEvent( QDropEvent* event ) {
     QTreeWidget::dropEvent( event );
 
-    for( TreeItem* catItem : m_categories )
-    {
-        if( catItem->parent() ) catItem->setItemType( categ_CHILD );
-        else                    catItem->setItemType( categ_MAIN );
+    for ( TreeItem* catItem : m_categories ) {
+        if ( catItem->parent() )
+            catItem->setItemType( categ_CHILD );
+        else
+            catItem->setItemType( categ_MAIN );
     }
 }
 
-void ComponentList::slotContextMenu( const QPoint& point )
-{
+void ComponentList::slotContextMenu( const QPoint& point ) {
     QMenu menu;
 
-    m_clickedItem = (TreeItem*)this->itemAt( point );
+    m_clickedItem = (TreeItem*) this->itemAt( point );
 
-    QAction* manageComponents = menu.addAction( QIcon(":/fileopen.png"),tr("Manage Shortcuts") );
-    connect( manageComponents, &QAction::triggered,
-             this, &ComponentList::slotManageComponents, Qt::UniqueConnection );
+    QAction* manageComponents = menu.addAction( QIcon( ":/fileopen.png" ), tr( "Manage Shortcuts" ) );
+    connect( manageComponents, &QAction::triggered, this, &ComponentList::slotManageComponents, Qt::UniqueConnection );
 
-    menu.exec( mapToGlobal(point) );
+    menu.exec( mapToGlobal( point ) );
 }
 
-void ComponentList::slotManageComponents()
-{
+void ComponentList::slotManageComponents() {
     m_mcDialog.initialize( m_clickedItem );
     m_mcDialog.setVisible( true );
     m_clickedItem = nullptr;
 }
 
-void ComponentList::search( QString filter )
-{
-    QList<QTreeWidgetItem*>    cList = findItems( filter, Qt::MatchContains|Qt::MatchRecursive, 0 );
-    QList<QTreeWidgetItem*> allItems = findItems( "", Qt::MatchContains|Qt::MatchRecursive, 0 );
+void ComponentList::search( QString filter ) {
+    QList<QTreeWidgetItem*> cList = findItems( filter, Qt::MatchContains | Qt::MatchRecursive, 0 );
+    QList<QTreeWidgetItem*> allItems = findItems( "", Qt::MatchContains | Qt::MatchRecursive, 0 );
 
-    for( QTreeWidgetItem* item : allItems )
-    {
-        TreeItem* treeItem = (TreeItem*)item;
+    for ( QTreeWidgetItem* item : allItems ) {
+        TreeItem* treeItem = (TreeItem*) item;
         treeItem->setHidden( true );
 
-        if( treeItem->childCount() > 0  )
-        {
-            if( m_searchFilter.isEmpty() )                            // First search, update actual expanded state
+        if ( treeItem->childCount() > 0 ) {
+            if ( m_searchFilter.isEmpty() ) // First search, update actual expanded state
                 treeItem->setItemExpanded( treeItem->isExpanded() );
-            else treeItem->setExpanded( treeItem->isItemExpanded() ); // Don't setItemExpanded (keeps the original state)
+            else
+                treeItem->setExpanded( treeItem->isItemExpanded() ); // Don't setItemExpanded (keeps the original state)
             continue;
         }
-        if( !cList.contains( item ) ) continue;
+        if ( !cList.contains( item ) )
+            continue;
 
         //bool hidden = treeItem->isItemHidden();
-        while( treeItem )
-        {
+        while ( treeItem ) {
             treeItem->setHidden( false );
-            if( treeItem->childCount() > 0 /*&& !hidden*/ && !filter.isEmpty() )
+            if ( treeItem->childCount() > 0 /*&& !hidden*/ && !filter.isEmpty() )
                 treeItem->setExpanded( true );
 
             treeItem = treeItem->parentItem();
@@ -523,14 +508,14 @@ void ComponentList::search( QString filter )
     m_searchFilter = filter;
 }
 
-void ComponentList::readConfig()
-{
+void ComponentList::readConfig() {
     QDomDocument domDoc = fileToDomDoc( m_listFile, "ComponentList::readConfig" );
-    if( domDoc.isNull() ) return;
+    if ( domDoc.isNull() )
+        return;
 
     QDomElement root = domDoc.documentElement();
-    QDomNode    tree = root.firstChild();
-    readNodCfg( &domDoc, nullptr );               // Read items as stored in file
+    QDomNode tree = root.firstChild();
+    readNodCfg( &domDoc, nullptr ); // Read items as stored in file
 
     /*for( TreeItem* item : m_categories.values() ) // Insert new categories
     {
@@ -548,69 +533,64 @@ void ComponentList::readConfig()
     }*/
 }
 
-void ComponentList::readNodCfg( QDomNode* node, TreeItem* parent )
-{
+void ComponentList::readNodCfg( QDomNode* node, TreeItem* parent ) {
     TreeItem* item = nullptr;
     bool expanded = false;
 
     QDomElement element = node->toElement();
-    QString name = element.attribute("name");
+    QString name = element.attribute( "name" );
 
-    if( element.tagName() == "category" )
-    {
+    if ( element.tagName() == "category" ) {
         item = m_categories.value( name );
 
-        if( item ){
+        if ( item ) {
             //m_categories.remove( name );
             m_categoryList.append( item );
-            expanded = element.attribute("expanded") == "1";
+            expanded = element.attribute( "expanded" ) == "1";
 
             treItemType_t itemType = parent ? categ_CHILD : categ_MAIN;
             item->setItemType( itemType );
         }
-    }
-    else if( element.tagName() == "component" )
-    {
+    } else if ( element.tagName() == "component" ) {
         item = m_components.value( name );
 
-        if( item ){
+        if ( item ) {
             //m_components.remove( name );
-            QString shortcut = element.attribute("shortcut");
+            QString shortcut = element.attribute( "shortcut" );
             item->setShortCut( shortcut );
             m_shortCuts.insert( shortcut, name );
         }
     }
 
     //if( item ){
-        /*if( !m_oldConfig )
+    /*if( !m_oldConfig )
         {
             if( parent ) parent->addChild( item );
             else         addTopLevelItem( item );
         }*/
-        //bool hidden = element.attribute("hidden") == "1";
-        //item->setItemHidden( hidden );
+    //bool hidden = element.attribute("hidden") == "1";
+    //item->setItemHidden( hidden );
     //}
 
     QDomNode child = node->firstChild(); // Recursively read child items
-    while( !child.isNull() ){
+    while ( !child.isNull() ) {
         readNodCfg( &child, item );
         child = child.nextSibling();
     }
-    if( item ) item->setItemExpanded( expanded );
+    if ( item )
+        item->setItemExpanded( expanded );
 }
 
-void ComponentList::writeSettings()
-{
-    search(""); // Exit from a posible search and update item states
+void ComponentList::writeSettings() {
+    search( "" ); // Exit from a posible search and update item states
 
     QString treeStr = "<comptree>\n";
 
-    QList<QTreeWidgetItem*> topLevelList = ComponentList::self()->findItems("",Qt::MatchStartsWith);
+    QList<QTreeWidgetItem*> topLevelList = ComponentList::self()->findItems( "", Qt::MatchStartsWith );
 
-    for( QTreeWidgetItem* catItem : topLevelList )
-    {
-        TreeItem* childItem = (TreeItem*)catItem;
-        treeStr += childItem->toString("  ");
+    for ( QTreeWidgetItem* catItem : topLevelList ) {
+        TreeItem* childItem = (TreeItem*) catItem;
+        treeStr += childItem->toString( "  " );
     }
     treeStr += "</comptree>\n";
 

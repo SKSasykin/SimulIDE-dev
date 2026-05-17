@@ -9,12 +9,11 @@
 
 class LibraryItem;
 
-class Zener : public Diode
-{
-    public:
-        Zener( QString type, QString id );
-        ~Zener();
+class Zener : public Diode {
+public:
+    Zener( QString type, QString id );
+    ~Zener();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 };

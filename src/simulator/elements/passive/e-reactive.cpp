@@ -4,31 +4,26 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "e-reactive.h"
-#include "e-pin.h"
-#include "e-node.h"
-#include "simulator.h"
 #include "analogclock.h"
+#include "e-node.h"
+#include "e-pin.h"
+#include "simulator.h"
 
-eReactive::eReactive( QString id )
-         : eResistor( id )
-{
-    m_value    = 0;
+eReactive::eReactive( QString id ) : eResistor( id ) {
+    m_value = 0;
     m_InitCurr = 0;
     m_InitVolt = 0;
 
     AnalogClock::self()->addClkElement( this );
 }
-eReactive::~eReactive()
-{
+eReactive::~eReactive() {
     AnalogClock::self()->remClkElement( this );
 }
 
-void eReactive::stamp()
-{
+void eReactive::stamp() {
     eResistor::stamp();
 
-    if( m_ePin[0]->isConnected() && m_ePin[1]->isConnected())
-    {
+    if ( m_ePin[0]->isConnected() && m_ePin[1]->isConnected() ) {
         m_ePin[0]->createCurrent();
         m_ePin[1]->createCurrent();
 
@@ -38,10 +33,9 @@ void eReactive::stamp()
         m_curSource = m_InitCurr;
         m_curSource = updtCurr();
 
-        if( m_curSource )
-        {
+        if ( m_curSource ) {
             m_ePin[0]->stampCurrent( m_curSource );
-            m_ePin[1]->stampCurrent(-m_curSource );
+            m_ePin[1]->stampCurrent( -m_curSource );
         }
         //m_ePin[0]->changeCallBack( this );
         //m_ePin[1]->changeCallBack( this );
@@ -69,12 +63,10 @@ void eReactive::stamp()
     }
 }*/
 
-void eReactive::runEvent()
-{
+void eReactive::runEvent() {
     double volt = m_ePin[0]->getVoltage() - m_ePin[1]->getVoltage();
 
-    if( m_volt != volt )
-    {
+    if ( m_volt != volt ) {
         /*if( m_voltChanged )
         {
             updtReactStep();
@@ -85,13 +77,12 @@ void eReactive::runEvent()
         m_curSource = updtCurr();
 
         m_ePin[0]->stampCurrent( m_curSource );
-        m_ePin[1]->stampCurrent(-m_curSource );
+        m_ePin[1]->stampCurrent( -m_curSource );
     }
 }
 
-void eReactive::updtReactStep()
-{
+void eReactive::updtReactStep() {
     m_timeStep = AnalogClock::self()->getStep(); // Time in ps
-    m_tStep = (double)m_timeStep/1e12;         // Time in seconds
+    m_tStep = (double) m_timeStep / 1e12; // Time in seconds
     eResistor::setResistance( updtRes() );
 }

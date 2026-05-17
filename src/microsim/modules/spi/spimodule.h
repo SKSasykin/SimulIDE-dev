@@ -8,70 +8,65 @@
 #include "e-clocked_device.h"
 #include "transmodule.h"
 
-enum spiMode_t{
-    SPI_OFF=0,
-    SPI_MASTER,
-    SPI_SLAVE
-};
+enum spiMode_t { SPI_OFF = 0, SPI_MASTER, SPI_SLAVE };
 
 class IoPin;
 
-class SpiModule : public eClockedDevice, public TransModule
-{
-    public:
-        SpiModule( QString name );
-        ~SpiModule();
+class SpiModule : public eClockedDevice, public TransModule {
+public:
+    SpiModule( QString name );
+    ~SpiModule();
 
-        virtual void initialize() override;
-        virtual void stamp() override;
-        virtual void runEvent() override;
-        virtual void voltChanged() override;
+    virtual void initialize() override;
+    virtual void stamp() override;
+    virtual void runEvent() override;
+    virtual void voltChanged() override;
 
-        virtual void setMode( spiMode_t mode );
-        virtual void ssChanged( bool enable ){;}
+    virtual void setMode( spiMode_t mode );
+    virtual void ssChanged( bool enable ) { ; }
 
-        virtual void endTransaction();
-        virtual void StartTransaction();
+    virtual void endTransaction();
+    virtual void StartTransaction();
 
-        virtual void setMosiPin( IoPin* pin ) { m_MOSI = pin; }
-        virtual void setMisoPin( IoPin* pin ) { m_MISO = pin; }
-        virtual void setSckPin( IoPin* pin )  { m_clkPin = pin; }
-        virtual void setSsPin( IoPin* pin )   { m_SS = pin; }
+    virtual void setMosiPin( IoPin* pin ) { m_MOSI = pin; }
+    virtual void setMisoPin( IoPin* pin ) { m_MISO = pin; }
+    virtual void setSckPin( IoPin* pin ) { m_clkPin = pin; }
+    virtual void setSsPin( IoPin* pin ) { m_SS = pin; }
 
-        void setPins( IoPin* mosi, IoPin* miso, IoPin* clk, IoPin* ss );
+    void setPins( IoPin* mosi, IoPin* miso, IoPin* clk, IoPin* ss );
 
-        void setUseSS( bool u );
+    void setUseSS( bool u );
 
-    protected:
-        void step();
-        void resetSR();
-        inline void keepClocking();
+protected:
+    void step();
+    void resetSR();
+    inline void keepClocking();
 
-        uint64_t m_clockPeriod;   // SPI Clock half period in ps
+    uint64_t m_clockPeriod; // SPI Clock half period in ps
 
-        bool m_lsbFirst;
-        bool m_toggleSck;
-        bool m_enabled;
-        bool m_useSS;
+    bool m_lsbFirst;
+    bool m_toggleSck;
+    bool m_enabled;
+    bool m_useSS;
 
-        clkState_t m_sampleEdge;
-        clkState_t m_leadEdge;
-        clkState_t m_tailEdge;
+    clkState_t m_sampleEdge;
+    clkState_t m_leadEdge;
+    clkState_t m_tailEdge;
 
-        uint8_t m_outBit;
-        uint8_t m_inBit;
-        uint8_t m_bitCount;
+    uint8_t m_outBit;
+    uint8_t m_inBit;
+    uint8_t m_bitCount;
 
-        uint8_t m_srReg;    // Shift Register
-        uint8_t m_txReg;    // Byte sent
+    uint8_t m_srReg; // Shift Register
+    uint8_t m_txReg; // Byte sent
 
-        spiMode_t m_mode;
+    spiMode_t m_mode;
 
-        IoPin* m_MOSI;
-        IoPin* m_MISO;
-        //IoPin* m_SCK; // m_clkPin in eClockedDevice
-        IoPin* m_SS;
+    IoPin* m_MOSI;
+    IoPin* m_MISO;
+    //IoPin* m_SCK; // m_clkPin in eClockedDevice
+    IoPin* m_SS;
 
-        IoPin* m_dataOutPin;
-        IoPin* m_dataInPin;
+    IoPin* m_dataOutPin;
+    IoPin* m_dataInPin;
 };

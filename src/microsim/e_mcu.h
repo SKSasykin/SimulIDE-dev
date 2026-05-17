@@ -6,11 +6,11 @@
 #pragma once
 
 #include "e_iou.h"
+#include "mcudataspace.h"
+#include "mcuinterrupts.h"
+#include "mcusleep.h"
 #include "mcutimer.h"
 #include "mcuuart.h"
-#include "mcuinterrupts.h"
-#include "mcudataspace.h"
-#include "mcusleep.h"
 
 //class CpuBase;
 class McuTimer;
@@ -18,17 +18,12 @@ class McuWdt;
 class McuSleep;
 class McuCtrlPort;
 
-enum{
+enum {
     R_READ = 0,
     R_WRITE,
 };
 
-enum mcuState_t{
-    mcuStopped=0,
-    mcuError,
-    mcuRunning,
-    mcuSleeping
-};
+enum mcuState_t { mcuStopped = 0, mcuError, mcuRunning, mcuSleeping };
 
 class Mcu;
 class McuIntOsc;
@@ -39,129 +34,127 @@ class ConfigWord;
 class McuComp;
 class CpuBase;
 
-class eMcu : public DataSpace, public eIou
-{
-        friend class McuCreator;
-        friend class Mcu8bits;
-        friend class Mcu;
+class eMcu : public DataSpace, public eIou {
+    friend class McuCreator;
+    friend class Mcu8bits;
+    friend class Mcu;
 
-    public:
-        eMcu( Mcu* comp, QString id );
-        ~eMcu();
+public:
+    eMcu( Mcu* comp, QString id );
+    ~eMcu();
 
- static eMcu* self() { return m_pSelf; }
+    static eMcu* self() { return m_pSelf; }
 
-        void setup();
+    void setup();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override;
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override;
 
-        inline mcuState_t state() { return m_state; }
-        inline int sleepMode() { return m_sleepModule->mode(); }
+    inline mcuState_t state() { return m_state; }
+    inline int sleepMode() { return m_sleepModule->mode(); }
 
-        void stepCpu();
+    void stepCpu();
 
-        void setDebugger( BaseDebugger* deb );
-        void setDebugging( bool d );
+    void setDebugger( BaseDebugger* deb );
+    void setDebugging( bool d );
 
-        uint16_t getFlashValue( int address ) { return m_progMem[address]; }
-        void     setFlashValue( int address, uint16_t value ) { m_progMem[address] = value; }
-        uint32_t flashSize(){ return m_flashSize; }
-        uint32_t wordSize() { return m_wordSize; }
-        uint8_t  pgmPage() { return m_pgmPage; }
+    uint16_t getFlashValue( int address ) { return m_progMem[address]; }
+    void setFlashValue( int address, uint16_t value ) { m_progMem[address] = value; }
+    uint32_t flashSize() { return m_flashSize; }
+    uint32_t wordSize() { return m_wordSize; }
+    uint8_t pgmPage() { return m_pgmPage; }
 
-        QVector<int>* eeprom() { return &m_eeprom; }
-        void setEeprom( QVector<int>* eep );
-        uint32_t romSize()  { return m_romSize; }
-        uint8_t  getRomValue( int address ) { return m_eeprom[address]; }
-        void     setRomValue( int address, uint8_t value ) { m_eeprom[address] = value; }
+    QVector<int>* eeprom() { return &m_eeprom; }
+    void setEeprom( QVector<int>* eep );
+    uint32_t romSize() { return m_romSize; }
+    uint8_t getRomValue( int address ) { return m_eeprom[address]; }
+    void setRomValue( int address, uint8_t value ) { m_eeprom[address] = value; }
 
-        uint64_t cycle(){ return m_cycle; }
+    uint64_t cycle() { return m_cycle; }
 
-        void hardReset( bool r );
-        void sleep( bool s );
-        void start();
+    void hardReset( bool r );
+    void sleep( bool s );
+    void start();
 
-        QString getFileName() { return m_firmware; }
+    QString getFileName() { return m_firmware; }
 
-        double vdd() { return m_vdd; }
+    double vdd() { return m_vdd; }
 
-        double freq() { return m_freq; }
-        void setFreq( double freq );
-        void forceFreq( double freq );
-        uint64_t psInst() { return m_psInst; }  // picoseconds per instruction cycle
-        void setInstCycle( double p ){ m_cPerInst = m_cPerTick = p; }
+    double freq() { return m_freq; }
+    void setFreq( double freq );
+    void forceFreq( double freq );
+    uint64_t psInst() { return m_psInst; } // picoseconds per instruction cycle
+    void setInstCycle( double p ) { m_cPerInst = m_cPerTick = p; }
 
-        McuTimer* getTimer( QString name );
-        McuPort* getMcuPort( QString name );
-        McuPin*  getMcuPin( QString pinName );
+    McuTimer* getTimer( QString name );
+    McuPort* getMcuPort( QString name );
+    McuPin* getMcuPin( QString pinName );
 
-        IoPin*  getIoPin( QString pinName );
+    IoPin* getIoPin( QString pinName );
 
-        McuWdt* watchDog() { return m_wdt; }
-        McuVref* vrefModule();
+    McuWdt* watchDog() { return m_wdt; }
+    McuVref* vrefModule();
 
-        bool setCfgWord( uint16_t addr, uint16_t data );
-        McuIntOsc* intOsc() { return m_intOsc; }
-        McuComp* comparator() { return m_comparator; }
+    bool setCfgWord( uint16_t addr, uint16_t data );
+    McuIntOsc* intOsc() { return m_intOsc; }
+    McuComp* comparator() { return m_comparator; }
 
-        void wdr();
+    void wdr();
 
-        Interrupts* interrupts() { return &m_interrupts; }
-        void enableInterrupts( uint8_t en );
+    Interrupts* interrupts() { return &m_interrupts; }
+    void enableInterrupts( uint8_t en );
 
-        int cyclesDone;
+    int cyclesDone;
 
-        void setMain() { m_pSelf = this; }
+    void setMain() { m_pSelf = this; }
 
-    protected:
- static eMcu* m_pSelf;
+protected:
+    static eMcu* m_pSelf;
 
-        void reset();
+    void reset();
 
-        QString m_firmware;     // firmware file loaded
+    QString m_firmware; // firmware file loaded
 
-        mcuState_t m_state;
+    mcuState_t m_state;
 
-        uint64_t m_cycle;
-        std::vector<uint16_t> m_progMem;  // Program memory
-        uint32_t m_flashSize;
-        uint8_t  m_wordSize; // Size of Program memory word in bytes
-        uint8_t  m_pgmPage;
+    uint64_t m_cycle;
+    std::vector<uint16_t> m_progMem; // Program memory
+    uint32_t m_flashSize;
+    uint8_t m_wordSize; // Size of Program memory word in bytes
+    uint8_t m_pgmPage;
 
-        //QHash<QString, int> m_regsTable;   // int max 32 bits
+    //QHash<QString, int> m_regsTable;   // int max 32 bits
 
-        uint32_t m_romSize;
-        QVector<int> m_eeprom;
-        bool m_saveEepr;
+    uint32_t m_romSize;
+    QVector<int> m_eeprom;
+    bool m_saveEepr;
 
-        std::vector<McuModule*> m_modules;
-        std::vector<TransModule*> m_transModules;
+    std::vector<McuModule*> m_modules;
+    std::vector<TransModule*> m_transModules;
 
+    QHash<QString, McuTimer*> m_timerList; // Access TIMERS by name
+    QHash<QString, McuPort*> m_mcuPorts; // Access PORTS by name
+    ConfigWord* m_cfgWord;
+    McuSleep* m_sleepModule;
+    McuVref* m_vrefModule;
+    McuWdt* m_wdt;
+    McuIntOsc* m_intOsc;
+    McuComp* m_comparator;
 
-        QHash<QString, McuTimer*> m_timerList;// Access TIMERS by name
-        QHash<QString, McuPort*>  m_mcuPorts; // Access PORTS by name
-        ConfigWord* m_cfgWord;
-        McuSleep*   m_sleepModule;
-        McuVref*    m_vrefModule;
-        McuWdt*     m_wdt;
-        McuIntOsc*  m_intOsc;
-        McuComp*    m_comparator;
+    Interrupts m_interrupts;
 
-        Interrupts m_interrupts;
+    double m_vdd;
 
-        double m_vdd;
+    double m_freq; // Clock Frequency in MegaHerzs
+    double m_cPerInst; // Clock ticks per Instruction Cycle
+    double m_cPerTick; // Clock ticks  per cpu Cycle
+    uint64_t m_psInst; // picoseconds per Instruction Cycle
+    uint64_t m_psTick; // picoseconds per Clock Cycle
 
-        double m_freq;         // Clock Frequency in MegaHerzs
-        double m_cPerInst;     // Clock ticks per Instruction Cycle
-        double m_cPerTick;     // Clock ticks  per cpu Cycle
-        uint64_t m_psInst;     // picoseconds per Instruction Cycle
-        uint64_t m_psTick;     // picoseconds per Clock Cycle
+    bool m_clkState;
 
-        bool m_clkState;
-
-        // Debugger:
-        BaseDebugger* m_debugger;
-        bool          m_debugging;
+    // Debugger:
+    BaseDebugger* m_debugger;
+    bool m_debugging;
 };

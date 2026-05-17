@@ -12,10 +12,9 @@ QPointF getPointF( QString p );
 
 QString getStrPointF( QPointF p );
 
-
 //---------------------------------------------------
 
-struct propStr_t{
+struct propStr_t {
     QString name;
     QString value;
 };
@@ -23,4 +22,3 @@ struct propStr_t{
 QVector<propStr_t> parseXmlProps( QString line );
 QVector<propStr_t> parseProps( QString line );
 propStr_t parseProp( QString token );
-

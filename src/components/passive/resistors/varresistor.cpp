@@ -5,73 +5,73 @@
 
 #include <QPainter>
 
-#include "varresistor.h"
 #include "itemlibrary.h"
-#include "simulator.h"
 #include "resistor.h"
+#include "simulator.h"
+#include "varresistor.h"
 
 #include "doubleprop.h"
 #include "propdialog.h"
 
-#define tr(str) simulideTr("VarResistor",str)
+#define tr( str ) simulideTr( "VarResistor", str )
 
-Component* VarResistor::construct( QString type, QString id )
-{ return new VarResistor( type, id ); }
-
-LibraryItem* VarResistor::libraryItem()
-{
-    return new LibraryItem(
-        tr("Variable Resistor"),
-        "Resistors",
-        "varresistor.png",
-        "VarResistor",
-        VarResistor::construct);
+Component* VarResistor::construct( QString type, QString id ) {
+    return new VarResistor( type, id );
 }
 
-VarResistor::VarResistor( QString type, QString id )
-           : VarResBase( type, id  )
-{
+LibraryItem* VarResistor::libraryItem() {
+    return new LibraryItem( tr( "Variable Resistor" ), "Resistors", "varresistor.png", "VarResistor",
+                            VarResistor::construct );
+}
+
+VarResistor::VarResistor( QString type, QString id ) : VarResBase( type, id ) {
     setVal( 0 );
 
-    addPropGroup( { tr("Main"), {
-        new DoubProp<VarResistor>("Min_Resistance", tr("Minimum Resistance"), "Ω"
-                                 , this, &VarResistor::minVal, &VarResistor::setMinVal ),
+    addPropGroup( { tr( "Main" ),
+                    {
+                        new DoubProp<VarResistor>( "Min_Resistance", tr( "Minimum Resistance" ), "Ω", this,
+                                                   &VarResistor::minVal, &VarResistor::setMinVal ),
 
-        new DoubProp<VarResistor>("Max_Resistance", tr("Maximum Resistance"), "kΩ"
-                                 , this, &VarResistor::maxVal, &VarResistor::setMaxVal ),
+                        new DoubProp<VarResistor>( "Max_Resistance", tr( "Maximum Resistance" ), "kΩ", this,
+                                                   &VarResistor::maxVal, &VarResistor::setMaxVal ),
 
-        new DoubProp<VarResistor>("Value_Ohm", tr("Current Value"), "Ω"
-                                 , this, &VarResistor::getVal, &VarResistor::setVal ),
+                        new DoubProp<VarResistor>( "Value_Ohm", tr( "Current Value" ), "Ω", this, &VarResistor::getVal,
+                                                   &VarResistor::setVal ),
 
-        new DoubProp<VarResistor>("Dial_Step", tr("Dial Step"), "Ω"
-                                 , this, &VarResistor::getStep, &VarResistor::setStep ),
-    },0 } );
+                        new DoubProp<VarResistor>( "Dial_Step", tr( "Dial Step" ), "Ω", this, &VarResistor::getStep,
+                                                   &VarResistor::setStep ),
+                    },
+                    0 } );
 
-    addPropGroup( { tr("Dial"), Dialed::dialProps(), groupNoCopy } );
+    addPropGroup( { tr( "Dial" ), Dialed::dialProps(), groupNoCopy } );
 }
-VarResistor::~VarResistor(){}
+VarResistor::~VarResistor() { }
 
-void VarResistor::updateStep()
-{
-    if( !m_needUpdate ) return;
+void VarResistor::updateStep() {
+    if ( !m_needUpdate )
+        return;
     m_needUpdate = false;
 
     eResistor::setResistance( m_value );
-    if( m_propDialog ) m_propDialog->updtValues();
-    else setValLabelText( getPropStr( showProp() ) );
+    if ( m_propDialog )
+        m_propDialog->updtValues();
+    else
+        setValLabelText( getPropStr( showProp() ) );
 }
 
-void VarResistor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
-    if( m_hidden ) return;
+void VarResistor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
+    if ( m_hidden )
+        return;
     Component::paint( p, o, w );
 
-    if( m_ansiSymbol ) Resistor::drawAnsi( p, 0, 0 );
-    else               p->drawRect( QRectF(-11,-4.5, 22, 9 ) );
+    if ( m_ansiSymbol )
+        Resistor::drawAnsi( p, 0, 0 );
+    else
+        p->drawRect( QRectF( -11, -4.5, 22, 9 ) );
 
-    p->drawLine(-6, 6, 8,-8 );
-    p->drawLine( 8,-6, 8,-8 );
-    p->drawLine( 8,-8, 6,-8 );
+    p->drawLine( -6, 6, 8, -8 );
+    p->drawLine( 8, -6, 8, -8 );
+    p->drawLine( 8, -8, 6, -8 );
 
     Component::paintSelected( p );
 }

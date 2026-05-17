@@ -6,9 +6,7 @@
 #include "updatable.h"
 #include "simulator.h"
 
-Updatable::Updatable(){}
-Updatable::~Updatable()
-{
+Updatable::Updatable() { }
+Updatable::~Updatable() {
     Simulator::self()->remFromUpdateList( this );
 }
-

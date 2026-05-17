@@ -5,69 +5,67 @@
 
 #pragma once
 
-#include "e-element.h"
 #include "component.h"
 #include "e-coil.h"
+#include "e-element.h"
 
 class LibraryItem;
 
-class Transformer : public Component, public eElement
-{
-        struct winding_t
-        {
-            QString definition;
-            QString topology;
-            QString prefix;
-            QList<Pin*>   pins;
-            QList<eCoil*> coils;
-            int nCoils;
-            int start;
-            int angle;
-            int x;
-        };
+class Transformer : public Component, public eElement {
+    struct winding_t {
+        QString definition;
+        QString topology;
+        QString prefix;
+        QList<Pin*> pins;
+        QList<eCoil*> coils;
+        int nCoils;
+        int start;
+        int angle;
+        int x;
+    };
 
-    public:
-        Transformer( QString type, QString id );
-        ~Transformer();
+public:
+    Transformer( QString type, QString id );
+    ~Transformer();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void stamp() override;
-        virtual void runEvent() override;
+    virtual void stamp() override;
+    virtual void runEvent() override;
 
-        double baseInd() { return m_baseInd; }
-        void setBaseInd( double i );
+    double baseInd() { return m_baseInd; }
+    void setBaseInd( double i );
 
-        QString primary() { return m_primary.definition; }
-        void setPrimary( QString p );
+    QString primary() { return m_primary.definition; }
+    void setPrimary( QString p );
 
-        QString secondary() { return m_secondary.definition; }
-        void setSecondary( QString s );
+    QString secondary() { return m_secondary.definition; }
+    void setSecondary( QString s );
 
-        double coupCoeff() { return m_coupCoeff; }
-        void setCoupCoeff( double c );
+    double coupCoeff() { return m_coupCoeff; }
+    void setCoupCoeff( double c );
 
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    private:
-        void setupInducts( winding_t* w );
-        void createCoils();
-        int  getLeght( winding_t* w );
-        void modify( winding_t* w );
-        void create( winding_t* w );
+private:
+    void setupInducts( winding_t* w );
+    void createCoils();
+    int getLeght( winding_t* w );
+    void modify( winding_t* w );
+    void create( winding_t* w );
 
-        int m_lenght;
+    int m_lenght;
 
-        double m_baseInd;
-        double m_coupCoeff;
+    double m_baseInd;
+    double m_coupCoeff;
 
-        uint64_t m_reacStep;
+    uint64_t m_reacStep;
 
-        winding_t m_primary;
-        winding_t m_secondary;
+    winding_t m_primary;
+    winding_t m_secondary;
 
-        QList<eCoil*> m_coils;
+    QList<eCoil*> m_coils;
 
-        std::vector<std::vector<double>> m_inva;
+    std::vector<std::vector<double>> m_inva;
 };

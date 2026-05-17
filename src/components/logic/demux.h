@@ -9,25 +9,24 @@
 
 class LibraryItem;
 
-class Demux : public LogicComponent
-{
-    public:
-        Demux( QString type, QString id );
-        ~Demux();
+class Demux : public LogicComponent {
+public:
+    Demux( QString type, QString id );
+    ~Demux();
 
-static Component* construct( QString type, QString id );
-static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override{ IoComponent::runOutputs(); }
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        int addrBits() { return m_addrBits; }
-        void setAddrBits( int bits );
-        
-        QPainterPath shape() const;
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget );
+    int addrBits() { return m_addrBits; }
+    void setAddrBits( int bits );
 
-    private:
-        int m_addrBits;
+    QPainterPath shape() const;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget );
+
+private:
+    int m_addrBits;
 };

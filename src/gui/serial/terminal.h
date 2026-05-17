@@ -3,42 +3,40 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-
 #pragma once
 
 #include <QDialog>
 
-#include "updatable.h"
 #include "ui_terminal.h"
+#include "updatable.h"
 
-class Terminal : public QDialog, public Updatable, private Ui::Terminal
-{
+class Terminal : public QDialog, public Updatable, private Ui::Terminal {
     Q_OBJECT
 
-    public:
-        Terminal( QWidget* parent );
+public:
+    Terminal( QWidget* parent );
 
-        void updateStep() override;
+    void updateStep() override;
 
-        void received( uint8_t byte ) ;
+    void received( uint8_t byte );
 
-    signals:
-        void sendBytes( QByteArray data );
-        void closed();
+signals:
+    void sendBytes( QByteArray data );
+    void closed();
 
-    private slots:
-        void on_sendButton_clicked();
-        void on_clearSend_clicked();
-        void on_clearReceive_clicked();
-        void on_loadFileButton_clicked();
-        void on_saveLogButton_clicked();
+private slots:
+    void on_sendButton_clicked();
+    void on_clearSend_clicked();
+    void on_clearReceive_clicked();
+    void on_loadFileButton_clicked();
+    void on_saveLogButton_clicked();
 
-    protected:
-        void closeEvent( QCloseEvent* event ) override;
+protected:
+    void closeEvent( QCloseEvent* event ) override;
 
-    private:
-        void sendText();
-        void sendValue( int base );
+private:
+    void sendText();
+    void sendValue( int base );
 
-        QString m_textBuffer;
+    QString m_textBuffer;
 };

@@ -8,114 +8,120 @@
 #include "component.h"
 #include "e-element.h"
 
-class Chip : public Component, public eElement
-{
-    public:
-        Chip( QString type, QString id, QString device=""  );
-        ~Chip();
+class Chip : public Component, public eElement {
+public:
+    Chip( QString type, QString id, QString device = "" );
+    ~Chip();
 
-        bool propNotFound( QString prop, QString val ) override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        bool isBoard() { return m_isBoard; }
+    bool isBoard() { return m_isBoard; }
 
-        QString package() { return m_package; }
-        virtual void setPackage( QString package );
-        
-        bool logicSymbol() { return m_isLS; }
-        virtual void setLogicSymbol( bool ls );
+    QString package() { return m_package; }
+    virtual void setPackage( QString package );
 
-        virtual void setBckGndData( QString data );
-        void setBackground( QString bck ) override;
+    bool logicSymbol() { return m_isLS; }
+    virtual void setLogicSymbol( bool ls );
 
-        bool customColor() { return m_customColor; }
-        virtual void setCustomColor( bool c ){ m_customColor = c; }
+    virtual void setBckGndData( QString data );
+    void setBackground( QString bck ) override;
 
-        QString pkgColorStr() { return m_pkgColor.name(); }
-        void setPkgColorStr( QString color );
+    bool customColor() { return m_customColor; }
+    virtual void setCustomColor( bool c ) { m_customColor = c; }
 
-        bool border() { return m_border; }
-        void setBorder( bool b ) { m_border = b; update(); }
+    QString pkgColorStr() { return m_pkgColor.name(); }
+    void setPkgColorStr( QString color );
 
-        QString name() { return m_name; }
-        void setName( QString name );
+    bool border() { return m_border; }
+    void setBorder( bool b ) {
+        m_border = b;
+        update();
+    }
 
-        //subcType_t subcType() { return m_subcType; }
-        QString subcTypeStr() { return m_subcType; }
-        virtual void setSubcTypeStr( QString s ){ m_subcType = s; }
+    QString name() { return m_name; }
+    void setName( QString name );
 
-        int pkgWidth() { return m_width; }
-        void setWidth( int w );
-        void setHeight( int h );
+    //subcType_t subcType() { return m_subcType; }
+    QString subcTypeStr() { return m_subcType; }
+    virtual void setSubcTypeStr( QString s ) { m_subcType = s; }
 
-        void setBackData( std::vector<std::vector<int>>* d ) { m_backData = d; }
+    int pkgWidth() { return m_width; }
+    void setWidth( int w );
+    void setHeight( int h );
 
-        void setMargins( int top, int bottom, int right, int left );
-        void setMargins( QString margins );
-        QString getMargins() { return m_margins; }
+    void setBackData( std::vector<std::vector<int>>* d ) { m_backData = d; }
 
-        void setflip() override;
+    void setMargins( int top, int bottom, int right, int left );
+    void setMargins( QString margins );
+    QString getMargins() { return m_margins; }
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void setflip() override;
 
- static QMap<QString, QString> getPackages( QString compText );
- static QString convertPackage( QString pkgText );
- static QString cleanPinName( QString name );
- static QString getDevice( QString id );
- static QString s_subcType;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    protected:
-        virtual Pin* addPin( QString id, QString type, QString label,
-                             int pos, int xpos, int ypos, int angle, int length=8, int space=0 ){return nullptr;}
+    static QMap<QString, QString> getPackages( QString compText );
+    static QString convertPackage( QString pkgText );
+    static QString cleanPinName( QString name );
+    static QString getDevice( QString id );
+    static QString s_subcType;
 
-        virtual Pin* updatePin( QString id, QString type, QString label,
-                                int pos, int xpos, int ypos, int angle, int space=0  ){return nullptr;}
+protected:
+    virtual Pin* addPin( QString id, QString type, QString label, int pos, int xpos, int ypos, int angle,
+                         int length = 8, int space = 0 ) {
+        return nullptr;
+    }
 
-        virtual void addNewPin( QString id, QString type, QString label,
-                        int pos, int xpos, int ypos, int angle, int length=8, int space=0 );
+    virtual Pin* updatePin( QString id, QString type, QString label, int pos, int xpos, int ypos, int angle,
+                            int space = 0 ) {
+        return nullptr;
+    }
 
-        void initPackage(  QString pkgStr  );
+    virtual void addNewPin( QString id, QString type, QString label, int pos, int xpos, int ypos, int angle,
+                            int length = 8, int space = 0 );
 
-        void setPinStr( QVector<propStr_t> properties );
+    void initPackage( QString pkgStr );
 
-        virtual void embeedBackground( QString pixmapPath );
+    void setPinStr( QVector<propStr_t> properties );
 
-        void findHelp() override;
+    virtual void embeedBackground( QString pixmapPath );
 
-        void updateColor();
+    void findHelp() override;
 
-        int m_width;
-        int m_height;
-        int m_topMargin;
-        int m_bottomMargin;
-        int m_rightMargin;
-        int m_leftMargin;
-        QString m_margins;
-        
-        bool m_isLS;
-        bool m_initialized;
-        bool m_customColor;
-        bool m_isBoard;
-        bool m_border;
-        bool m_hasBckGndData;
+    void updateColor();
 
-        QString m_subcType;
+    int m_width;
+    int m_height;
+    int m_topMargin;
+    int m_bottomMargin;
+    int m_rightMargin;
+    int m_leftMargin;
+    QString m_margins;
 
-        QColor m_lsColor;
-        QColor m_icColor;
-        QColor m_pkgColor;
+    bool m_isLS;
+    bool m_initialized;
+    bool m_customColor;
+    bool m_isBoard;
+    bool m_border;
+    bool m_hasBckGndData;
 
-        QString m_name;
-        QString m_device;
-        QString m_package;
-        QString m_dataFile;
+    QString m_subcType;
 
-        QMap<QString, QString> m_packageList;
+    QColor m_lsColor;
+    QColor m_icColor;
+    QColor m_pkgColor;
 
-        QList<Pin*> m_ncPins;
-        QList<Pin*> m_tempPins;
-        QMap<QString, Pin*> m_pinMap;
+    QString m_name;
+    QString m_device;
+    QString m_package;
+    QString m_dataFile;
 
-        std::vector<std::vector<int>>* m_backData;
+    QMap<QString, QString> m_packageList;
 
-        QGraphicsTextItem m_label;
+    QList<Pin*> m_ncPins;
+    QList<Pin*> m_tempPins;
+    QMap<QString, Pin*> m_pinMap;
+
+    std::vector<std::vector<int>>* m_backData;
+
+    QGraphicsTextItem m_label;
 };

@@ -3,31 +3,30 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-#include <QPainter>
 #include <QDebug>
+#include <QPainter>
 
 #include "stm32pin.h"
 
 Stm32Pin::Stm32Pin( uint8_t port, int i, QString id, Component* mcu )
-        : IoPin( 0, QPoint(0,0), id, 0, mcu, input )
-        //, QemuModule( mcu, i )
+    : IoPin( 0, QPoint( 0, 0 ), id, 0, mcu, input )
+//, QemuModule( mcu, i )
 {
     //m_id     = id;
-    m_port   = port;
+    m_port = port;
 
     m_pullAdmit = 1e5; // 10k
 
     double vdd = 3.3; //m_port->getMcu()->vdd();
     m_outHighV = vdd;
-    m_inpHighV = vdd/2;
-    m_inpLowV  = vdd/2;
+    m_inpHighV = vdd / 2;
+    m_inpLowV = vdd / 2;
 
-    m_pinMask = 1<<i;
+    m_pinMask = 1 << i;
 }
-Stm32Pin::~Stm32Pin() {}
+Stm32Pin::~Stm32Pin() { }
 
-void Stm32Pin::initialize()
-{
+void Stm32Pin::initialize() {
     //m_outCtrl = false;
     //m_dirCtrl = false;
     //m_isAnalog = false;
@@ -41,8 +40,7 @@ void Stm32Pin::initialize()
     IoPin::initialize();
 }
 
-void Stm32Pin::stamp()
-{
+void Stm32Pin::stamp() {
     IoPin::stamp();
 
     m_alternate = false;
@@ -59,12 +57,12 @@ void Stm32Pin::stamp()
     //update();
 }
 
-void Stm32Pin::voltChanged()
-{
+void Stm32Pin::voltChanged() {
     bool oldState = m_inpState;
     bool newState = IoPin::getInpState();
 
-    if( oldState == newState ) return;
+    if ( oldState == newState )
+        return;
 
     /// while( m_arena->qemuAction )        // Wait for previous action executed
     /// {
@@ -76,48 +74,52 @@ void Stm32Pin::voltChanged()
     /// m_arena->qemuAction = SIM_GPIO_IN;
 }
 
-void Stm32Pin::setPinMode( pinMode_t mode )
-{
+void Stm32Pin::setPinMode( pinMode_t mode ) {
     //qDebug() << "Stm32Pin::setPinMode" << this->m_id << mode;
     IoPin::setPinMode( mode );
     changeCallBack( this, mode == input );
 }
 
-void Stm32Pin::setPull( bool p )
-{
-    if( m_pull == p ) return;
+void Stm32Pin::setPull( bool p ) {
+    if ( m_pull == p )
+        return;
     m_pull = p;
     setOutState( m_outState );
 }
 
 bool Stm32Pin::setAlternate( bool a ) // If changing to Not Alternate, return false
 {
-    if( m_alternate == a ) return true;
+    if ( m_alternate == a )
+        return true;
     m_alternate = a;
-    if( a ) qDebug() << "Stm32Pin::setAlternate" << this->m_id;
+    if ( a )
+        qDebug() << "Stm32Pin::setAlternate" << this->m_id;
     return a;
 }
 
 void Stm32Pin::setAnalog( bool a ) /// TODO: if changing to Not Analog, return false
 {
-    if( m_analog == a ) return;
+    if ( m_analog == a )
+        return;
     m_analog = a;
 }
 
-void Stm32Pin::setPortState(  bool high ) // Set output from Port register
+void Stm32Pin::setPortState( bool high ) // Set output from Port register
 {
-    if( m_alternate ) return;
+    if ( m_alternate )
+        return;
     setPinState( high );
 }
 
 void Stm32Pin::setOutState( bool high ) // Set output from Alternate (peripheral)
 {
-    if( m_alternate ) setPinState( high );
+    if ( m_alternate )
+        setPinState( high );
 }
 
-void Stm32Pin::scheduleState( bool high, uint64_t time )
-{
-    if( m_alternate ) IoPin::scheduleState( high, time );
+void Stm32Pin::scheduleState( bool high, uint64_t time ) {
+    if ( m_alternate )
+        IoPin::scheduleState( high, time );
 }
 
 void Stm32Pin::setPinState( bool high ) // Set Output to Hight or Low
@@ -127,44 +129,49 @@ void Stm32Pin::setPinState( bool high ) // Set Output to Hight or Low
 
     //if( m_inverted ) high = !high;
 
-    switch( m_pinMode )
-    {
-        case undef_mode: return;
-        case input:
-            if( m_pull ){
-                m_outVolt = high ? m_outHighV : m_outLowV;
-                ePin::stampCurrent( m_outVolt*m_pullAdmit );
-            }
-            break;
-        case output:
+    switch ( m_pinMode ) {
+    case undef_mode:
+        return;
+    case input:
+        if ( m_pull ) {
             m_outVolt = high ? m_outHighV : m_outLowV;
-            ePin::stampCurrent( m_outVolt*m_admit );
-            break;
-        case openCo:
-            m_gndAdmit = high ? 1/1e8 : 1/m_outputImp;
-            updtState();
-            break;
-        default: return;
+            ePin::stampCurrent( m_outVolt * m_pullAdmit );
+        }
+        break;
+    case output:
+        m_outVolt = high ? m_outHighV : m_outLowV;
+        ePin::stampCurrent( m_outVolt * m_admit );
+        break;
+    case openCo:
+        m_gndAdmit = high ? 1 / 1e8 : 1 / m_outputImp;
+        updtState();
+        break;
+    default:
+        return;
     }
 }
 
-void Stm32Pin::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
-    if( !isVisible() ) return;
+void Stm32Pin::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
+    if ( !isVisible() )
+        return;
     Pin::paint( p, o, w );
 
-    if( !m_pull ) return;
-    if( m_pinMode > openCo ) return;
+    if ( !m_pull )
+        return;
+    if ( m_pinMode > openCo )
+        return;
 
     // Draw pullUp/Down dot
 
-    if( m_outState ) p->setBrush( QColor( 255, 180,   0 ) );
-    else             p->setBrush( QColor(   0, 180, 255 ) );
+    if ( m_outState )
+        p->setBrush( QColor( 255, 180, 0 ) );
+    else
+        p->setBrush( QColor( 0, 180, 255 ) );
 
     QPen pen = p->pen();
     pen.setWidthF( 0 );
-    p->setPen(pen);
-    int start = (m_length > 4) ? m_length-4.5 : 3.5;
-    QRectF rect( start+0.6,-1.5, 3, 3 );
-    p->drawEllipse(rect);
+    p->setPen( pen );
+    int start = ( m_length > 4 ) ? m_length - 4.5 : 3.5;
+    QRectF rect( start + 0.6, -1.5, 3, 3 );
+    p->drawEllipse( rect );
 }

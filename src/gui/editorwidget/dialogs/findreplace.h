@@ -11,28 +11,27 @@
 
 class CodeEditor;
 
-class FindReplace : public QDialog, private Ui::FindReplace
-{
+class FindReplace : public QDialog, private Ui::FindReplace {
     Q_OBJECT
 
-    public:
-        FindReplace( QWidget* parent );
+public:
+    FindReplace( QWidget* parent );
 
-        void setEditor( CodeEditor* ce ) { m_editor = ce; }
-        void setTextToFind( QString text ) { findEdit->setText( text ); }
+    void setEditor( CodeEditor* ce ) { m_editor = ce; }
+    void setTextToFind( QString text ) { findEdit->setText( text ); }
 
-    public slots:
-        void on_prevButton_clicked();
-        void on_nextButton_clicked();
-        void on_allButton_clicked();
-        void on_replaceButton_clicked();
-        void on_replFindButton_clicked();
-        void on_replAllButton_clicked();
-        void on_closeButton_clicked();
+public slots:
+    void on_prevButton_clicked();
+    void on_nextButton_clicked();
+    void on_allButton_clicked();
+    void on_replaceButton_clicked();
+    void on_replFindButton_clicked();
+    void on_replAllButton_clicked();
+    void on_closeButton_clicked();
 
-    private:
-        bool find( bool next );
+private:
+    bool find( bool next );
 
-        QTextCursor m_textCursor;
-        CodeEditor* m_editor;
+    QTextCursor m_textCursor;
+    CodeEditor* m_editor;
 };

@@ -7,15 +7,14 @@
 
 class BaseDebugger;
 
-class GputilsDebug
-{
-    public:
-        GputilsDebug();
-        ~GputilsDebug();
+class GputilsDebug {
+public:
+    GputilsDebug();
+    ~GputilsDebug();
 
-        //int compile( bool debug );
+    //int compile( bool debug );
 
-        static bool getVariables( BaseDebugger* debugger );
-        static bool mapFlashToSource( BaseDebugger* debugger );
-        //static bool mapFlashToAsm( BaseDebugger* debugger );
+    static bool getVariables( BaseDebugger* debugger );
+    static bool mapFlashToSource( BaseDebugger* debugger );
+    //static bool mapFlashToAsm( BaseDebugger* debugger );
 };

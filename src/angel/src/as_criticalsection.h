@@ -28,8 +28,6 @@
    andreas@angelcode.com
 */
 
-
-
 //
 // as_criticalsection.h
 //
@@ -59,4 +57,3 @@ inline bool tryEnter() { return true; }
 END_AS_NAMESPACE
 
 #endif
-

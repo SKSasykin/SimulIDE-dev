@@ -9,13 +9,12 @@
 
 class CodeEditor;
 
-class scrollWidget : public QScrollBar
-{
-    public:
-        scrollWidget( CodeEditor* editor, Qt::Orientation o, QWidget* parent=0 );
-        ~scrollWidget();
+class scrollWidget : public QScrollBar {
+public:
+    scrollWidget( CodeEditor* editor, Qt::Orientation o, QWidget* parent = 0 );
+    ~scrollWidget();
 
-        void paintEvent( QPaintEvent* event ) override;
+    void paintEvent( QPaintEvent* event ) override;
 
-        CodeEditor* m_editor;
+    CodeEditor* m_editor;
 };

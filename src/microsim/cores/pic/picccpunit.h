@@ -5,51 +5,50 @@
 
 #pragma once
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
 class PicOcUnit;
 class PicIcUnit;
 class PicPwmUnit;
 class McuPin;
 
-enum ccpMode_t{
-    ccpOFF=0,
+enum ccpMode_t {
+    ccpOFF = 0,
     ccpCAP,
     ccpCOM,
     ccpPWM,
 };
 
-class PicCcpUnit : public McuModule, public eElement
-{
+class PicCcpUnit : public McuModule, public eElement {
     friend class McuCreator;
 
-    public:
-        PicCcpUnit( eMcu* mcu, QString name, int type );
-        ~PicCcpUnit();
+public:
+    PicCcpUnit( eMcu* mcu, QString name, int type );
+    ~PicCcpUnit();
 
-        virtual void setup() override;
-        virtual void initialize() override;
+    virtual void setup() override;
+    virtual void initialize() override;
 
-        virtual void ccprWriteL( uint8_t val );
-        virtual void ccprWriteH( uint8_t val );
+    virtual void ccprWriteL( uint8_t val );
+    virtual void ccprWriteH( uint8_t val );
 
-        virtual void configureA( uint8_t CCPxCON ) override;
+    virtual void configureA( uint8_t CCPxCON ) override;
 
-        virtual void setInterrupt( Interrupt* i ) override;
+    virtual void setInterrupt( Interrupt* i ) override;
 
-        void setPin( McuPin* pin );
+    void setPin( McuPin* pin );
 
-    protected:
-        uint8_t m_mode;
-        ccpMode_t m_ccpMode;
+protected:
+    uint8_t m_mode;
+    ccpMode_t m_ccpMode;
 
-        uint8_t* m_ccpRegL;
-        uint8_t* m_ccpRegH;
+    uint8_t* m_ccpRegL;
+    uint8_t* m_ccpRegH;
 
-        regBits_t m_CCPxM;
+    regBits_t m_CCPxM;
 
-        PicIcUnit*  m_capUnit;
-        PicOcUnit*  m_comUnit;
-        PicPwmUnit* m_pwmUnit;
+    PicIcUnit* m_capUnit;
+    PicOcUnit* m_comUnit;
+    PicPwmUnit* m_pwmUnit;
 };

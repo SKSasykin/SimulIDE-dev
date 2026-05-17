@@ -28,7 +28,6 @@
    andreas@angelcode.com
 */
 
-
 //
 // as_variablescope.cpp
 //
@@ -43,90 +42,81 @@
 
 BEGIN_AS_NAMESPACE
 
-asCVariableScope::asCVariableScope(asCVariableScope *parent)
-{
-	this->parent    = parent;
-	Reset();
+asCVariableScope::asCVariableScope( asCVariableScope* parent ) {
+    this->parent = parent;
+    Reset();
 }
 
-asCVariableScope::~asCVariableScope()
-{
-	Reset();
+asCVariableScope::~asCVariableScope() {
+    Reset();
 }
 
-void asCVariableScope::Reset()
-{
-	isBreakScope = false;
-	isContinueScope = false;
+void asCVariableScope::Reset() {
+    isBreakScope = false;
+    isContinueScope = false;
 
-	for( asUINT n = 0; n < variables.GetLength(); n++ )
-		if( variables[n] ) 
-		{
-			asDELETE(variables[n],sVariable);
-		}
-	variables.SetLength(0);
+    for ( asUINT n = 0; n < variables.GetLength(); n++ )
+        if ( variables[n] ) {
+            asDELETE( variables[n], sVariable );
+        }
+    variables.SetLength( 0 );
 }
 
-int asCVariableScope::DeclareVariable(const char *name, const asCDataType &type, int stackOffset, bool onHeap)
-{
-	// TODO: optimize: Improve linear search
-	// See if the variable is already declared
-	if( strcmp(name, "") != 0 )
-	{
-		for( asUINT n = 0; n < variables.GetLength(); n++ )
-		{
-			if( variables[n]->name == name )
-				return -1;
-		}
-	}
+int asCVariableScope::DeclareVariable( const char* name, const asCDataType& type, int stackOffset, bool onHeap ) {
+    // TODO: optimize: Improve linear search
+    // See if the variable is already declared
+    if ( strcmp( name, "" ) != 0 ) {
+        for ( asUINT n = 0; n < variables.GetLength(); n++ ) {
+            if ( variables[n]->name == name )
+                return -1;
+        }
+    }
 
-	sVariable *var = asNEW(sVariable);
-	if( var == 0 )
-	{
-		// Out of memory. Return without allocating the var
-		return -2;
-	}
-	var->name           = name;
-	var->type           = type;
-	var->stackOffset    = stackOffset;
-	var->isInitialized  = false;
-	var->isPureConstant = false;
-	var->onHeap         = onHeap;
+    sVariable* var = asNEW( sVariable );
+    if ( var == 0 ) {
+        // Out of memory. Return without allocating the var
+        return -2;
+    }
+    var->name = name;
+    var->type = type;
+    var->stackOffset = stackOffset;
+    var->isInitialized = false;
+    var->isPureConstant = false;
+    var->onHeap = onHeap;
 
-	// Parameters are initialized
-    if( stackOffset <= 0 ) var->isInitialized = true;
+    // Parameters are initialized
+    if ( stackOffset <= 0 )
+        var->isInitialized = true;
 
-	variables.PushLast(var);
+    variables.PushLast( var );
 
-	return 0;
+    return 0;
 }
 
-sVariable *asCVariableScope::GetVariable(const char *name)
-{
-	// TODO: optimize: Improve linear search
-	// Find the variable
-	for( asUINT n = 0; n < variables.GetLength(); n++ )
-	{
-		if( variables[n]->name == name )
-			return variables[n];
-	}
+sVariable* asCVariableScope::GetVariable( const char* name ) {
+    // TODO: optimize: Improve linear search
+    // Find the variable
+    for ( asUINT n = 0; n < variables.GetLength(); n++ ) {
+        if ( variables[n]->name == name )
+            return variables[n];
+    }
 
-    if( parent ) return parent->GetVariable(name);
+    if ( parent )
+        return parent->GetVariable( name );
 
-	return 0;
+    return 0;
 }
 
-sVariable *asCVariableScope::GetVariableByOffset(int offset)
-{
-	// TODO: optimize: Improve linear search
-	// Find the variable
-	for( asUINT n = 0; n < variables.GetLength(); n++ )
-	{
-		if( variables[n]->stackOffset == offset )
-			return variables[n];
-	}
-    if( parent ) return parent->GetVariableByOffset(offset);
-	return 0;
+sVariable* asCVariableScope::GetVariableByOffset( int offset ) {
+    // TODO: optimize: Improve linear search
+    // Find the variable
+    for ( asUINT n = 0; n < variables.GetLength(); n++ ) {
+        if ( variables[n]->stackOffset == offset )
+            return variables[n];
+    }
+    if ( parent )
+        return parent->GetVariableByOffset( offset );
+    return 0;
 }
 
 END_AS_NAMESPACE

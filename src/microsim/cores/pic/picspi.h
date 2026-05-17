@@ -9,30 +9,28 @@
 
 class eMcu;
 
-class PicSpi : public McuSpi
-{
+class PicSpi : public McuSpi {
     friend class PicMssp;
 
-    public:
-        PicSpi( eMcu* mcu, QString name );
-        ~PicSpi();
+public:
+    PicSpi( eMcu* mcu, QString name );
+    ~PicSpi();
 
-        virtual void setup() override;
-        //virtual void initialize() override;
+    virtual void setup() override;
+    //virtual void initialize() override;
 
-        virtual void setMode( spiMode_t mode ) override;
-        virtual void configureA( uint8_t newSSPCON ) override;
-        virtual void writeStatus( uint8_t newSSPSTAT ) override;
-        virtual void writeSpiReg( uint8_t newSSPBUF ) override;
-        virtual void endTransaction() override;
-        virtual void sleep( int mode ) override;
+    virtual void setMode( spiMode_t mode ) override;
+    virtual void configureA( uint8_t newSSPCON ) override;
+    virtual void writeStatus( uint8_t newSSPSTAT ) override;
+    virtual void writeSpiReg( uint8_t newSSPBUF ) override;
+    virtual void endTransaction() override;
+    virtual void sleep( int mode ) override;
 
-    protected:
+protected:
+    bool m_clkPol;
+    bool m_clkPha;
 
-        bool m_clkPol;
-        bool m_clkPha;
-
-        /*uint8_t*  m_SPCR;
+    /*uint8_t*  m_SPCR;
 
         regBits_t m_SPIE;
 
@@ -40,9 +38,9 @@ class PicSpi : public McuSpi
         regBits_t m_MSTR;
         regBits_t m_CPOL;
         regBits_t m_CPHA;*/
-        //regBits_t m_SPIF;
+    //regBits_t m_SPIF;
 
-        regBits_t m_SSPEN;
-        regBits_t m_CKP;
-        regBits_t m_CKE;
+    regBits_t m_SSPEN;
+    regBits_t m_CKP;
+    regBits_t m_CKE;
 };

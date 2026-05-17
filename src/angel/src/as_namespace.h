@@ -28,7 +28,6 @@
    andreas@angelcode.com
 */
 
-
 #ifndef AS_NAMESPACE_H
 #define AS_NAMESPACE_H
 
@@ -36,42 +35,33 @@
 
 BEGIN_AS_NAMESPACE
 
-struct asSNameSpace
-{
-	asCString name;
+struct asSNameSpace {
+    asCString name;
 
-	// TODO: namespace: A namespace should have access masks. The application should be
-	//                  able to restrict specific namespaces from access to specific modules
+    // TODO: namespace: A namespace should have access masks. The application should be
+    //                  able to restrict specific namespaces from access to specific modules
 };
 
+struct asSNameSpaceNamePair {
+    const asSNameSpace* ns;
+    asCString name;
 
-struct asSNameSpaceNamePair
-{
-	const asSNameSpace *ns;
-	asCString           name;
+    asSNameSpaceNamePair() : ns( 0 ) { }
+    asSNameSpaceNamePair( const asSNameSpace* _ns, const asCString& _name ) : ns( _ns ), name( _name ) { }
 
-	asSNameSpaceNamePair() : ns(0) {}
-	asSNameSpaceNamePair(const asSNameSpace *_ns, const asCString &_name) : ns(_ns), name(_name) {}
+    asSNameSpaceNamePair& operator=( const asSNameSpaceNamePair& other ) {
+        ns = other.ns;
+        name = other.name;
+        return *this;
+    }
 
-	asSNameSpaceNamePair &operator=(const asSNameSpaceNamePair &other)
-	{
-		ns   = other.ns;
-		name = other.name;
-		return *this;
-	}
+    bool operator==( const asSNameSpaceNamePair& other ) const { return ( ns == other.ns && name == other.name ); }
 
-	bool operator==(const asSNameSpaceNamePair &other) const
-	{
-		return (ns == other.ns && name == other.name);
-	}
-
-	bool operator<(const asSNameSpaceNamePair &other) const
-	{
-		return (ns < other.ns || (ns == other.ns && name < other.name));
-	}
+    bool operator<( const asSNameSpaceNamePair& other ) const {
+        return ( ns < other.ns || ( ns == other.ns && name < other.name ) );
+    }
 };
 
 END_AS_NAMESPACE
 
 #endif
-

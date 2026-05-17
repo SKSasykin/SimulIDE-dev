@@ -7,18 +7,17 @@
 
 #include "varresbase.h"
 
-class ThermistorBase : public VarResBase
-{
-    public:
-        ThermistorBase( QString type, QString id );
-        ~ThermistorBase();
+class ThermistorBase : public VarResBase {
+public:
+    ThermistorBase( QString type, QString id );
+    ~ThermistorBase();
 
-        bool ptc()  { return m_ptc; }
-        void setPtc( bool ptc );
+    bool ptc() { return m_ptc; }
+    void setPtc( bool ptc );
 
-        virtual void setMaxVal( double max ) override;
-        virtual void setMinVal( double min ) override;
+    virtual void setMaxVal( double max ) override;
+    virtual void setMinVal( double min ) override;
 
-    protected:
-        bool m_ptc;
+protected:
+    bool m_ptc;
 };

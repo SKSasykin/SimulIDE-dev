@@ -7,16 +7,15 @@
 
 #include <QDial>
 
-class CustomDial : public QDial
-{
+class CustomDial : public QDial {
     Q_OBJECT
-    public:
-        CustomDial( QWidget* parent=nullptr );
+public:
+    CustomDial( QWidget* parent = nullptr );
 
-    private:
-        virtual void paintEvent( QPaintEvent* e ) override;
-        bool eventFilter(QObject *object, QEvent *event) override;
+private:
+    virtual void paintEvent( QPaintEvent* e ) override;
+    bool eventFilter( QObject* object, QEvent* event ) override;
 
-        double m_arrowX;
-        double m_arrowY;
+    double m_arrowX;
+    double m_arrowY;
 };

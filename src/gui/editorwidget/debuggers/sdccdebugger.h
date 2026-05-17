@@ -7,16 +7,15 @@
 
 #include "cdebugger.h"
 
-class SdccDebugger : public cDebugger
-{
-    public:
-        SdccDebugger( CodeEditor* parent, OutPanelText* outPane );
-        ~SdccDebugger();
+class SdccDebugger : public cDebugger {
+public:
+    SdccDebugger( CodeEditor* parent, OutPanelText* outPane );
+    ~SdccDebugger();
 
-        virtual int compile( bool debug ) override;
+    virtual int compile( bool debug ) override;
 
-    protected:
-        virtual bool postProcess() override;
+protected:
+    virtual bool postProcess() override;
 
-        bool findCSEG();
+    bool findCSEG();
 };

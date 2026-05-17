@@ -7,35 +7,31 @@
 #include "circuit.h"
 #include "shield.h"
 
-BoardSubc::BoardSubc( QString type, QString id, QString device )
-         : SubCircuit( type, id,device )
-{
+BoardSubc::BoardSubc( QString type, QString id, QString device ) : SubCircuit( type, id, device ) {
     m_graphical = true;
     m_isBoard = true;
     m_subcType = "Board";
     m_parentBoard = nullptr;
 }
-BoardSubc::~BoardSubc(){}
+BoardSubc::~BoardSubc() { }
 
 void BoardSubc::setLogicSymbol( bool ls ) /// FIXME
 {
-    if( m_shields.size() ) return;
+    if ( m_shields.size() )
+        return;
     SubCircuit::setLogicSymbol( ls );
 }
 
-void BoardSubc::attachShield( ShieldSubc* shield )
-{
-    if( !m_shields.contains( shield ) ) m_shields.append( shield );
+void BoardSubc::attachShield( ShieldSubc* shield ) {
+    if ( !m_shields.contains( shield ) )
+        m_shields.append( shield );
 }
 
-QString BoardSubc::toString()
-{
+QString BoardSubc::toString() {
     QString toStr;
-    for( ShieldSubc* shield : m_shields )
-    {
+    for ( ShieldSubc* shield : m_shields ) {
         toStr += shield->toString();
     }
     toStr += SubCircuit::toString();
     return toStr;
 }
-

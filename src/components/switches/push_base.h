@@ -7,14 +7,13 @@
 
 #include "switch_base.h"
 
-class PushBase : public SwitchBase
-{
-    public:
-        PushBase( QString type, QString id );
-        ~PushBase();
+class PushBase : public SwitchBase {
+public:
+    PushBase( QString type, QString id );
+    ~PushBase();
 
-    public slots:
-        void onbuttonPressed();
-        void onbuttonReleased();
-        virtual void keyEvent( QString key, bool pressed );
+public slots:
+    void onbuttonPressed();
+    void onbuttonReleased();
+    virtual void keyEvent( QString key, bool pressed );
 };

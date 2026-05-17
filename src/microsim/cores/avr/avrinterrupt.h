@@ -8,17 +8,16 @@
 #include "mcuinterrupts.h"
 #include "mcutypes.h"
 
-class AVRInterrupt : public Interrupt
-{
-    public:
-        AVRInterrupt( QString name, uint16_t vector, eMcu* mcu );
-        ~AVRInterrupt();
+class AVRInterrupt : public Interrupt {
+public:
+    AVRInterrupt( QString name, uint16_t vector, eMcu* mcu );
+    ~AVRInterrupt();
 
- static Interrupt* getInterrupt( QString name, uint16_t vector, eMcu* mcu );
+    static Interrupt* getInterrupt( QString name, uint16_t vector, eMcu* mcu );
 
-        //virtual void execute() override;
-        //virtual void exitInt() override;
+    //virtual void execute() override;
+    //virtual void exitInt() override;
 
-    private:
-        //regBits_t m_I;
+private:
+    //regBits_t m_I;
 };

@@ -5,58 +5,57 @@
 
 #pragma once
 
-#include <QWidget>
 #include <QDir>
 #include <QNetworkAccessManager>
+#include <QWidget>
 
 #include "ui_installer.h"
 
 class InstallItem;
 class QNetworkReply;
 
-class Installer : public QWidget, private Ui::installer
-{
+class Installer : public QWidget, private Ui::installer {
     Q_OBJECT
 
-    public:
-        Installer( QWidget* parent );
+public:
+    Installer( QWidget* parent );
 
-        void checkForUpdates( QString url="" );
+    void checkForUpdates( QString url = "" );
 
-        void loadInstalled();
+    void loadInstalled();
 
-        void installItem( QString itemName );
-        void unInstallItem( QString itemName );
+    void installItem( QString itemName );
+    void unInstallItem( QString itemName );
 
-        void writeSettings();
+    void writeSettings();
 
-        QStringList getGroupItems( QString group ) { return m_groupItemList.value( group ); }
+    QStringList getGroupItems( QString group ) { return m_groupItemList.value( group ); }
 
-    public slots:
-        void on_updtButton_clicked();
+public slots:
+    void on_updtButton_clicked();
 
-    private:
-        //void addItemInstaller( QString itemStr, int row );
-        void updtReady();
-        void itemDataReady();
-        void loadList();
+private:
+    //void addItemInstaller( QString itemStr, int row );
+    void updtReady();
+    void itemDataReady();
+    void loadList();
 
-        bool m_checkUpdates;
-        bool m_updated;
-        bool m_changed;
+    bool m_checkUpdates;
+    bool m_updated;
+    bool m_changed;
 
-        QDir m_compsDir;
-        QString m_compsUrl;
-        QString m_version;
+    QDir m_compsDir;
+    QString m_compsUrl;
+    QString m_version;
 
-        QString m_nextItem;
+    QString m_nextItem;
 
-        QMap<QString, InstallItem*> m_items;
-        QMap<QString, int64_t> m_installed;
-        QMap<QString, QStringList>  m_groupItemList;
+    QMap<QString, InstallItem*> m_items;
+    QMap<QString, int64_t> m_installed;
+    QMap<QString, QStringList> m_groupItemList;
 
-        InstallItem* m_installItem;
+    InstallItem* m_installItem;
 
-        QNetworkReply* m_reply;
-        QNetworkAccessManager m_manager;
+    QNetworkReply* m_reply;
+    QNetworkAccessManager m_manager;
 };

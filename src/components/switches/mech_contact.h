@@ -8,41 +8,45 @@
 #include "component.h"
 #include "e-resistor.h"
 
-class MechContact : public Component, public eElement
-{
-    public:
-        MechContact( QString type, QString id );
-        ~MechContact();
+class MechContact : public Component, public eElement {
+public:
+    MechContact( QString type, QString id );
+    ~MechContact();
 
-        virtual int poles() { return m_numPoles; }
-        virtual void setPoles( int poles );
+    virtual int poles() { return m_numPoles; }
+    virtual void setPoles( int poles );
 
-        virtual bool dt() { return (m_numthrows>1); }
-        virtual void setDt( bool dt );
-        
-        virtual bool nClose() { return m_nClose; }
-        virtual void setNClose( bool nc );
+    virtual bool dt() { return ( m_numthrows > 1 ); }
+    virtual void setDt( bool dt );
 
-        void stamp() override;
-        void remove() override;
-        void updateStep() override { if( m_changed ) { m_changed = false; update(); } }
+    virtual bool nClose() { return m_nClose; }
+    virtual void setNClose( bool nc );
 
-        void  SetupSwitches( int poles, int throws );
-        void  SetupButton();
+    void stamp() override;
+    void remove() override;
+    void updateStep() override {
+        if ( m_changed ) {
+            m_changed = false;
+            update();
+        }
+    }
 
-    protected:
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void SetupSwitches( int poles, int throws );
+    void SetupButton();
 
-        virtual void setSwitch( bool on );
+protected:
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-        std::vector<eResistor*> m_switches;
+    virtual void setSwitch( bool on );
 
-        bool m_closed;
-        bool m_nClose;
-        bool m_ButHidden;
+    std::vector<eResistor*> m_switches;
 
-        int m_numPoles;
-        int m_numthrows;
+    bool m_closed;
+    bool m_nClose;
+    bool m_ButHidden;
 
-        int m_pin0;
+    int m_numPoles;
+    int m_numthrows;
+
+    int m_pin0;
 };

@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include "esp32pin.h"
 #include "qemudevice.h"
 #include "qemutwi.h"
-#include "esp32pin.h"
 
 class LibraryItem;
 //class esp32Pin;
@@ -15,29 +15,28 @@ class Esp32Gpio;
 class Esp32IoMux;
 class Esp32Led;
 
-class Esp32 : public QemuDevice
-{
-    public:
-        Esp32( QString type, QString id, QString device );
-        ~Esp32();
+class Esp32 : public QemuDevice {
+public:
+    Esp32( QString type, QString id, QString device );
+    ~Esp32();
 
-        void stamp() override;
+    void stamp() override;
 
-    protected:
-        Pin* addPin( QString id, QString type, QString label,
-                    int n, int x, int y, int angle, int length=8, int space=0 ) override;
+protected:
+    Pin* addPin( QString id, QString type, QString label, int n, int x, int y, int angle, int length = 8,
+                 int space = 0 ) override;
 
-        bool createArgs() override;
+    bool createArgs() override;
 
-         void updtFrequency() override;
+    void updtFrequency() override;
 
-        void createMatrix();
+    void createMatrix();
 
-        uint32_t m_cpuFreq;
-        uint32_t m_apbFreq;
+    uint32_t m_cpuFreq;
+    uint32_t m_apbFreq;
 
-        Esp32Gpio* m_gpio;
-        Esp32IoMux* m_iomux;
+    Esp32Gpio* m_gpio;
+    Esp32IoMux* m_iomux;
 
-        Esp32Led* m_leds;
+    Esp32Led* m_leds;
 };

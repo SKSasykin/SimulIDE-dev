@@ -8,15 +8,14 @@
 #include <QPainterPath>
 #include <QToolButton>
 
-class UpDoButton : public QToolButton
-{
+class UpDoButton : public QToolButton {
     Q_OBJECT
-    public:
-        UpDoButton( bool up, QWidget* parent=nullptr );
+public:
+    UpDoButton( bool up, QWidget* parent = nullptr );
 
-    private:
-        virtual void paintEvent( QPaintEvent* ) override;
+private:
+    virtual void paintEvent( QPaintEvent* ) override;
 
-        QPainterPath m_path;
-        QColor m_color;
+    QPainterPath m_path;
+    QColor m_color;
 };

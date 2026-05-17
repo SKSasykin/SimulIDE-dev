@@ -7,15 +7,13 @@
 
 #include "mcuport.h"
 
+class AvrPort : public McuPort {
+public:
+    AvrPort( eMcu* mcu, QString name );
+    ~AvrPort();
 
-class AvrPort : public McuPort
-{
-    public:
-        AvrPort( eMcu* mcu, QString name );
-        ~AvrPort();
+    void pinRegChanged( uint8_t newPIN );
 
-        void pinRegChanged( uint8_t newPIN );
-
-    protected:
-        virtual McuPin* createPin( int i, QString id , Component* mcu ) override;
+protected:
+    virtual McuPin* createPin( int i, QString id, Component* mcu ) override;
 };

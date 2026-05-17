@@ -9,47 +9,46 @@
 
 class LibraryItem;
 
-class ShiftReg : public LogicComponent
-{
-    public:
-        ShiftReg( QString type, QString id );
-        ~ShiftReg();
+class ShiftReg : public LogicComponent {
+public:
+    ShiftReg( QString type, QString id );
+    ~ShiftReg();
 
- static Component* construct( QString type, QString id );
- static LibraryItem *libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        bool propNotFound( QString prop, QString val ) override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override{ IoComponent::runOutputs(); }
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        int bits() { return m_bits; }
-        void setBits( int b );
+    int bits() { return m_bits; }
+    void setBits( int b );
 
-        bool parallelIn() { return m_parallelIn; }
-        void setParallelIn( bool p );
+    bool parallelIn() { return m_parallelIn; }
+    void setParallelIn( bool p );
 
-        bool bidirectional() { return m_bidir; }
-        void setBidirectional( bool b );
+    bool bidirectional() { return m_bidir; }
+    void setBidirectional( bool b );
 
-        //bool resetInv() { return m_resetInv; }
-        //void setResetInv( bool inv );
+    //bool resetInv() { return m_resetInv; }
+    //void setResetInv( bool inv );
 
-    private:
-        void updatePins();
+private:
+    void updatePins();
 
-        int m_bits;
-        uint m_bitMask;
+    int m_bits;
+    uint m_bitMask;
 
-        //bool m_resetInv;
-        bool m_parallelIn;
-        bool m_bidir;
-        bool m_ldInps;
+    //bool m_resetInv;
+    bool m_parallelIn;
+    bool m_bidir;
+    bool m_ldInps;
 
-        IoPin* m_dinPin;
-        IoPin* m_dilPin;
-        IoPin* m_dirPin;
-        IoPin* m_rstPin;
-        IoPin* m_serPin;
+    IoPin* m_dinPin;
+    IoPin* m_dilPin;
+    IoPin* m_dirPin;
+    IoPin* m_rstPin;
+    IoPin* m_serPin;
 };

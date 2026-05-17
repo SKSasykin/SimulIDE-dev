@@ -4,106 +4,101 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "magnitudecomp.h"
-#include "itemlibrary.h"
 #include "iopin.h"
+#include "itemlibrary.h"
 
 #include "intprop.h"
 
-#define tr(str) simulideTr("MagnitudeComp",str)
+#define tr( str ) simulideTr( "MagnitudeComp", str )
 
-Component* MagnitudeComp::construct( QString type, QString id )
-{ return new MagnitudeComp( type, id ); }
-
-LibraryItem* MagnitudeComp::libraryItem()
-{
-    return new LibraryItem(
-        tr("Magnitude Comparator"),
-        "Arithmetic" ,
-        "3to2g.png",
-        "MagnitudeComp",
-        MagnitudeComp::construct );
+Component* MagnitudeComp::construct( QString type, QString id ) {
+    return new MagnitudeComp( type, id );
 }
 
-MagnitudeComp::MagnitudeComp( QString type, QString id )
-             : IoComponent( type, id )
-             , eElement( id )
-{
-    m_width  = 4;
+LibraryItem* MagnitudeComp::libraryItem() {
+    return new LibraryItem( tr( "Magnitude Comparator" ), "Arithmetic", "3to2g.png", "MagnitudeComp",
+                            MagnitudeComp::construct );
+}
+
+MagnitudeComp::MagnitudeComp( QString type, QString id ) : IoComponent( type, id ), eElement( id ) {
+    m_width = 4;
     m_height = 4;
 
-    init({          // Inputs:
-            "IL01iA>B",
-            "IL02iA=B",
-            "IL03iA<B",
-                   // Outputs:
-            "OR01A>B",
-            "OR02A=B",
-            "OR03A<B"
-        });
+    init( { // Inputs:
+            "IL01iA>B", "IL02iA=B", "IL03iA<B",
+            // Outputs:
+            "OR01A>B", "OR02A=B", "OR03A<B" } );
 
     setBits( 2 );
 
-    addPropGroup( { tr("Main"), {
-        new IntProp <MagnitudeComp>("Bits", tr("Size"),"_bits"
-                            , this, &MagnitudeComp::bits, &MagnitudeComp::setBits, propNoCopy,"uint" ),
-    }, groupNoCopy } );
+    addPropGroup( { tr( "Main" ),
+                    {
+                        new IntProp<MagnitudeComp>( "Bits", tr( "Size" ), "_bits", this, &MagnitudeComp::bits,
+                                                    &MagnitudeComp::setBits, propNoCopy, "uint" ),
+                    },
+                    groupNoCopy } );
 
-    appendPropGroup( tr("Main"), IoComponent::familyProps() );
+    appendPropGroup( tr( "Main" ), IoComponent::familyProps() );
 
-    addPropGroup( { tr("Inputs"), IoComponent::inputProps(),0 } );
+    addPropGroup( { tr( "Inputs" ), IoComponent::inputProps(), 0 } );
 
-    addPropGroup( { tr("Outputs")
-        , IoComponent::outputProps()
-        + IoComponent::outputType(),0 } );
+    addPropGroup( { tr( "Outputs" ), IoComponent::outputProps() + IoComponent::outputType(), 0 } );
 
-    addPropGroup( { tr("Timing"), IoComponent::edgeProps(),0 } );
+    addPropGroup( { tr( "Timing" ), IoComponent::edgeProps(), 0 } );
 }
 
-MagnitudeComp::~MagnitudeComp(){}
+MagnitudeComp::~MagnitudeComp() { }
 
-void MagnitudeComp::stamp()
-{
+void MagnitudeComp::stamp() {
     IoComponent::initState();
     // Logic for 7485
     m_outPin[0]->setOutState( true );
     m_outPin[2]->setOutState( true );
 
-    for( IoPin* pin : m_inpPin ) pin->changeCallBack( this );
+    for ( IoPin* pin : m_inpPin )
+        pin->changeCallBack( this );
 }
 
 void MagnitudeComp::voltChanged() // Called when any pin node change volt
 {
     int iA = 0, A = 0, B = 0;
 
-    for( int i=0; i<3; ++i )
-        if( m_inpPin[i]->getInpState() ) iA |= 1<<i;
+    for ( int i = 0; i < 3; ++i )
+        if ( m_inpPin[i]->getInpState() )
+            iA |= 1 << i;
 
-    for( int i=0; i<m_bits; ++i )
-    {
-        if( m_inpPin[3+i]->getInpState()        ) A |= 1<<i;
-        if( m_inpPin[3+m_bits+i]->getInpState() ) B |= 1<<i;
+    for ( int i = 0; i < m_bits; ++i ) {
+        if ( m_inpPin[3 + i]->getInpState() )
+            A |= 1 << i;
+        if ( m_inpPin[3 + m_bits + i]->getInpState() )
+            B |= 1 << i;
     }
 
-    if     ( A > B ) m_nextOutVal = 0b001;
-    else if( A < B ) m_nextOutVal = 0b100;
-    else{
-        if     ( iA  & 0b010 ) iA = 0b010; // Logic for 7485
-        else if( iA == 0b101 ) iA = 0b000;
-        else if( iA == 0b000 ) iA = 0b101;
+    if ( A > B )
+        m_nextOutVal = 0b001;
+    else if ( A < B )
+        m_nextOutVal = 0b100;
+    else {
+        if ( iA & 0b010 )
+            iA = 0b010; // Logic for 7485
+        else if ( iA == 0b101 )
+            iA = 0b000;
+        else if ( iA == 0b000 )
+            iA = 0b101;
         m_nextOutVal = iA;
     }
     scheduleOutPuts( this );
 }
 
-void MagnitudeComp::setBits( int b )
-{
-    if( b < 1 ) b = 1;
+void MagnitudeComp::setBits( int b ) {
+    if ( b < 1 )
+        b = 1;
     m_bits = b;
 
-    setNumInps( 3+b*2, "I"); // Set a label to get Pin 1 full cell below edge
+    setNumInps( 3 + b * 2, "I" ); // Set a label to get Pin 1 full cell below edge
 
-    for( int i=0; i<b; ++i ){
-        m_inpPin[3+i]->setLabelText("A"+QString::number(i) );
-        m_inpPin[3+b+i]->setLabelText("B"+QString::number(i) );
+    for ( int i = 0; i < b; ++i ) {
+        m_inpPin[3 + i]->setLabelText( "A" + QString::number( i ) );
+        m_inpPin[3 + b + i]->setLabelText( "B" + QString::number( i ) );
     }
 }

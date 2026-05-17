@@ -12,48 +12,47 @@
 class Component;
 class QAction;
 
-class MemTable : public QWidget, private Ui::MemTable
-{
+class MemTable : public QWidget, private Ui::MemTable {
     Q_OBJECT
-    
-    public:
-        MemTable( QWidget* parent=0, int dataSize=256, int wordBytes=1 );
 
-        void updateTable( QVector<int>* data );
-        void setData( QVector<int>* data, int wordBytes=1 );
-        void setValue( int address, int val );
-        void setCellBytes( int bytes );
-        void setAddrSelected( int addr ,bool jump );
+public:
+    MemTable( QWidget* parent = 0, int dataSize = 256, int wordBytes = 1 );
 
-    signals:
-        void dataChanged( int address, int val );
+    void updateTable( QVector<int>* data );
+    void setData( QVector<int>* data, int wordBytes = 1 );
+    void setValue( int address, int val );
+    void setCellBytes( int bytes );
+    void setAddrSelected( int addr, bool jump );
 
-    public slots:
-        void on_table_itemChanged( QTableWidgetItem* item );
-        void on_table_cellClicked( int row, int col ) { cellClicked( row, col ); }
-        void on_table_itemEntered( QTableWidgetItem* item );
-        void on_context_menu_requested( const QPoint &pos );
-        void saveTable();
-        void loadTable();
+signals:
+    void dataChanged( int address, int val );
 
-    private:
-        void resizeTable( int dataSize );
-        void setCellValue( int address, int val );
-        void cellClicked( int row, int col );
-        QString valToHex( int val, int bytes );
-        QVector<int> toIntVector();
+public slots:
+    void on_table_itemChanged( QTableWidgetItem* item );
+    void on_table_cellClicked( int row, int col ) { cellClicked( row, col ); }
+    void on_table_itemEntered( QTableWidgetItem* item );
+    void on_context_menu_requested( const QPoint& pos );
+    void saveTable();
+    void loadTable();
 
-        int m_updtCount;
-        int m_dataSize;
-        int m_wordBytes;
-        int m_cellBytes;
-        int m_byteRatio; // m_wordBytes/m_cellBytes
-        int m_addrBytes;
+private:
+    void resizeTable( int dataSize );
+    void setCellValue( int address, int val );
+    void cellClicked( int row, int col );
+    QString valToHex( int val, int bytes );
+    QVector<int> toIntVector();
 
-        bool m_blocked;
+    int m_updtCount;
+    int m_dataSize;
+    int m_wordBytes;
+    int m_cellBytes;
+    int m_byteRatio; // m_wordBytes/m_cellBytes
+    int m_addrBytes;
 
-        bool m_canSaveLoad;
+    bool m_blocked;
 
-        QTableWidgetItem* m_hoverItem;
-        QVector<int>* m_data;
+    bool m_canSaveLoad;
+
+    QTableWidgetItem* m_hoverItem;
+    QVector<int>* m_data;
 };

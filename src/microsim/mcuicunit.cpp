@@ -4,31 +4,27 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "mcuicunit.h"
-#include "mcutimer.h"
+#include "e_mcu.h"
 #include "mcuinterrupts.h"
 #include "mcupin.h"
-#include "e_mcu.h"
+#include "mcutimer.h"
 
-McuIcUnit::McuIcUnit( eMcu* mcu, QString name )
-         : McuModule( mcu, name )
-         , eElement( mcu->getId()+"-"+name )
-{
-    m_timer  = nullptr;
-    m_icPin  = nullptr;
+McuIcUnit::McuIcUnit( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) {
+    m_timer = nullptr;
+    m_icPin = nullptr;
     m_icRegL = nullptr;
     m_icRegH = nullptr;
 }
-McuIcUnit::~McuIcUnit( ){}
+McuIcUnit::~McuIcUnit() { }
 
-void McuIcUnit::initialize()
-{
+void McuIcUnit::initialize() {
     m_prescaler = 1;
-    if( m_icPin ) m_icPin->changeCallBack( this, false );
+    if ( m_icPin )
+        m_icPin->changeCallBack( this, false );
     clear();
 }
 
-void McuIcUnit::clear()
-{
+void McuIcUnit::clear() {
     m_counter = 0;
     m_enabled = false;
     m_inState = false;
@@ -40,25 +36,28 @@ void McuIcUnit::voltChanged() // Pin change
 {
     bool inState = m_icPin->getInpState();
 
-    if( m_inState == inState ) return;  // No Edge
+    if ( m_inState == inState )
+        return; // No Edge
     m_inState = inState;
-    if( inState == m_fallingEdge ) return; // Wrong Edge
+    if ( inState == m_fallingEdge )
+        return; // Wrong Edge
 
     m_counter++;
-    if( m_counter < m_prescaler ) return;
+    if ( m_counter < m_prescaler )
+        return;
     m_counter = 0;
 
-    if( m_icRegL )
-    {
+    if ( m_icRegL ) {
         uint16_t count = m_timer->getCount();
         *m_icRegL = count & 0xFF;
-        if( m_icRegH ) *m_icRegH = (count >> 8) & 0xFF;
+        if ( m_icRegH )
+            *m_icRegH = ( count >> 8 ) & 0xFF;
     }
     m_interrupt->raise();
 }
 
-void McuIcUnit::enable( bool en )
-{
+void McuIcUnit::enable( bool en ) {
     m_enabled = en;
-    if( m_icPin ) m_icPin->changeCallBack( this, en );
+    if ( m_icPin )
+        m_icPin->changeCallBack( this, en );
 }

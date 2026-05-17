@@ -4,23 +4,21 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "avrinterrupt.h"
-#include "e_mcu.h"
 #include "datautils.h"
+#include "e_mcu.h"
 
 Interrupt* AVRInterrupt::getInterrupt( QString name, uint16_t vector, eMcu* mcu ) // Static
 {
     return new AVRInterrupt( name, vector, mcu );
 }
 
-AVRInterrupt::AVRInterrupt( QString name, uint16_t vector, eMcu* mcu )
-            : Interrupt( name, vector, mcu )
-{
+AVRInterrupt::AVRInterrupt( QString name, uint16_t vector, eMcu* mcu ) : Interrupt( name, vector, mcu ) {
     //m_I = getRegBits( "I", mcu );
 
     //m_autoClear = true;
     //m_remember  = true;
 }
-AVRInterrupt::~AVRInterrupt(){}
+AVRInterrupt::~AVRInterrupt() { }
 
 /*void AVRInterrupt::execute()
 {
@@ -35,4 +33,3 @@ void AVRInterrupt::exitInt() // Exit from this interrupt
     m_interrupts->enableGlobal( 2 );  // Enable interrupts (execute next cycle)
     Interrupt::exitInt();
 }*/
-

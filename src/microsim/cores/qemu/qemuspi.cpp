@@ -5,18 +5,14 @@
 
 #include <QDebug>
 
-#include "qemuspi.h"
-#include "qemudevice.h"
 #include "iopin.h"
+#include "qemudevice.h"
+#include "qemuspi.h"
 #include "simulator.h"
 
 QemuSpi::QemuSpi( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
-       : QemuModule( mcu, name, n, clk, memStart, memEnd )
-       , SpiModule( name )
-{
-
-}
-QemuSpi::~QemuSpi(){}
+    : QemuModule( mcu, name, n, clk, memStart, memEnd ), SpiModule( name ) { }
+QemuSpi::~QemuSpi() { }
 
 //void QemuSpi::doAction()
 //{

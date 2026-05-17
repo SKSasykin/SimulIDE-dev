@@ -8,12 +8,11 @@
 #include "cpu8bits.h"
 #include "e-element.h"
 
-class Mcs65Interface : public Cpu8bits, public eElement
-{
-    public:
-        Mcs65Interface( eMcu* mcu );
-        ~Mcs65Interface();
+class Mcs65Interface : public Cpu8bits, public eElement {
+public:
+    Mcs65Interface( eMcu* mcu );
+    ~Mcs65Interface();
 
-    protected:
-        QString getStrInst( uint8_t IR );
+protected:
+    QString getStrInst( uint8_t IR );
 };

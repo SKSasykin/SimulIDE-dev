@@ -12,38 +12,37 @@ class QVBoxLayout;
 class CustomDial;
 class CustomSlider;
 
-class DialWidget : public QWidget
-{
+class DialWidget : public QWidget {
     Q_OBJECT
-    
-    public:
-        DialWidget( QWidget* parent=nullptr );
-        ~DialWidget();
 
-        double scale() { return m_scale; }
-        void setScale( double s );
+public:
+    DialWidget( QWidget* parent = nullptr );
+    ~DialWidget();
 
-        void setSize( int size );
+    double scale() { return m_scale; }
+    void setScale( double s );
 
-        void setType( int type );
+    void setSize( int size );
 
-        void setValue( int v );
-        int value();
+    void setType( int type );
 
-        void setSingleStep( int s );
-        void setMaximum( int m );
+    void setValue( int v );
+    int value();
 
-        QAbstractSlider* dial() { return m_dial; }
+    void setSingleStep( int s );
+    void setMaximum( int m );
 
-    protected:
-        virtual void paintEvent( QPaintEvent* e ) override;
+    QAbstractSlider* dial() { return m_dial; }
 
-        int m_size;
-        double m_scale;
+protected:
+    virtual void paintEvent( QPaintEvent* e ) override;
 
-        QVBoxLayout* m_verticalLayout;
+    int m_size;
+    double m_scale;
 
-        QAbstractSlider* m_dial;
-        CustomDial*      m_knob;
-        CustomSlider*    m_slider;
+    QVBoxLayout* m_verticalLayout;
+
+    QAbstractSlider* m_dial;
+    CustomDial* m_knob;
+    CustomSlider* m_slider;
 };

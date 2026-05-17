@@ -7,30 +7,29 @@
 
 #include "mcueeprom.h"
 
-class PicEeprom : public McuEeprom
-{
-        friend class McuCreator;
+class PicEeprom : public McuEeprom {
+    friend class McuCreator;
 
-    public:
-        PicEeprom( eMcu* mcu, QString name );
-        ~PicEeprom();
+public:
+    PicEeprom( eMcu* mcu, QString name );
+    ~PicEeprom();
 
-        virtual void setup() override;
-        virtual void initialize() override;
-        virtual void runEvent() override;
+    virtual void setup() override;
+    virtual void initialize() override;
+    virtual void runEvent() override;
 
-        virtual void configureA( uint8_t newEECON1 ) override;
-        virtual void configureB( uint8_t newEECON2 ) override;
+    virtual void configureA( uint8_t newEECON1 ) override;
+    virtual void configureB( uint8_t newEECON2 ) override;
 
-    private:
-        uint64_t m_nextCycle;
-        bool m_writeEnable;
+private:
+    uint64_t m_nextCycle;
+    bool m_writeEnable;
 
-        uint8_t m_wrMask;
+    uint8_t m_wrMask;
 
-        regBits_t m_EEPGD;
-        regBits_t m_WRERR;
-        regBits_t m_WREN;
-        regBits_t m_WR;
-        regBits_t m_RD;
+    regBits_t m_EEPGD;
+    regBits_t m_WRERR;
+    regBits_t m_WREN;
+    regBits_t m_WR;
+    regBits_t m_RD;
 };

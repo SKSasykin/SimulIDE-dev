@@ -44,7 +44,6 @@
 
 #ifndef QT_NO_TEXTODFWRITER
 
-
 #include <QtCore/qfile.h>
 #include <QtCore/qstring.h>
 
@@ -52,55 +51,47 @@ QT_BEGIN_NAMESPACE
 
 class qZipReaderPrivate;
 
-class Q_AUTOTEST_EXPORT qZipReader
-{
-    public:
-        qZipReader( const QString &fileName, QIODevice::OpenMode mode = QIODevice::ReadOnly );
+class Q_AUTOTEST_EXPORT qZipReader {
+public:
+    qZipReader( const QString& fileName, QIODevice::OpenMode mode = QIODevice::ReadOnly );
 
-        explicit qZipReader(QIODevice *device);
-        ~qZipReader();
+    explicit qZipReader( QIODevice* device );
+    ~qZipReader();
 
-        bool isReadable() const;
-        bool exists() const;
+    bool isReadable() const;
+    bool exists() const;
 
-        struct Q_AUTOTEST_EXPORT FileInfo
-        {
-            FileInfo();
-            FileInfo(const FileInfo &other);
-            ~FileInfo();
-            FileInfo &operator=(const FileInfo &other);
-            QString filePath;
-            uint isDir : 1;
-            uint isFile : 1;
-            uint isSymLink : 1;
-            QFile::Permissions permissions;
-            uint crc32;
-            qint64 size;
-            void *d;
-        };
+    struct Q_AUTOTEST_EXPORT FileInfo {
+        FileInfo();
+        FileInfo( const FileInfo& other );
+        ~FileInfo();
+        FileInfo& operator=( const FileInfo& other );
+        QString filePath;
+        uint isDir : 1;
+        uint isFile : 1;
+        uint isSymLink : 1;
+        QFile::Permissions permissions;
+        uint crc32;
+        qint64 size;
+        void* d;
+    };
 
-        QList<FileInfo> fileInfoList() const;
-        int count() const;
+    QList<FileInfo> fileInfoList() const;
+    int count() const;
 
-        FileInfo entryInfoAt(int index) const;
-        QByteArray fileData(const QString &fileName) const;
-        bool extractAll(const QString &destinationDir) const;
+    FileInfo entryInfoAt( int index ) const;
+    QByteArray fileData( const QString& fileName ) const;
+    bool extractAll( const QString& destinationDir ) const;
 
-        enum Status {
-            NoError,
-            FileReadError,
-            FileOpenError,
-            FilePermissionsError,
-            FileError
-        };
+    enum Status { NoError, FileReadError, FileOpenError, FilePermissionsError, FileError };
 
-        Status status() const;
+    Status status() const;
 
-        void close();
+    void close();
 
-    private:
-        qZipReaderPrivate *d;
-        Q_DISABLE_COPY(qZipReader)
+private:
+    qZipReaderPrivate* d;
+    Q_DISABLE_COPY( qZipReader )
 };
 
 QT_END_NAMESPACE

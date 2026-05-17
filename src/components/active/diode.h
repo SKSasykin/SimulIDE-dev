@@ -10,31 +10,30 @@
 
 class LibraryItem;
 
-class Diode : public LinkerComponent, public eDiode
-{
-    public:
-        Diode( QString type, QString id, bool zener=false );
-        ~Diode();
+class Diode : public LinkerComponent, public eDiode {
+public:
+    Diode( QString type, QString id, bool zener = false );
+    ~Diode();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void voltChanged() override;
+    void voltChanged() override;
 
-        bool propNotFound( QString prop, QString val ) override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        void initialize() override;
-        void stamp() override;
-        void updateStep() override;
+    void initialize() override;
+    void stamp() override;
+    void updateStep() override;
 
-        double resistance() override{ return m_resistor->resistance(); }
-        void setResSafe( double resist ) override { m_resistor->setResSafe(resist);}
+    double resistance() override { return m_resistor->resistance(); }
+    void setResSafe( double resist ) override { m_resistor->setResSafe( resist ); }
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget ) override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget ) override;
 
-    private:
-        bool m_isZener;
+private:
+    bool m_isZener;
 
-        eNode* m_midEnode;
-        eResistor* m_resistor;
+    eNode* m_midEnode;
+    eResistor* m_resistor;
 };

@@ -7,20 +7,19 @@
 
 #include "usartmodule.h"
 
-class UartTx : public UartTR
-{
-    public:
-        UartTx( UsartModule* usart, eMcu* mcu, QString name );
-        ~UartTx();
+class UartTx : public UartTR {
+public:
+    UartTx( UsartModule* usart, eMcu* mcu, QString name );
+    ~UartTx();
 
-        virtual void enable( uint8_t en ) override;
-        virtual void runEvent() override;
+    virtual void enable( uint8_t en ) override;
+    virtual void runEvent() override;
 
-        void processData( uint8_t data );
-        void startTransmission();
+    void processData( uint8_t data );
+    void startTransmission();
 
-        uint64_t getFrameTime() { return m_framesize*m_period; }
+    uint64_t getFrameTime() { return m_framesize * m_period; }
 
-    protected:
-        void sendBit();
+protected:
+    void sendBit();
 };

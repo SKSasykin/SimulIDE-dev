@@ -4,25 +4,20 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "mcuspi.h"
-#include "iopin.h"
 #include "e_mcu.h"
+#include "iopin.h"
 
-McuSpi::McuSpi( eMcu* mcu, QString name )
-      : McuPrescaled( mcu, name )
-      , SpiModule( mcu->getId()+"-"+name )
-{
+McuSpi::McuSpi( eMcu* mcu, QString name ) : McuPrescaled( mcu, name ), SpiModule( mcu->getId() + "-" + name ) {
     m_dataReg = nullptr;
     m_statReg = nullptr;
 }
 
-McuSpi::~McuSpi()
-{
-}
+McuSpi::~McuSpi() { }
 
-void McuSpi::initialize()
-{
+void McuSpi::initialize() {
     SpiModule::initialize();
-    if( m_statReg ) *m_statReg = 0;
+    if ( m_statReg )
+        *m_statReg = 0;
 }
 
 /*void McuSpi::setMode( spiMode_t mode )

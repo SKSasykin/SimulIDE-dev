@@ -6,16 +6,12 @@
 #include "mcuvref.h"
 #include "e_mcu.h"
 
-McuVref::McuVref( eMcu* mcu, QString name )
-       : McuModule( mcu, name )
-       , eElement( mcu->getId()+"-"+name )
-{
+McuVref::McuVref( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) {
     m_pinOut = nullptr;
 }
-McuVref::~McuVref(){}
+McuVref::~McuVref() { }
 
-void McuVref::initialize()
-{
+void McuVref::initialize() {
     m_enabled = false;
     m_mode = 0;
     m_vref = 0;
@@ -29,7 +25,9 @@ void McuVref::initialize()
 
 void McuVref::addCallBack( McuModule* mod, bool call ) // Add Modules to be called at Interrupt raise
 {
-    if( call )
-    { if( !m_callBacks.contains( mod ) ) m_callBacks.append( mod ); }
-    else m_callBacks.removeAll( mod );
+    if ( call ) {
+        if ( !m_callBacks.contains( mod ) )
+            m_callBacks.append( mod );
+    } else
+        m_callBacks.removeAll( mod );
 }

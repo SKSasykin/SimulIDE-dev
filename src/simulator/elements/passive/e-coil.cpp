@@ -3,23 +3,20 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-#include "simulator.h"
 #include "e-coil.h"
 #include "e-node.h"
 #include "e-pin.h"
+#include "simulator.h"
 
 #include <math.h>
 
 eCoil::eCoil( int i, int s, int t, double h, double r, QString id )
-     : eResistor( id )
-     , m_resistor0( id+"resistor0")
-     , m_resistor1( id+"resistor1")
-{
+    : eResistor( id ), m_resistor0( id + "resistor0" ), m_resistor1( id + "resistor1" ) {
     index = i;
-    sign  = s;
+    sign = s;
     size = t;
     relation = r;
-    inductance = h*r*r; // H
+    inductance = h * r * r; // H
 
     setNumEpins( 2 );
     m_resistor0.setNumEpins( 2 );
@@ -28,22 +25,20 @@ eCoil::eCoil( int i, int s, int t, double h, double r, QString id )
     m_resistor0.setAdmit( 1000 );
     m_resistor1.setAdmit( 1000 );
 }
-eCoil::~eCoil(){}
+eCoil::~eCoil() { }
 
-void eCoil::initialize()
-{
-    m_enode0 = new eNode( m_elmId+"enode0");
-    m_enode1 = new eNode( m_elmId+"enode1");
+void eCoil::initialize() {
+    m_enode0 = new eNode( m_elmId + "enode0" );
+    m_enode1 = new eNode( m_elmId + "enode1" );
 }
 
-void eCoil::stamp(){}
-void eCoil::stampCoil()
-{
+void eCoil::stamp() { }
+void eCoil::stampCoil() {
     m_ePin[0]->setEnode( m_enode0 );
-    m_resistor0.getEpin(1)->setEnode( m_enode0 );
+    m_resistor0.getEpin( 1 )->setEnode( m_enode0 );
 
     m_ePin[1]->setEnode( m_enode1 );
-    m_resistor1.getEpin(1)->setEnode( m_enode1 );
+    m_resistor1.getEpin( 1 )->setEnode( m_enode1 );
 
     m_ePin[0]->createCurrent();
     m_ePin[1]->createCurrent();
@@ -52,35 +47,33 @@ void eCoil::stampCoil()
     eResistor::stamp();
 }
 
-void eCoil::setEnode( int n, eNode* e )
-{
-    if( n == 0 ) m_resistor0.getEpin(0)->setEnode( e );
-    else         m_resistor1.getEpin(0)->setEnode( e );
+void eCoil::setEnode( int n, eNode* e ) {
+    if ( n == 0 )
+        m_resistor0.getEpin( 0 )->setEnode( e );
+    else
+        m_resistor1.getEpin( 0 )->setEnode( e );
 }
 
-double eCoil::getVolt()
-{
+double eCoil::getVolt() {
     double volt = m_ePin[0]->getVoltage() - m_ePin[1]->getVoltage();
     return volt;
 }
 
-void eCoil::stampCurrent( double current )
-{
+void eCoil::stampCurrent( double current ) {
     m_currSource += current;
 
-    m_ePin[0]->stampCurrent(-m_currSource );
+    m_ePin[0]->stampCurrent( -m_currSource );
     m_ePin[1]->stampCurrent( m_currSource );
 }
 
-void eCoil::addIductor( eCoil* coil, double g )
-{
+void eCoil::addIductor( eCoil* coil, double g ) {
     eNode* n0 = coil->getEpin( 0 )->getEnode();
     eNode* n1 = coil->getEpin( 1 )->getEnode();
 
-    m_ePin[0]->addSingAdm( n0,-g );
+    m_ePin[0]->addSingAdm( n0, -g );
     m_ePin[0]->addSingAdm( n1, g );
     m_ePin[1]->addSingAdm( n0, g );
-    m_ePin[1]->addSingAdm( n1,-g );
+    m_ePin[1]->addSingAdm( n1, -g );
 }
 // Coil structure: (VVVV = resistor)
 //

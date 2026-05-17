@@ -5,21 +5,20 @@
 
 #pragma once
 
-#include "gate.h"
 #include "component.h"
+#include "gate.h"
 
 class LibraryItem;
 
-class OrGate : public Gate
-{
-    public:
-        OrGate( QString type, QString id );
-        ~OrGate();
+class OrGate : public Gate {
+public:
+    OrGate( QString type, QString id );
+    ~OrGate();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-    protected:
-        bool calcOutput( int inputs ) override;
-        void updatePath() override;
+protected:
+    bool calcOutput( int inputs ) override;
+    void updatePath() override;
 };

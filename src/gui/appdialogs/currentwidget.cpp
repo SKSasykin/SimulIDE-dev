@@ -11,15 +11,13 @@
 
 CurrentWidget* CurrentWidget::m_pSelf = nullptr;
 
-CurrentWidget::CurrentWidget( QWidget* parent )
-             : QWidget( parent )
-{
+CurrentWidget::CurrentWidget( QWidget* parent ) : QWidget( parent ) {
     setupUi( this );
     m_pSelf = this;
 
-    QFont font( MainWindow::self()->defaultFontName() , 10, QFont::Bold );
+    QFont font( MainWindow::self()->defaultFontName(), 10, QFont::Bold );
     double fontScale = MainWindow::self()->fontScale();
-    font.setPixelSize( 12*fontScale );
+    font.setPixelSize( 12 * fontScale );
 
     currSpeedLabel->setFont( font );
 
@@ -37,8 +35,7 @@ CurrentWidget::CurrentWidget( QWidget* parent )
     currSpeedSlider->setVisible( c );
 }*/
 
-void CurrentWidget::on_currSpeedSlider_valueChanged( int speed )
-{
-    m_currentSpeed = pow( (double)speed/150, 4.5 );
+void CurrentWidget::on_currSpeedSlider_valueChanged( int speed ) {
+    m_currentSpeed = pow( (double) speed / 150, 4.5 );
     //qDebug() << m_CurrentWidget;
 }

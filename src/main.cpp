@@ -4,77 +4,78 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QApplication>
-#include <QTranslator>
 #include <QStandardPaths>
+#include <QTranslator>
 #include <QtGui>
 
-#include "mainwindow.h"
+#include "batchtest.h"
 #include "circuitwidget.h"
 #include "editorwindow.h"
-#include "batchtest.h"
+#include "mainwindow.h"
 
-void myMessageOutput( QtMsgType type, const QMessageLogContext &context, const QString &msg )
-{
+void myMessageOutput( QtMsgType type, const QMessageLogContext& context, const QString& msg ) {
     QByteArray localMsg = msg.toLocal8Bit();
-    const char* file     = context.file ? context.file : "";
+    const char* file = context.file ? context.file : "";
     const char* function = context.function ? context.function : "";
-    switch (type) {
+    switch ( type ) {
     case QtDebugMsg:
-        if( CircuitWidget::self() ) CircuitWidget::self()->simDebugMessage( msg );
+        if ( CircuitWidget::self() )
+            CircuitWidget::self()->simDebugMessage( msg );
         fprintf( stderr, "%s \n", localMsg.constData() );
         break;
     case QtInfoMsg:
-        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        fprintf( stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function );
         break;
     case QtWarningMsg:
-        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        fprintf( stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function );
         break;
     case QtCriticalMsg:
-        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        fprintf( stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function );
         break;
     case QtFatalMsg:
-        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+        fprintf( stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function );
         break;
     }
 }
 
-QString langFile( QString locale )
-{
-    QString langF = ":/simulide_"+locale+".qm";
+QString langFile( QString locale ) {
+    QString langF = ":/simulide_" + locale + ".qm";
 
-    if( !QFile::exists( langF ) ) langF = "";
+    if ( !QFile::exists( langF ) )
+        langF = "";
 
     return langF;
 }
 
-int main( int argc, char *argv[] )
-{
+int main( int argc, char* argv[] ) {
     qInstallMessageHandler( myMessageOutput );
 
 #ifdef _WIN32
-    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
+    if ( AttachConsole( ATTACH_PARENT_PROCESS ) ) {
+        freopen( "CONOUT$", "w", stdout );
+        freopen( "CONOUT$", "w", stderr );
     }
 #endif
 
     QApplication app( argc, argv );
 
-    QSettings settings( QStandardPaths::standardLocations( QStandardPaths::AppDataLocation).first()+"/simulide.ini",  QSettings::IniFormat, 0l );
+    QSettings settings( QStandardPaths::standardLocations( QStandardPaths::AppDataLocation ).first() + "/simulide.ini",
+                        QSettings::IniFormat, 0l );
 
     QString locale = QLocale::system().name();
-    if( settings.contains( "language" ) ) locale = settings.value( "language" ).toString();
+    if ( settings.contains( "language" ) )
+        locale = settings.value( "language" ).toString();
 
     QString langF = langFile( locale );
-    if( langF == "" )
-    {
-        locale = QLocale::system().name().split("_").first();
+    if ( langF == "" ) {
+        locale = QLocale::system().name().split( "_" ).first();
         langF = langFile( locale );
     }
-    if( langF == "" ) langF = ":/simulide_en.qm";
+    if ( langF == "" )
+        langF = ":/simulide_en.qm";
 
     QTranslator translator;
-    if( translator.load( langF ) )
+    if ( translator.load( langF ) )
         app.installTranslator( &translator );
 
     app.setApplicationVersion( APP_VERSION );
@@ -83,43 +84,38 @@ int main( int argc, char *argv[] )
     window.setLoc( locale );
     window.show();
 
-    for( int i=1; i<argc; ++i )
-    {
+    for ( int i = 1; i < argc; ++i ) {
         QString arg = QString::fromStdString( argv[i] );
 
-        if( arg == "-nogui")
-        {
+        if ( arg == "-nogui" ) {
             window.hideGui();
-        }
-        else if( arg == "-test" )
-        {
+        } else if ( arg == "-test" ) {
             i++;
-            if( i >= argc ){
-                qDebug() <<"ERROR: missing argument for"<< arg;
+            if ( i >= argc ) {
+                qDebug() << "ERROR: missing argument for" << arg;
                 break;
             }
             arg = QString::fromStdString( argv[i] );
-            QTimer::singleShot( 500, [arg](){ BatchTest::doBatchTest( arg ); } );
+            QTimer::singleShot( 500, [arg]() { BatchTest::doBatchTest( arg ); } );
             break;
-        }
-        else{
+        } else {
             QString file = "file://";
-            if( arg.startsWith( file ) ) arg.replace( file, "" ).replace("\r\n", "" ).replace("%20", " ");
+            if ( arg.startsWith( file ) )
+                arg.replace( file, "" ).replace( "\r\n", "" ).replace( "%20", " " );
 #ifdef _WIN32
-            if( arg.startsWith( "/" )) arg.remove( 0, 1 );
+            if ( arg.startsWith( "/" ) )
+                arg.remove( 0, 1 );
 #endif
-            if( !QFile::exists( arg ) ){
-                qDebug() <<"ERROR: unrecognized argument"<< arg;
+            if ( !QFile::exists( arg ) ) {
+                qDebug() << "ERROR: unrecognized argument" << arg;
                 break;
             }
-            if( arg.endsWith(".sim2") || arg.endsWith(".sim1"))
-            {
-                QTimer::singleShot( 500, CircuitWidget::self()
-                                  , [arg]()->void{ CircuitWidget::self()->loadCirc( arg ); } );
-            }
-            else{
-                QTimer::singleShot( 500, CircuitWidget::self()
-                                   , [arg]()->void{ EditorWindow::self()->loadFile( arg ); } );
+            if ( arg.endsWith( ".sim2" ) || arg.endsWith( ".sim1" ) ) {
+                QTimer::singleShot( 500, CircuitWidget::self(),
+                                    [arg]() -> void { CircuitWidget::self()->loadCirc( arg ); } );
+            } else {
+                QTimer::singleShot( 500, CircuitWidget::self(),
+                                    [arg]() -> void { EditorWindow::self()->loadFile( arg ); } );
             }
             break;
         }
@@ -127,4 +123,3 @@ int main( int argc, char *argv[] )
 
     return app.exec();
 }
-

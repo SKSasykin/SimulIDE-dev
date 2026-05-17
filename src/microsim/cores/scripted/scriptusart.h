@@ -5,29 +5,28 @@
 
 #pragma once
 
-#include "scriptperif.h"
 #include "mcuuart.h"
+#include "scriptperif.h"
 
 class ScriptCpu;
 
 class asIScriptFunction;
 
-class ScriptUsart : public McuUsart, public ScriptPerif
-{
-    public:
-        ScriptUsart( eMcu* mcu, QString name, int number );
-        ~ScriptUsart();
+class ScriptUsart : public McuUsart, public ScriptPerif {
+public:
+    ScriptUsart( eMcu* mcu, QString name, int number );
+    ~ScriptUsart();
 
-        void reset() override;
-        void byteReceived( uint8_t data ) override;
-        void frameSent( uint8_t data ) override;
+    void reset() override;
+    void byteReceived( uint8_t data ) override;
+    void frameSent( uint8_t data ) override;
 
-        QStringList registerScript( ScriptCpu* cpu ) override;
-        void startScript() override;
+    QStringList registerScript( ScriptCpu* cpu ) override;
+    void startScript() override;
 
-    private:
-        //QString m_uartName;
+private:
+    //QString m_uartName;
 
-        asIScriptFunction* m_byteReceived;
-        asIScriptFunction* m_frameSent;
+    asIScriptFunction* m_byteReceived;
+    asIScriptFunction* m_frameSent;
 };

@@ -5,51 +5,48 @@
 
 #pragma once
 
-#include <QPlainTextEdit>
-#include <QSyntaxHighlighter>
-#include <QRegularExpression>
 #include <QObject>
+#include <QPlainTextEdit>
+#include <QRegularExpression>
+#include <QSyntaxHighlighter>
 
 #include "updatable.h"
 
 class OutHighlighter;
 
-class OutPanelText : public QPlainTextEdit, public Updatable
-{
+class OutPanelText : public QPlainTextEdit, public Updatable {
     Q_OBJECT
-    public:
-        OutPanelText( QWidget* parent=0 );
-        ~OutPanelText();
+public:
+    OutPanelText( QWidget* parent = 0 );
+    ~OutPanelText();
 
-        void updateStep() override;
+    void updateStep() override;
 
-        void appendText( const QString text ) { m_textBuffer.append( text ); }
-        void appendLine( const QString text );
+    void appendText( const QString text ) { m_textBuffer.append( text ); }
+    void appendLine( const QString text );
 
-    private:
-        QString m_textBuffer;
- 
-        OutHighlighter* m_highlighter;
+private:
+    QString m_textBuffer;
+
+    OutHighlighter* m_highlighter;
 };
 
 // CLASS OutHighlighter ****************************************
 
-class OutHighlighter : public QSyntaxHighlighter
-{
+class OutHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
 
-    public:
-        OutHighlighter( QTextDocument* parent = 0 );
-        ~OutHighlighter();
+public:
+    OutHighlighter( QTextDocument* parent = 0 );
+    ~OutHighlighter();
 
-    protected:
-        void highlightBlock( const QString &text );
+protected:
+    void highlightBlock( const QString& text );
 
-    private:
-        struct HighlightingRule
-        {
-            QRegularExpression pattern;
-            QTextCharFormat format;
-        };
-        QVector<HighlightingRule> highlightingRules;
+private:
+    struct HighlightingRule {
+        QRegularExpression pattern;
+        QTextCharFormat format;
+    };
+    QVector<HighlightingRule> highlightingRules;
 };

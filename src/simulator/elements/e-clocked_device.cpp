@@ -4,27 +4,24 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "e-clocked_device.h"
-#include "circuitwidget.h"
-#include "simulator.h"
 #include "circuit.h"
+#include "circuitwidget.h"
 #include "iopin.h"
+#include "simulator.h"
 
-eClockedDevice::eClockedDevice( QString id )
-              : eElement( id )
-{
-    m_clock   = false;
-    m_clkPin  = nullptr;
+eClockedDevice::eClockedDevice( QString id ) : eElement( id ) {
+    m_clock = false;
+    m_clkPin = nullptr;
     m_trigger = Clock;
 }
-eClockedDevice::~eClockedDevice(){}
+eClockedDevice::~eClockedDevice() { }
 
-void eClockedDevice::stamp()
-{
-    if( m_clkPin ){
+void eClockedDevice::stamp() {
+    if ( m_clkPin ) {
         m_clock = m_clkPin->inverted();
         m_clkPin->changeCallBack( this );
-    }
-    else m_clock = false;
+    } else
+        m_clock = false;
 }
 
 /*bool eClockedDevice::clockInv()
@@ -44,55 +41,53 @@ void eClockedDevice::setClockInv( bool inv )
     Simulator::self()->resumeSim();
 }*/
 
-void eClockedDevice::updateClock()
-{
-    if( !m_clkPin ) { m_clkState = Clock_Allow; return; }
+void eClockedDevice::updateClock() {
+    if ( !m_clkPin ) {
+        m_clkState = Clock_Allow;
+        return;
+    }
 
     m_clkState = Clock_Low;
 
     bool clock = m_clkPin->getInpState(); // Clock pin volt.
 
-    if( m_trigger == InEnable )
-    {
-        if( clock ) m_clkState = Clock_Allow;
-    }
-    else if( m_trigger == Clock )
-    {
-        if     (!m_clock &&  clock ) m_clkState = Clock_Rising;
-        else if( m_clock &&  clock ) m_clkState = Clock_High;
-        else if( m_clock && !clock ) m_clkState = Clock_Falling;
-    }
-    else m_clkState = Clock_Allow;
+    if ( m_trigger == InEnable ) {
+        if ( clock )
+            m_clkState = Clock_Allow;
+    } else if ( m_trigger == Clock ) {
+        if ( !m_clock && clock )
+            m_clkState = Clock_Rising;
+        else if ( m_clock && clock )
+            m_clkState = Clock_High;
+        else if ( m_clock && !clock )
+            m_clkState = Clock_Falling;
+    } else
+        m_clkState = Clock_Allow;
     m_clock = clock;
 }
 
-void eClockedDevice::setTrigger( trigger_t trigger )
-{
-    if( Simulator::self()->isRunning() ) CircuitWidget::self()->powerCircOff();
+void eClockedDevice::setTrigger( trigger_t trigger ) {
+    if ( Simulator::self()->isRunning() )
+        CircuitWidget::self()->powerCircOff();
 
     m_trigger = trigger;
     m_clock = false;
 
-    if( m_trigger == None )
-    {
+    if ( m_trigger == None ) {
         m_clkPin->removeConnector();
         m_clkPin->setLabelText( "" );
         m_clkPin->setVisible( false );
-    }
-    else if( m_trigger == Clock )
-    {
+    } else if ( m_trigger == Clock ) {
         m_clkPin->setLabelText( ">" );
         m_clkPin->setVisible( true );
-    }
-    else if( m_trigger == InEnable )
-    {
+    } else if ( m_trigger == InEnable ) {
         m_clkPin->setLabelText( "IE" );
         m_clkPin->setVisible( true );
     }
     Circuit::self()->update();
 }
 
-void eClockedDevice::remove()
-{
-    if( m_clkPin) m_clkPin->removeConnector();
+void eClockedDevice::remove() {
+    if ( m_clkPin )
+        m_clkPin->removeConnector();
 }

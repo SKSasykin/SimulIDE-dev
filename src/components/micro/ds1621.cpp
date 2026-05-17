@@ -10,54 +10,41 @@
 
 #include <math.h>
 
-#include "ds1621.h"
-#include "itemlibrary.h"
-#include "dialed.h"
 #include "circuit.h"
+#include "dialed.h"
+#include "ds1621.h"
 #include "iopin.h"
+#include "itemlibrary.h"
 #include "simulator.h"
 #include "updobutton.h"
 
 #include "doubleprop.h"
 
-#define tr(str) simulideTr("DS1621",str)
+#define tr( str ) simulideTr( "DS1621", str )
 
-Component *DS1621::construct( QString type, QString id) {
-  return new DS1621( type, id );
+Component* DS1621::construct( QString type, QString id ) {
+    return new DS1621( type, id );
 }
 
-LibraryItem *DS1621::libraryItem()
-{
-    return new LibraryItem(
-        tr("DS1621"),
-        "Sensors",
-        "ic_comp.png",
-        "DS1621",
-        DS1621::construct);
+LibraryItem* DS1621::libraryItem() {
+    return new LibraryItem( tr( "DS1621" ), "Sensors", "ic_comp.png", "DS1621", DS1621::construct );
 }
 
 DS1621::DS1621( QString type, QString id )
-      : IoComponent( type, id )
-      , TwiModule( id )
-      , m_vdd(   0, QPoint( 24, -8 ), id+"-PinVdd", 0, this )
-      , m_gnd( 180, QPoint(-24, 16 ), id+"-PinGnd", 0, this )
-{
+    : IoComponent( type, id ), TwiModule( id ), m_vdd( 0, QPoint( 24, -8 ), id + "-PinVdd", 0, this ),
+      m_gnd( 180, QPoint( -24, 16 ), id + "-PinGnd", 0, this ) {
     m_graphical = true;
 
-    m_width  = 4;
+    m_width = 4;
     m_height = 5;
 
-    init({           // Inputs:
-      "IL01SDA", // type: Input, side: Left, pos: 01, label: "SDA"
-      "IL02SCL",
-      "IR02A0",
-      "IR03A1",
-      "IR04A2",
-      // Outputs:
-      "OL03Tou"
-     });
+    init( { // Inputs:
+            "IL01SDA", // type: Input, side: Left, pos: 01, label: "SDA"
+            "IL02SCL", "IR02A0", "IR03A1", "IR04A2",
+            // Outputs:
+            "OL03Tou" } );
 
-    m_area = QRect(-16,-20-4, m_width*8, m_height*8+8 );
+    m_area = QRect( -16, -20 - 4, m_width * 8, m_height * 8 + 8 );
 
     m_inpPin[0]->setPinMode( openCo );
     TwiModule::setSdaPin( m_inpPin[0] );
@@ -65,30 +52,32 @@ DS1621::DS1621( QString type, QString id )
     m_inpPin[1]->setPinMode( openCo );
     TwiModule::setSclPin( m_inpPin[1] );
 
-    for( IoPin* pin : m_inpPin ) pin->setLabelColor( QColor( 250, 250, 200 ) );
-    for( IoPin* pin : m_outPin ) pin->setLabelColor( QColor( 250, 250, 200 ) );
+    for ( IoPin* pin : m_inpPin )
+        pin->setLabelColor( QColor( 250, 250, 200 ) );
+    for ( IoPin* pin : m_outPin )
+        pin->setLabelColor( QColor( 250, 250, 200 ) );
 
     m_vdd.setLabelColor( QColor( 250, 250, 200 ) );
     m_gnd.setLabelColor( QColor( 250, 250, 200 ) );
-    m_vdd.setLabelText("Vdd");
-    m_gnd.setLabelText("Gnd");
+    m_vdd.setLabelText( "Vdd" );
+    m_gnd.setLabelText( "Gnd" );
     m_vdd.setUnused( true );
     m_gnd.setUnused( true );
 
     UpDoButton* u_button = new UpDoButton( true );
     QGraphicsProxyWidget* proxy = Circuit::self()->addWidget( u_button );
     proxy->setParentItem( this );
-    proxy->setPos( QPoint(-20,-27 ) );
+    proxy->setPos( QPoint( -20, -27 ) );
 
     UpDoButton* d_button = new UpDoButton( false );
     proxy = Circuit::self()->addWidget( d_button );
     proxy->setParentItem( this );
-    proxy->setPos( QPoint(-20,-22 ) );
+    proxy->setPos( QPoint( -20, -22 ) );
 
-    QObject::connect( u_button, &UpDoButton::pressed, [=](){ upbuttonclicked(); } );
-    QObject::connect( d_button, &UpDoButton::pressed, [=](){ downbuttonclicked(); } );
+    QObject::connect( u_button, &UpDoButton::pressed, [=]() { upbuttonclicked(); } );
+    QObject::connect( d_button, &UpDoButton::pressed, [=]() { downbuttonclicked(); } );
 
-    m_font.setFamily("Ubuntu Mono");
+    m_font.setFamily( "Ubuntu Mono" );
 #ifdef _WIN32
     m_font.setStretch( 99 );
 #else
@@ -97,7 +86,7 @@ DS1621::DS1621( QString type, QString id )
     m_font.setPixelSize( 9 );
     m_font.setBold( true );
     m_font.setLetterSpacing( QFont::PercentageSpacing, 100 );
-    setLabelPos(-24,-28 );
+    setLabelPos( -24, -28 );
 
     setTemp( 22.5 );
     setTempInc( 0.5 );
@@ -106,16 +95,18 @@ DS1621::DS1621( QString type, QString id )
     //IoComponent::initState();
     m_cCode = 0b01001000; // 0x98 >> 1  : I2C Addr
 
-    addPropGroup( { tr("Main"), {
-        new DoubProp<DS1621>("Temp", tr("Temperature"), "°C"
-                            , this, &DS1621::temp, &DS1621::setTemp ),
+    addPropGroup(
+        { tr( "Main" ),
+          {
+              new DoubProp<DS1621>( "Temp", tr( "Temperature" ), "°C", this, &DS1621::temp, &DS1621::setTemp ),
 
-        new DoubProp<DS1621>("TempInc", tr("Temp. increment"), "°C"
-                            , this, &DS1621::tempInc, &DS1621::setTempInc ),
-    },0} );
+              new DoubProp<DS1621>( "TempInc", tr( "Temp. increment" ), "°C", this, &DS1621::tempInc,
+                                    &DS1621::setTempInc ),
+          },
+          0 } );
 }
 
-DS1621::~DS1621() {}
+DS1621::~DS1621() { }
 
 void DS1621::stamp() // Called at Simulation Start
 {
@@ -127,90 +118,106 @@ void DS1621::stamp() // Called at Simulation Start
     m_config = 0;
     m_convert = false;
     m_oneShot = false;
-    m_outPol  = false;
+    m_outPol = false;
 
     m_Th = 0;
     m_Tl = 0;
 
     TwiModule::setMode( TWI_SLAVE );
 
-    for( int i=2; i<5; i++ ) m_inpPin[i]->changeCallBack( this );
+    for ( int i = 2; i < 5; i++ )
+        m_inpPin[i]->changeCallBack( this );
 }
 
 void DS1621::runEvent() // Conversion done 750  ms
 {
-    if( !m_convert ) return;
+    if ( !m_convert )
+        return;
 
-    m_config |= 1<<7; // Set DONE bit
+    m_config |= 1 << 7; // Set DONE bit
 
-    if( m_changed ) doConvert();
-    if( !m_oneShot ) Simulator::self()->addEvent( 750*1e9, this ); // Continuous
+    if ( m_changed )
+        doConvert();
+    if ( !m_oneShot )
+        Simulator::self()->addEvent( 750 * 1e9, this ); // Continuous
 }
 
-void DS1621::voltChanged()             // Some Pin Changed State, Manage it
+void DS1621::voltChanged() // Some Pin Changed State, Manage it
 {
     m_address = m_cCode;
-    if( m_inpPin[2]->getInpState() ) m_address += 1;
-    if( m_inpPin[3]->getInpState() ) m_address += 2;
-    if( m_inpPin[4]->getInpState() ) m_address += 4;
+    if ( m_inpPin[2]->getInpState() )
+        m_address += 1;
+    if ( m_inpPin[3]->getInpState() )
+        m_address += 2;
+    if ( m_inpPin[4]->getInpState() )
+        m_address += 4;
 
-    TwiModule::voltChanged();        // Run I2C Engine
+    TwiModule::voltChanged(); // Run I2C Engine
 }
 
 void DS1621::readByte() // read from I2C
 {
     bool convert = m_convert;
 
-    if( m_command == 0x00 )      // Master sending Command
+    if ( m_command == 0x00 ) // Master sending Command
     {
         m_writeByte = -1;
-        if     ( m_rxReg == 0x22 ) convert = false;
-        else if( m_rxReg == 0xEE ) convert = true;
-        else{
+        if ( m_rxReg == 0x22 )
+            convert = false;
+        else if ( m_rxReg == 0xEE )
+            convert = true;
+        else {
             m_command = m_rxReg;
-            if     ( m_command == 0xA1 ) m_writeByte = 1;  // Access TH
-            else if( m_command == 0xA2 ) m_writeByte = 1;  // Access TL
-            else if( m_command == 0xA8 ) m_writeByte = 0;  // Read Counter
-            else if( m_command == 0xA9 ) m_writeByte = 0;  // Read Slope
-            else if( m_command == 0xAA ) m_writeByte = 1;  // Read Temp
-            else if( m_command == 0xAC ) m_writeByte = 0;  // Access Config
+            if ( m_command == 0xA1 )
+                m_writeByte = 1; // Access TH
+            else if ( m_command == 0xA2 )
+                m_writeByte = 1; // Access TL
+            else if ( m_command == 0xA8 )
+                m_writeByte = 0; // Read Counter
+            else if ( m_command == 0xA9 )
+                m_writeByte = 0; // Read Slope
+            else if ( m_command == 0xAA )
+                m_writeByte = 1; // Read Temp
+            else if ( m_command == 0xAC )
+                m_writeByte = 0; // Access Config
         }
-        if( convert != m_convert ){
+        if ( convert != m_convert ) {
             m_convert = convert;
             Simulator::self()->cancelEvents( this );
 
-            if( convert ) // Start Conversion
+            if ( convert ) // Start Conversion
             {
-                m_config &= ~(1<<7); // Clear DONE bit
-                Simulator::self()->addEvent( 750*1e9, this ); // 750 ms
+                m_config &= ~( 1 << 7 ); // Clear DONE bit
+                Simulator::self()->addEvent( 750 * 1e9, this ); // 750 ms
             }
         }
-    }else{                         // Master writting Data
-        if( m_writeByte >= 0  ){
-            if     ( m_command == 0xA1 ) // Write TH
+    } else { // Master writting Data
+        if ( m_writeByte >= 0 ) {
+            if ( m_command == 0xA1 ) // Write TH
             {
-                m_ThReg[ m_writeByte ] = m_rxReg;
+                m_ThReg[m_writeByte] = m_rxReg;
                 m_Th = m_ThReg[1];
                 double thH = m_ThReg[0] ? 0.5 : 0.0;
-                if( m_Th < 0 ) thH = -thH;
+                if ( m_Th < 0 )
+                    thH = -thH;
                 m_Th += thH;
-            }
-            else if( m_command == 0xA2 ) // Write TL
+            } else if ( m_command == 0xA2 ) // Write TL
             {
-                m_TlReg[ m_writeByte ] = m_rxReg;
+                m_TlReg[m_writeByte] = m_rxReg;
                 m_Tl = m_TlReg[1];
                 double tlH = m_TlReg[0] ? 0.5 : 0.0;
-                if( m_Tl < 0 ) tlH = -tlH;
+                if ( m_Tl < 0 )
+                    tlH = -tlH;
                 m_Tl += tlH;
-            }
-            else if( m_command == 0xAC ) // Write Config
+            } else if ( m_command == 0xAC ) // Write Config
             {
                 m_config = m_rxReg;
                 m_oneShot = m_config & 1;
-                m_outPol  = m_config & 2;
+                m_outPol = m_config & 2;
             }
         }
-        if( --m_writeByte < 0 ) m_command = 0;
+        if ( --m_writeByte < 0 )
+            m_command = 0;
     }
     TwiModule::readByte();
 }
@@ -218,87 +225,92 @@ void DS1621::readByte() // read from I2C
 void DS1621::writeByte() // write to I2C
 {
     m_txReg = 0;
-    if( m_writeByte >= 0 ){
-        if     ( m_command == 0xA1 ) m_txReg = m_ThReg[ m_writeByte ]; // Read TH
-        else if( m_command == 0xA2 ) m_txReg = m_TlReg[ m_writeByte ]; // Read TL
-        else if( m_command == 0xA8 ) m_txReg = m_tempCount;            // Read Counter
-        else if( m_command == 0xA9 ) m_txReg = m_tempSlope;            // Read Slope
-        else if( m_command == 0xAA ) m_txReg = m_tempReg[m_writeByte]; // Read Temp
-        else if( m_command == 0xAC ) m_txReg = m_config;               // Read Config
+    if ( m_writeByte >= 0 ) {
+        if ( m_command == 0xA1 )
+            m_txReg = m_ThReg[m_writeByte]; // Read TH
+        else if ( m_command == 0xA2 )
+            m_txReg = m_TlReg[m_writeByte]; // Read TL
+        else if ( m_command == 0xA8 )
+            m_txReg = m_tempCount; // Read Counter
+        else if ( m_command == 0xA9 )
+            m_txReg = m_tempSlope; // Read Slope
+        else if ( m_command == 0xAA )
+            m_txReg = m_tempReg[m_writeByte]; // Read Temp
+        else if ( m_command == 0xAC )
+            m_txReg = m_config; // Read Config
     }
-    if( --m_writeByte < 0 ) m_command = 0;
+    if ( --m_writeByte < 0 )
+        m_command = 0;
 
     TwiModule::writeByte();
 }
 
-void DS1621::doConvert()
-{
+void DS1621::doConvert() {
     m_changed = false;
 
     float temp_abs = fabs( m_temp ); // make comptutations with absolute value
     m_tempReg[1] = temp_abs;
     float temp_frac = temp_abs - m_tempReg[1];
-    if( temp_frac >= 0.75) m_tempReg[1] += 1;
+    if ( temp_frac >= 0.75 )
+        m_tempReg[1] += 1;
 
     m_tempReg[0] = 0;
-    if( (temp_frac >= 0.25) && (temp_frac < 0.75)) m_tempReg[0] = 0x80;
+    if ( ( temp_frac >= 0.25 ) && ( temp_frac < 0.75 ) )
+        m_tempReg[0] = 0x80;
 
-    m_tempSlope = 16;          // compute high resolution
-    m_tempCount = m_tempSlope * (0.75 + m_tempReg[1] - temp_abs);
+    m_tempSlope = 16; // compute high resolution
+    m_tempCount = m_tempSlope * ( 0.75 + m_tempReg[1] - temp_abs );
 
-    if( m_temp < 0.0) m_tempReg[1] = -m_tempReg[1]; // take sign into account
+    if ( m_temp < 0.0 )
+        m_tempReg[1] = -m_tempReg[1]; // take sign into account
 
-    if( m_temp > m_Th ){
-        m_config |= 1<<6;  // Set THF bit
+    if ( m_temp > m_Th ) {
+        m_config |= 1 << 6; // Set THF bit
         m_outPin[0]->setOutState( m_outPol );
-    }
-    else if( m_temp < m_Tl ){
-        m_config |= 1<<5;  // Set TLF bit
+    } else if ( m_temp < m_Tl ) {
+        m_config |= 1 << 5; // Set TLF bit
         m_outPin[0]->setOutState( !m_outPol );
     }
 }
 
-void DS1621::upbuttonclicked()
-{
+void DS1621::upbuttonclicked() {
     setTemp( m_temp + m_tempInc );
 }
 
-void DS1621::downbuttonclicked()
-{
+void DS1621::downbuttonclicked() {
     setTemp( m_temp - m_tempInc );
 }
 
-void  DS1621::setTemp( double temp )
-{
+void DS1621::setTemp( double temp ) {
     m_temp = temp;
-    if( m_temp > 125 ) m_temp = 125;
-    if( m_temp < -55 ) m_temp = -55;
+    if ( m_temp > 125 )
+        m_temp = 125;
+    if ( m_temp < -55 )
+        m_temp = -55;
     m_changed = true;
     update();
 }
 
-void DS1621::setTempInc( double inc )
-{
+void DS1621::setTempInc( double inc ) {
     m_tempInc = trim( inc );
     update();
 }
 
-void DS1621::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
+void DS1621::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
     Component::paint( p, o, w );
 
     p->setBrush( QColor( 20, 30, 60 ) );
-    p->drawRoundedRect( QRect(-16,-16, m_width*8, m_height*8 ), 1, 1 );
+    p->drawRoundedRect( QRect( -16, -16, m_width * 8, m_height * 8 ), 1, 1 );
 
     p->setOpacity( .6 );
-    p->fillRect( QRectF(-14,-26, 32, 8 ), QColor( Qt::white ) );
+    p->fillRect( QRectF( -14, -26, 32, 8 ), QColor( Qt::white ) );
     p->setOpacity( 1 );
 
     p->setFont( m_font );
-    p->drawText( QRectF(-14,-26, 32, 8 ), Qt::AlignCenter, QString::number( m_temp, 'f', 1 )+"°C" );
+    p->drawText( QRectF( -14, -26, 32, 8 ), Qt::AlignCenter, QString::number( m_temp, 'f', 1 ) + "°C" );
 
     p->setPen( QColor( 170, 170, 150 ) );
-    p->drawArc(-4,-20, 8, 8, 0, -2880 /* -16*180 */ );
+    p->drawArc( -4, -20, 8, 8, 0, -2880 /* -16*180 */ );
 
     Component::paintSelected( p );
 }

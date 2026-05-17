@@ -11,28 +11,27 @@
 class LibraryItem;
 class IoPin;
 
-class Aip31068_i2c : public Hd44780_Base, public TwiModule
-{
-    public:
-        Aip31068_i2c( QString type, QString id );
-        ~Aip31068_i2c();
-        
-        static Component* construct( QString type, QString id );
-        static LibraryItem* libraryItem();
+class Aip31068_i2c : public Hd44780_Base, public TwiModule {
+public:
+    Aip31068_i2c( QString type, QString id );
+    ~Aip31068_i2c();
 
-        virtual void initialize() override;
-        virtual void stamp() override;
-        virtual void updateStep() override;
-        virtual void voltChanged() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        virtual void startWrite() override;
-        virtual void readByte() override;
+    virtual void initialize() override;
+    virtual void stamp() override;
+    virtual void updateStep() override;
+    virtual void voltChanged() override;
 
-        void showPins( bool show );
+    virtual void startWrite() override;
+    virtual void readByte() override;
 
-    private:
-        int m_controlByte;
-        int m_phase;
+    void showPins( bool show );
 
-        IoPin* m_pinSda;
+private:
+    int m_controlByte;
+    int m_phase;
+
+    IoPin* m_pinSda;
 };

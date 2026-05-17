@@ -23,40 +23,39 @@
 
 class QFileSystemModel;
 
-class FileBrowser : public QTreeView
-{
+class FileBrowser : public QTreeView {
     Q_OBJECT
 
-    public:
-        FileBrowser( QWidget *parent );
-        ~FileBrowser();
-        
- static FileBrowser* self() { return m_pSelf; }
- 
-        void setPath( QString path );
-        void searchFiles( QString filter );
-        
-    public slots:
-        void cdUp();
-        void open();
-        void openInEditor();
-        void openExternally();
-        void openParentDirExternally();
-        void addBookMark();
-        void showHidden();
-        
-    protected:
-        void contextMenuEvent( QContextMenuEvent* event );
+public:
+    FileBrowser( QWidget* parent );
+    ~FileBrowser();
 
-    private:
- static FileBrowser* m_pSelf;
- 
-        void mouseDoubleClickEvent( QMouseEvent* );
-        void keyPressEvent( QKeyEvent *event );
-        
-        QFileSystemModel* m_fileSystemModel;
-        
-        QString m_currentPath;
+    static FileBrowser* self() { return m_pSelf; }
 
-        bool m_showHidden;
+    void setPath( QString path );
+    void searchFiles( QString filter );
+
+public slots:
+    void cdUp();
+    void open();
+    void openInEditor();
+    void openExternally();
+    void openParentDirExternally();
+    void addBookMark();
+    void showHidden();
+
+protected:
+    void contextMenuEvent( QContextMenuEvent* event );
+
+private:
+    static FileBrowser* m_pSelf;
+
+    void mouseDoubleClickEvent( QMouseEvent* );
+    void keyPressEvent( QKeyEvent* event );
+
+    QFileSystemModel* m_fileSystemModel;
+
+    QString m_currentPath;
+
+    bool m_showHidden;
 };

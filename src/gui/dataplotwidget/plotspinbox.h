@@ -7,18 +7,17 @@
 
 #include <QDoubleSpinBox>
 
-class PlotSpinBox : public QDoubleSpinBox
-{
-    public:
-        PlotSpinBox( QWidget* parent );
-        ~PlotSpinBox();
+class PlotSpinBox : public QDoubleSpinBox {
+public:
+    PlotSpinBox( QWidget* parent );
+    ~PlotSpinBox();
 
-        void setUnitStr( QString u ) { m_unit = u; }
+    void setUnitStr( QString u ) { m_unit = u; }
 
-        QValidator::State validate( QString& text, int& n ) const override;
+    QValidator::State validate( QString& text, int& n ) const override;
 
-    private:
-        QDoubleSpinBox* m_this;
+private:
+    QDoubleSpinBox* m_this;
 
-        QString m_unit;
+    QString m_unit;
 };

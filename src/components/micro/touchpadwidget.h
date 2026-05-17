@@ -7,24 +7,23 @@
 
 #include <QWidget>
 
-class TouchPadWidget : public QWidget
-{
-    public:
-        TouchPadWidget();
-        ~TouchPadWidget();
-        
-        void resetValues();
-        int getXValue() { return m_xMousePos; }
-        int getYValue() { return m_yMousePos; }
+class TouchPadWidget : public QWidget {
+public:
+    TouchPadWidget();
+    ~TouchPadWidget();
 
-    protected:
-        void mousePressEvent( QMouseEvent* event );
-        void mouseMoveEvent( QMouseEvent* event );
-        void mouseReleaseEvent( QMouseEvent* event );
+    void resetValues();
+    int getXValue() { return m_xMousePos; }
+    int getYValue() { return m_yMousePos; }
 
-    private:
-        void checkValues();
+protected:
+    void mousePressEvent( QMouseEvent* event );
+    void mouseMoveEvent( QMouseEvent* event );
+    void mouseReleaseEvent( QMouseEvent* event );
 
-        int m_xMousePos;
-        int m_yMousePos;
+private:
+    void checkValues();
+
+    int m_xMousePos;
+    int m_yMousePos;
 };

@@ -7,9 +7,8 @@
 
 #include "mcusleep.h"
 
-class PicSleep : public McuSleep
-{
-    public:
-        PicSleep( eMcu* mcu, QString name );
-        ~PicSleep();
+class PicSleep : public McuSleep {
+public:
+    PicSleep( eMcu* mcu, QString name );
+    ~PicSleep();
 };

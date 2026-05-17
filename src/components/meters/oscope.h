@@ -12,70 +12,69 @@ class OscopeChannel;
 class OscWidget;
 class DataWidget;
 
-class Oscope : public PlotBase
-{
-    public:
-        Oscope( QString type, QString id );
-        ~Oscope();
+class Oscope : public PlotBase {
+public:
+    Oscope( QString type, QString id );
+    ~Oscope();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double filter() { return m_filter; }
-        void setFilter( double filter );
+    double filter() { return m_filter; }
+    void setFilter( double filter );
 
-        int autoSC() { return m_auto; }
-        void setAutoSC( int ch );
+    int autoSC() { return m_auto; }
+    void setAutoSC( int ch );
 
-        QString hideCh();
-        void setHideCh( QString hc );
+    QString hideCh();
+    void setHideCh( QString hc );
 
-        int tracks();
-        void setTracks( int tracks );
+    int tracks();
+    void setTracks( int tracks );
 
-        QString timPos() override;
-        void setTimPos( QString tp ) override;
+    QString timPos() override;
+    void setTimPos( QString tp ) override;
 
-        QString volDiv() override;
-        void setVolDiv( QString vd ) override;
+    QString volDiv() override;
+    void setVolDiv( QString vd ) override;
 
-        QString volPos();
-        void setVolPos( QString vp );
+    QString volPos();
+    void setVolPos( QString vp );
 
-        void setTrigger( int ch ) override;
+    void setTrigger( int ch ) override;
 
-        void updateStep() override;
+    void updateStep() override;
 
-        void setTimeDiv( uint64_t td ) override;
+    void setTimeDiv( uint64_t td ) override;
 
-        int64_t timePos( int ch ){ return m_timePos[ch]; }
-        void setTimePos( int ch, int64_t tp );
-        void moveTimePos( int64_t delta ) override;
+    int64_t timePos( int ch ) { return m_timePos[ch]; }
+    void setTimePos( int ch, int64_t tp );
+    void moveTimePos( int64_t delta ) override;
 
-        double voltDiv( int ch ){ return m_voltDiv[ch]; }
-        void setVoltDiv( int ch, double vd );
+    double voltDiv( int ch ) { return m_voltDiv[ch]; }
+    void setVoltDiv( int ch, double vd );
 
-        double voltPos( int ch ){ return m_voltPos[ch]; }
-        void setVoltPos( int ch, double vp );
+    double voltPos( int ch ) { return m_voltPos[ch]; }
+    void setVoltPos( int ch, double vp );
 
-        void hideChannel( int ch, bool hide );
+    void hideChannel( int ch, bool hide );
 
-        void setTunnels( QString tunnels ) override;
+    void setTunnels( QString tunnels ) override;
 
-        void expand( bool e ) override;
+    void expand( bool e ) override;
 
-        DataWidget* dataW() { return m_dataWidget; }
+    DataWidget* dataW() { return m_dataWidget; }
 
-    private:
-        double m_filter;
+private:
+    double m_filter;
 
-        int m_auto;
+    int m_auto;
 
-        int64_t m_timePos[4];
-        double  m_voltDiv[4];
-        double  m_voltPos[4];
-        bool    m_hideCh[4];
+    int64_t m_timePos[4];
+    double m_voltDiv[4];
+    double m_voltPos[4];
+    bool m_hideCh[4];
 
-        OscWidget*  m_oscWidget;
-        DataWidget* m_dataWidget;
+    OscWidget* m_oscWidget;
+    DataWidget* m_dataWidget;
 };

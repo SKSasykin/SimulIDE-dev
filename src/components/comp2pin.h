@@ -7,9 +7,8 @@
 
 #include "component.h"
 
-class Comp2Pin : public Component
-{
-    public:
-        Comp2Pin( QString type, QString id );
-        ~Comp2Pin(){}
+class Comp2Pin : public Component {
+public:
+    Comp2Pin( QString type, QString id );
+    ~Comp2Pin() { }
 };

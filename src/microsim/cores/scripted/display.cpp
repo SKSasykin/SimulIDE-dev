@@ -10,68 +10,62 @@
 #include "simulator.h"
 
 DisplayArea::DisplayArea( uint w, uint h, QString name, QWidget* parent )
-       : QWidget( parent )
-       , Updatable()
-       , eElement( name )
-{
-    m_width  = m_newWidth  = w;
+    : QWidget( parent ), Updatable(), eElement( name ) {
+    m_width = m_newWidth = w;
     m_height = m_newHeight = h;
-    m_scale  = 1;
+    m_scale = 1;
 
-    m_background= 0;
+    m_background = 0;
     m_changed = false;
-    m_embed   = true;
-    m_bgr     = false;
+    m_embed = true;
+    m_bgr = false;
 
     updtImageSize();
 
     Simulator::self()->addToUpdateList( this );
 }
-DisplayArea::~DisplayArea(){}
+DisplayArea::~DisplayArea() { }
 
-void DisplayArea::initialize()
-{
+void DisplayArea::initialize() {
     m_x = 0;
     m_y = 0;
 }
 
-void DisplayArea::updateStep()
-{
-    if( m_changed )
-    {
+void DisplayArea::updateStep() {
+    if ( m_changed ) {
         m_changed = false;
-        m_width  = m_newWidth;
+        m_width = m_newWidth;
         m_height = m_newHeight;
         updtImageSize();
     }
     update();
 }
 
-void DisplayArea::setWidth( uint w )
-{
-    if( m_width == w || w < 1 ) return;
+void DisplayArea::setWidth( uint w ) {
+    if ( m_width == w || w < 1 )
+        return;
     m_newWidth = w;
     m_changed = true;
 }
 
-void DisplayArea::setHeight( uint h )
-{
-    if( m_height == h || h < 1 ) return;
+void DisplayArea::setHeight( uint h ) {
+    if ( m_height == h || h < 1 )
+        return;
     m_newHeight = h;
     m_changed = true;
 }
 
-void DisplayArea::setSize( uint w, uint h )
-{
-    if( w < 1 || h < 1 ) return;
-    m_newWidth  = w;
+void DisplayArea::setSize( uint w, uint h ) {
+    if ( w < 1 || h < 1 )
+        return;
+    m_newWidth = w;
     m_newHeight = h;
     m_changed = true;
 }
 
-void DisplayArea::setMonitorScale( double scale )
-{
-    if( scale <= 0 ) return;
+void DisplayArea::setMonitorScale( double scale ) {
+    if ( scale <= 0 )
+        return;
     m_scale = scale;
 
     updtImageSize();
@@ -79,87 +73,79 @@ void DisplayArea::setMonitorScale( double scale )
     show();
 }
 
-void DisplayArea::setEmbed( bool e )
-{
+void DisplayArea::setEmbed( bool e ) {
     m_embed = e;
     this->setVisible( !e );
 }
 
-void DisplayArea::setBackground( int b )
-{
+void DisplayArea::setBackground( int b ) {
     m_background = b;
 }
 
-void DisplayArea::fillData( int data )
-{
-    for( uint x=0; x<m_width; x++ )
-        for( uint y=0; y<m_height; y++ )
+void DisplayArea::fillData( int data ) {
+    for ( uint x = 0; x < m_width; x++ )
+        for ( uint y = 0; y < m_height; y++ )
             m_data[x][y] = data;
 }
 
-void DisplayArea::clear()
-{
+void DisplayArea::clear() {
     fillData( m_background );
 }
 
-void DisplayArea::drawLine( int x0, int y0, int x1, int y1, int color )
-{
-    int dx = fabs( x1-x0 );
-    int dy = fabs( y1-y0 );
+void DisplayArea::drawLine( int x0, int y0, int x1, int y1, int color ) {
+    int dx = fabs( x1 - x0 );
+    int dy = fabs( y1 - y0 );
 
     int stepX = x0 < x1 ? 1 : -1;
     int stepY = y0 < y1 ? 1 : -1;
 
     int err = dx - dy;
 
-    while( true )
-    {
+    while ( true ) {
         setPixel( x0, y0, color );
 
-        if( x0 == x1 && y0 == y1 ) break;
+        if ( x0 == x1 && y0 == y1 )
+            break;
 
         int e2 = 2 * err;
 
-        if( e2 > -dy ){
+        if ( e2 > -dy ) {
             err -= dy;
             x0 += stepX;
         }
-        if( e2 < dx ){
+        if ( e2 < dx ) {
             err += dx;
             y0 += stepY;
         }
     }
 }
 
-void DisplayArea::setPixel( uint x, uint y, int color )
-{
-    if( x >= m_width || y >= m_height ) return;
+void DisplayArea::setPixel( uint x, uint y, int color ) {
+    if ( x >= m_width || y >= m_height )
+        return;
 
-    if( m_bgr )
-    {
-        int b = color &0x0000FF;
-        int r = color>>16 & 0x0000FF;
+    if ( m_bgr ) {
+        int b = color & 0x0000FF;
+        int r = color >> 16 & 0x0000FF;
 
         color &= 0x00FF00;
-        color |= b<<16 | r;
+        color |= b << 16 | r;
     }
     m_data[x][y] = color;
 }
 
-void DisplayArea::updtImageSize()
-{
+void DisplayArea::updtImageSize() {
     m_data.clear();
-    m_data.resize( m_width, std::vector<int>(m_height, m_background) );
-    this->setFixedSize( m_width*m_scale, m_height*m_scale );
+    m_data.resize( m_width, std::vector<int>( m_height, m_background ) );
+    this->setFixedSize( m_width * m_scale, m_height * m_scale );
 }
 
-void DisplayArea::paintEvent( QPaintEvent* )
-{
-    if( m_embed ) return;
-    QPainter p(this);
+void DisplayArea::paintEvent( QPaintEvent* ) {
+    if ( m_embed )
+        return;
+    QPainter p( this );
 
-    for( uint x=0; x<m_width; x++ )
-        for( uint y=0; y<m_height; y++ )
-            p.fillRect( QRectF( x*m_scale, y*m_scale, m_scale, m_scale ), QColor(m_data[x][y]) );
+    for ( uint x = 0; x < m_width; x++ )
+        for ( uint y = 0; y < m_height; y++ )
+            p.fillRect( QRectF( x * m_scale, y * m_scale, m_scale, m_scale ), QColor( m_data[x][y] ) );
 }
-

@@ -11,23 +11,21 @@
 
 class TreeItem;
 
+class manCompDialog : public QDialog, private Ui::manCompDialog {
+public:
+    manCompDialog( QWidget* parent );
 
-class manCompDialog : public QDialog, private Ui::manCompDialog
-{
-    public:
-        manCompDialog( QWidget* parent );
+    void initialize( TreeItem* treeItem );
 
-        void initialize( TreeItem* treeItem );
+private slots:
+    void slotItemChanged( QTableWidgetItem* item );
 
-    private slots:
-        void slotItemChanged( QTableWidgetItem* item );
+private:
+    //void reject();
+    void addItem( TreeItem* treeItem );
 
-    private:
-        //void reject();
-        void addItem( TreeItem* treeItem );
+    QMap<QTableWidgetItem*, TreeItem*> m_treeToList;
+    QMap<QTableWidgetItem*, TreeItem*> m_treeToShort;
 
-        QMap<QTableWidgetItem*, TreeItem*> m_treeToList;
-        QMap<QTableWidgetItem*, TreeItem*> m_treeToShort;
-
-        bool m_initialized;
+    bool m_initialized;
 };

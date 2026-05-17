@@ -5,10 +5,8 @@
 
 #include "picsleep.h"
 
-PicSleep::PicSleep( eMcu* mcu, QString name )
-        : McuSleep( mcu, name )
-{
+PicSleep::PicSleep( eMcu* mcu, QString name ) : McuSleep( mcu, name ) {
     m_enabled = true;
     m_sleepMode = 1;
 }
-PicSleep::~PicSleep(){}
+PicSleep::~PicSleep() { }

@@ -9,23 +9,23 @@
 #include "propdialog.h"
 //#include "mainwindow.h"
 
-TextVal::TextVal( PropDialog* parent, CompBase* comp, ComProperty* prop )
-       : PropVal( parent, comp, prop )
-{
-    setupUi(this);
+TextVal::TextVal( PropDialog* parent, CompBase* comp, ComProperty* prop ) : PropVal( parent, comp, prop ) {
+    setupUi( this );
 }
-TextVal::~TextVal() {}
+TextVal::~TextVal() { }
 
-void TextVal::setup( bool )
-{
+void TextVal::setup( bool ) {
     //float scale = MainWindow::self()->fontScale();
     //QFont font = textBox->font();
     //font.setPixelSize( 11.0*scale );
     //textBox->setFont( font );
 
     QString text = m_property->getValStr();
-    text = text.replace("&#xa;", "\n").replace("&#x22;", "\"")
-            .replace("&#x3D", "=").replace("&#x3C", "<").replace("&#x3E", ">");
+    text = text.replace( "&#xa;", "\n" )
+               .replace( "&#x22;", "\"" )
+               .replace( "&#x3D", "=" )
+               .replace( "&#x3C", "<" )
+               .replace( "&#x3E", ">" );
     textBox->setText( text );
     updatValue();
     this->adjustSize();
@@ -46,19 +46,14 @@ void TextVal::setup( bool )
     evalText->setPlainText( excep );
 }*/
 
-void TextVal::on_textBox_textChanged()
-{
+void TextVal::on_textBox_textChanged() {
     m_property->setValStr( textBox->toPlainText() );
     m_propDialog->changed();
 }
 
-void TextVal::updatValue()
-{
+void TextVal::updatValue() {
     /// FIXME QString text = m_scriptComp->property( m_propName.toUtf8() ).toString();
     /// FIXME textBox->setPlainText( text );
 }
 
-void TextVal::updtValues()
-{
-
-}
+void TextVal::updtValues() { }

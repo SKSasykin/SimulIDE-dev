@@ -7,9 +7,8 @@
 
 #include "avrgccdebugger.h"
 
-class Xc8Debugger : public AvrGccDebugger
-{
-    public:
-        Xc8Debugger( CodeEditor* parent, OutPanelText* outPane );
-        ~Xc8Debugger();
+class Xc8Debugger : public AvrGccDebugger {
+public:
+    Xc8Debugger( CodeEditor* parent, OutPanelText* outPane );
+    ~Xc8Debugger();
 };

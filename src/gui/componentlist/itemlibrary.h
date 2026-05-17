@@ -9,50 +9,47 @@
 
 class LibraryItem;
 
-class ItemLibrary
-{
-    public:
-        ItemLibrary();
-        ~ItemLibrary();
+class ItemLibrary {
+public:
+    ItemLibrary();
+    ~ItemLibrary();
 
- static ItemLibrary* self() { return m_pSelf; }
+    static ItemLibrary* self() { return m_pSelf; }
 
-        QList<LibraryItem*> items() { return m_items; }
-        Component* createItem( QString type, QString id );
+    QList<LibraryItem*> items() { return m_items; }
+    Component* createItem( QString type, QString id );
 
-        void addItem( LibraryItem* item );
-        
-        void loadItems();
+    void addItem( LibraryItem* item );
 
-    protected:
- static ItemLibrary* m_pSelf;
+    void loadItems();
 
-        QList<LibraryItem*> m_items;
+protected:
+    static ItemLibrary* m_pSelf;
+
+    QList<LibraryItem*> m_items;
 };
 
-typedef Component* (*createItemPtr)( QString type, QString id );
-class LibraryItem
-{
-    public:
-        LibraryItem( QString name, QString category, QString iconName,
-                     QString type, createItemPtr createItem );
-        
-        ~LibraryItem();
+typedef Component* ( *createItemPtr )( QString type, QString id );
+class LibraryItem {
+public:
+    LibraryItem( QString name, QString category, QString iconName, QString type, createItemPtr createItem );
 
-        QString name()     { return m_name; }
-        QString category() { return m_category; }
-        QString iconfile() { return m_iconfile; }
-        QString type()     { return m_type; }
-        bool isType( QString type );
+    ~LibraryItem();
 
-        createItemPtr createItemFnPtr() { return m_createItem; }
+    QString name() { return m_name; }
+    QString category() { return m_category; }
+    QString iconfile() { return m_iconfile; }
+    QString type() { return m_type; }
+    bool isType( QString type );
 
-    private:
-        QString m_name;
-        QString m_category;
-        QString m_iconfile;
-        QString m_type;
-        QStringList m_typeList;
+    createItemPtr createItemFnPtr() { return m_createItem; }
 
-        createItemPtr m_createItem;
+private:
+    QString m_name;
+    QString m_category;
+    QString m_iconfile;
+    QString m_type;
+    QStringList m_typeList;
+
+    createItemPtr m_createItem;
 };

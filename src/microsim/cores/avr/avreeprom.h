@@ -7,31 +7,30 @@
 
 #include "mcueeprom.h"
 
-class AvrEeprom : public McuEeprom
-{
-        friend class McuCreator;
+class AvrEeprom : public McuEeprom {
+    friend class McuCreator;
 
-    public:
-        AvrEeprom( eMcu* mcu, QString name );
-        ~AvrEeprom();
+public:
+    AvrEeprom( eMcu* mcu, QString name );
+    ~AvrEeprom();
 
-        virtual void setup() override;
-        virtual void initialize() override;
-        virtual void runEvent() override;
+    virtual void setup() override;
+    virtual void initialize() override;
+    virtual void runEvent() override;
 
-        virtual void configureA( uint8_t newEECR ) override;
+    virtual void configureA( uint8_t newEECR ) override;
 
-        virtual void writeEeprom() override;
+    virtual void writeEeprom() override;
 
-    private:
-        uint64_t m_nextCycle;
+private:
+    uint64_t m_nextCycle;
 
-        uint8_t m_mode;
+    uint8_t m_mode;
 
-        uint8_t* m_EECR;
+    uint8_t* m_EECR;
 
-        regBits_t m_EEPM;
-        regBits_t m_EEMPE;
-        regBits_t m_EEPE;
-        regBits_t m_EERE;
+    regBits_t m_EEPM;
+    regBits_t m_EEMPE;
+    regBits_t m_EEPE;
+    regBits_t m_EERE;
 };

@@ -6,95 +6,79 @@
 #include <math.h>
 
 #include "bjt.h"
-#include "itemlibrary.h"
+#include "circuit.h"
 #include "circuitwidget.h"
 #include "connector.h"
-#include "simulator.h"
-#include "circuit.h"
+#include "itemlibrary.h"
 #include "pin.h"
+#include "simulator.h"
 
-#include "doubleprop.h"
 #include "boolprop.h"
+#include "doubleprop.h"
 
-#define tr(str) simulideTr("BJT",str)
+#define tr( str ) simulideTr( "BJT", str )
 
-Component* BJT::construct( QString type, QString id )
-{ return new BJT( type, id ); }
-
-LibraryItem* BJT::libraryItem()
-{
-    return new LibraryItem(
-        tr("BJT"),
-        "Transistors",
-        "bjt.png",
-        "BJT",
-        BJT::construct );
+Component* BJT::construct( QString type, QString id ) {
+    return new BJT( type, id );
 }
 
-BJT::BJT( QString type, QString id )
-   : Component( type, id )
-   , eBJT( id )
-{
-    m_area =  QRectF( -12, -14, 28, 28 );
-    setLabelPos(18, 0, 0);
+LibraryItem* BJT::libraryItem() {
+    return new LibraryItem( tr( "BJT" ), "Transistors", "bjt.png", "BJT", BJT::construct );
+}
 
-    eBJT::setNumEpins(6);
+BJT::BJT( QString type, QString id ) : Component( type, id ), eBJT( id ) {
+    m_area = QRectF( -12, -14, 28, 28 );
+    setLabelPos( 18, 0, 0 );
+
+    eBJT::setNumEpins( 6 );
     m_pin.resize( 3 );
-    m_ePin[0] = m_pin[0] = new Pin( 90,  QPoint( 8,-16), id+"-collector", 0, this );
-    m_ePin[1] = m_pin[1] = new Pin( 270, QPoint( 8, 16), id+"-emiter"   , 1, this );
-    m_ePin[2] = m_pin[2] = new Pin( 180, QPoint(-16, 0), id+"-base"     , 0, this );
+    m_ePin[0] = m_pin[0] = new Pin( 90, QPoint( 8, -16 ), id + "-collector", 0, this );
+    m_ePin[1] = m_pin[1] = new Pin( 270, QPoint( 8, 16 ), id + "-emiter", 1, this );
+    m_ePin[2] = m_pin[2] = new Pin( 180, QPoint( -16, 0 ), id + "-base", 0, this );
 
     eBJT::setup();
 
     Simulator::self()->addToUpdateList( this );
 
-    addPropGroup( { tr("Main"), {
-        new BoolProp<BJT>("PNP"  , tr("PNP"),""
-                         , this, &BJT::pnp , &BJT::setPnp ),
+    addPropGroup( { tr( "Main" ),
+                    { new BoolProp<BJT>( "PNP", tr( "PNP" ), "", this, &BJT::pnp, &BJT::setPnp ),
 
-        new DoubProp<BJT>("Gain" , tr("Gain"),""
-                         , this, &BJT::gain, &BJT::setGain ),
+                      new DoubProp<BJT>( "Gain", tr( "Gain" ), "", this, &BJT::gain, &BJT::setGain ),
 
-        new DoubProp<BJT>("Vcrit", tr("Threshold"),"V"
-                         , this, &BJT::threshold, &BJT::setThreshold )
-    },0} );
+                      new DoubProp<BJT>( "Vcrit", tr( "Threshold" ), "V", this, &BJT::threshold, &BJT::setThreshold ) },
+                    0 } );
 }
-BJT::~BJT(){}
+BJT::~BJT() { }
 
-void BJT::updateStep()
-{
-    if( Circuit::self()->animateCurr() || m_changed ) update();
+void BJT::updateStep() {
+    if ( Circuit::self()->animateCurr() || m_changed )
+        update();
 
-    if( m_changed ) eBJT::voltChanged(); // m_changed cleared at eBJT::voltChanged
+    if ( m_changed )
+        eBJT::voltChanged(); // m_changed cleared at eBJT::voltChanged
 }
 
-void BJT::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
+void BJT::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
     Component::paint( p, o, w );
-    
-    if( Circuit::self()->animateCurr()
-     && fabs(m_baseCurr) > 1e-9 ) p->setBrush( Qt::yellow );
-    else                          p->setBrush( Qt::white );
+
+    if ( Circuit::self()->animateCurr() && fabs( m_baseCurr ) > 1e-9 )
+        p->setBrush( Qt::yellow );
+    else
+        p->setBrush( Qt::white );
 
     p->drawEllipse( m_area );
-    p->drawLine(-12, 0,-4,  0 );
-    p->drawLine( -4,-8,-4,  8 );
-    p->drawLine( -4,-4, 8,-12 );
+    p->drawLine( -12, 0, -4, 0 );
+    p->drawLine( -4, -8, -4, 8 );
+    p->drawLine( -4, -4, 8, -12 );
     p->drawLine( -4, 4, 8, 12 );
-    
+
     p->setBrush( Qt::black );
-    if( m_PNP ){
-        QPointF points[3] = {
-        QPointF( 0.1, 6.8 ),
-        QPointF( 2.4, 10 ),
-        QPointF( 4, 7.5 ) };
-        p->drawPolygon(points, 3);
-    }else{
-        QPointF points[3] = {
-        QPointF( 6  , 10.7 ),
-        QPointF( 2.4, 10 ),
-        QPointF( 4  , 7.5 ) };
-        p->drawPolygon(points, 3);
+    if ( m_PNP ) {
+        QPointF points[3] = { QPointF( 0.1, 6.8 ), QPointF( 2.4, 10 ), QPointF( 4, 7.5 ) };
+        p->drawPolygon( points, 3 );
+    } else {
+        QPointF points[3] = { QPointF( 6, 10.7 ), QPointF( 2.4, 10 ), QPointF( 4, 7.5 ) };
+        p->drawPolygon( points, 3 );
     }
     Component::paintSelected( p );
 }

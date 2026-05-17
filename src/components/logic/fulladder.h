@@ -5,33 +5,31 @@
 
 #pragma once
 
-#include "iocomponent.h"
 #include "e-element.h"
+#include "iocomponent.h"
 
 class LibraryItem;
 
-class FullAdder : public IoComponent, public eElement
-{
-    public:
-        FullAdder( QString type, QString id );
-        ~FullAdder();
+class FullAdder : public IoComponent, public eElement {
+public:
+    FullAdder( QString type, QString id );
+    ~FullAdder();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override { IoComponent::runOutputs(); }
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        int bits() { return m_bits; }
-        void setBits( int b );
+    int bits() { return m_bits; }
+    void setBits( int b );
 
-        Pin* getPin( QString pinName ) override;
+    Pin* getPin( QString pinName ) override;
 
-    private:
+private:
+    int m_bits;
 
-        int m_bits;
-
-        IoPin* m_ciPin;
-        IoPin* m_coPin;
+    IoPin* m_ciPin;
+    IoPin* m_coPin;
 };

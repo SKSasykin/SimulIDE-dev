@@ -10,30 +10,29 @@
 class MemTable;
 class eMcu;
 
-class MemData
-{
-    public:
-        MemData();
-        ~MemData();
+class MemData {
+public:
+    MemData();
+    ~MemData();
 
-        static bool loadData( QVector<int>* toData, bool resize=false, int bits=8 );
-        static void saveData( QVector<int>* data, int bits=8 );
+    static bool loadData( QVector<int>* toData, bool resize = false, int bits = 8 );
+    static void saveData( QVector<int>* data, int bits = 8 );
 
-        static bool loadFile( QVector<int>* toData, QString file, bool resize, int bits, eMcu* eMcu=nullptr );
-        static bool loadDat( QVector<int>* toData, QString file, bool resize );
-        static bool loadHex( QVector<int>* toData, QString file, bool resize, int bits );
-        static bool loadBin( QVector<int>* toData, QString file, bool resize, int bits );
+    static bool loadFile( QVector<int>* toData, QString file, bool resize, int bits, eMcu* eMcu = nullptr );
+    static bool loadDat( QVector<int>* toData, QString file, bool resize );
+    static bool loadHex( QVector<int>* toData, QString file, bool resize, int bits );
+    static bool loadBin( QVector<int>* toData, QString file, bool resize, int bits );
 
-        static QString getMem( QVector<int>* data );
-        static void setMem( QVector<int>* data, QString m );
+    static QString getMem( QVector<int>* data );
+    static void setMem( QVector<int>* data, QString m );
 
-        virtual void showTable( int dataSize=256, int wordBytes=1 );
+    virtual void showTable( int dataSize = 256, int wordBytes = 1 );
 
-    protected:
-        MemTable* m_memTable;
-        static eMcu* m_eMcu;
+protected:
+    MemTable* m_memTable;
+    static eMcu* m_eMcu;
 
-        static void saveDat( QVector<int>* data, int bits );
-        static void saveHex( QVector<int>* data, int bits ); /// TODO
-        static void saveBin( QVector<int>* data, int bits );
+    static void saveDat( QVector<int>* data, int bits );
+    static void saveHex( QVector<int>* data, int bits ); /// TODO
+    static void saveBin( QVector<int>* data, int bits );
 };

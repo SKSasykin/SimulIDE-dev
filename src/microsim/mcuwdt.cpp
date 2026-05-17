@@ -9,10 +9,7 @@
 #include "mcuinterrupts.h"
 #include "simulator.h"
 
-McuWdt::McuWdt( eMcu* mcu, QString name )
-      : McuPrescaled( mcu, name )
-      , eElement( mcu->getId()+"-"+name )
-{
-    m_wdtFuse  = false;
+McuWdt::McuWdt( eMcu* mcu, QString name ) : McuPrescaled( mcu, name ), eElement( mcu->getId() + "-" + name ) {
+    m_wdtFuse = false;
 }
-McuWdt::~McuWdt(){}
+McuWdt::~McuWdt() { }

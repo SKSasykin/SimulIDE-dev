@@ -9,10 +9,9 @@
 
 #include "ui_about.h"
 
-class AboutDialog : public QDialog, private Ui::AboutDialog
-{
+class AboutDialog : public QDialog, private Ui::AboutDialog {
     Q_OBJECT
 
-    public:
-        AboutDialog( QWidget* parent=0 );
+public:
+    AboutDialog( QWidget* parent = 0 );
 };

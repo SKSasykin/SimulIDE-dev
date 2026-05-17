@@ -5,24 +5,18 @@
 
 #include <QDebug>
 
-#include "mcusleep.h"
 #include "e_mcu.h"
+#include "mcusleep.h"
 
-McuSleep::McuSleep( eMcu* mcu, QString name )
-       : McuModule( mcu, name )
-       , eElement( mcu->getId()+"-"+name )
-{
-}
-McuSleep::~McuSleep(){}
-
+McuSleep::McuSleep( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) { }
+McuSleep::~McuSleep() { }
 
 /*void McuSleep::sleep()
 {
     qDebug() << "McuSleep Enter Sleep\n";
 }*/
 
-void McuSleep::callBack()
-{
+void McuSleep::callBack() {
     qDebug() << "McuSleep Exit Sleep\n";
     m_mcu->sleep( false );
 }

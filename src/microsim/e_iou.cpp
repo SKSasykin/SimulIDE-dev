@@ -8,31 +8,28 @@
 #include "ioport.h"
 #include "watcher.h"
 
-eIou::eIou( Mcu* comp, QString id )
-    : eElement( id )
-{
+eIou::eIou( Mcu* comp, QString id ) : eElement( id ) {
     m_component = comp;
 
-    m_cpu     = nullptr;
-    m_clkPin  = nullptr;
+    m_cpu = nullptr;
+    m_clkPin = nullptr;
 }
-eIou::~eIou(){}
+eIou::~eIou() { }
 
-IoPort* eIou::getIoPort( QString name )
-{
+IoPort* eIou::getIoPort( QString name ) {
     IoPort* port = m_ioPorts.value( name );
     return port;
 }
 
-IoPin* eIou::getIoPin( QString pinName )
-{
-    if( pinName.isEmpty() ) return nullptr;
+IoPin* eIou::getIoPin( QString pinName ) {
+    if ( pinName.isEmpty() )
+        return nullptr;
     IoPin* pin = nullptr;
 
-    for( IoPort* port : m_ioPorts )
-    {
+    for ( IoPort* port : m_ioPorts ) {
         pin = port->getPin( pinName );
-        if( pin ) break;
+        if ( pin )
+            break;
     }
     return pin;
 }

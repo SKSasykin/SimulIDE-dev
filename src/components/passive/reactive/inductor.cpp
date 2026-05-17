@@ -12,67 +12,60 @@
 
 #include "doubleprop.h"
 
-#define tr(str) simulideTr("Inductor",str)
+#define tr( str ) simulideTr( "Inductor", str )
 
-Component* Inductor::construct( QString type, QString id )
-{ return new Inductor( type, id ); }
-
-LibraryItem* Inductor::libraryItem()
-{
-    return new LibraryItem(
-        tr("Inductor"),
-        "Reactive",
-        "inductor.png",
-        "Inductor",
-        Inductor::construct);
+Component* Inductor::construct( QString type, QString id ) {
+    return new Inductor( type, id );
 }
 
-Inductor::Inductor( QString type, QString id )
-        : Reactive( type, id )
-{
-    m_area = QRectF(-10,-6, 20, 12 );
+LibraryItem* Inductor::libraryItem() {
+    return new LibraryItem( tr( "Inductor" ), "Reactive", "inductor.png", "Inductor", Inductor::construct );
+}
+
+Inductor::Inductor( QString type, QString id ) : Reactive( type, id ) {
+    m_area = QRectF( -10, -6, 20, 12 );
 
     m_pin[0]->setLength( 4 );
     m_pin[1]->setLength( 4 );
 
     m_value = m_inductance = 1; // H
 
-    addPropGroup( { tr("Main"), {
-        new DoubProp<Inductor>("Inductance", tr("Inductance"), "H"
-                              , this, &Inductor::value, &Inductor::setValue ),
+    addPropGroup( { tr( "Main" ),
+                    {
+                        new DoubProp<Inductor>( "Inductance", tr( "Inductance" ), "H", this, &Inductor::value,
+                                                &Inductor::setValue ),
 
-        new DoubProp<Inductor>("Resistance", tr("Resistance"), "µΩ"
-                              , this, &Inductor::resist , &Inductor::setResist ),
+                        new DoubProp<Inductor>( "Resistance", tr( "Resistance" ), "µΩ", this, &Inductor::resist,
+                                                &Inductor::setResist ),
 
-        new DoubProp<Inductor>("InitVolt", tr("Initial Current"), "A"
-                              , this, &Inductor::initCurr, &Inductor::setInitCurr ),
+                        new DoubProp<Inductor>( "InitVolt", tr( "Initial Current" ), "A", this, &Inductor::initCurr,
+                                                &Inductor::setInitCurr ),
 
-        //new DoubProp<Inductor>("ReaStep", tr("Reactive Step"), "ns"
-        //                      ,this, &Inductor::reaStep , &Inductor::setReaStep, 0 )
-    },0 } );
+                        //new DoubProp<Inductor>("ReaStep", tr("Reactive Step"), "ns"
+                        //                      ,this, &Inductor::reaStep , &Inductor::setReaStep, 0 )
+                    },
+                    0 } );
 
-    setShowProp("Inductance");
-    setPropStr("Inductance", "1");
+    setShowProp( "Inductance" );
+    setPropStr( "Inductance", "1" );
 }
-Inductor::~Inductor(){}
+Inductor::~Inductor() { }
 
-void Inductor::setCurrentValue( double c )
-{
+void Inductor::setCurrentValue( double c ) {
     m_inductance = c;
     m_changed = true;
 }
 
-void Inductor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
+void Inductor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
     Component::paint( p, o, w );
 
     QPen pen = p->pen();
     pen.setWidth( 2 );
     p->setPen( pen );
-    
-    p->drawArc( QRectF(-12,-4.5, 10, 10 ),-45*16 , 220*16 );
-    p->drawArc( QRectF( -5,-4.5, 10, 10 ), 225*16,-270*16 );
-    p->drawArc( QRectF(  2,-4.5, 10, 10 ), 225*16,-220*16 );
+
+    p->drawArc( QRectF( -12, -4.5, 10, 10 ), -45 * 16, 220 * 16 );
+    p->drawArc( QRectF( -5, -4.5, 10, 10 ), 225 * 16, -270 * 16 );
+    p->drawArc( QRectF( 2, -4.5, 10, 10 ), 225 * 16, -220 * 16 );
 
     Component::paintSelected( p );
 }

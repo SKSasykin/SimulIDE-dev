@@ -6,85 +6,80 @@
 #include <QPainter>
 #include <QtMath>
 
-#include "thermistor.h"
 #include "itemlibrary.h"
 #include "resistor.h"
+#include "thermistor.h"
 
 #include "intprop.h"
 #include "propdialog.h"
 
-#define tr(str) simulideTr("Thermistor",str)
+#define tr( str ) simulideTr( "Thermistor", str )
 
-Component* Thermistor::construct( QString type, QString id )
-{ return new Thermistor( type, id ); }
-
-LibraryItem* Thermistor::libraryItem()
-{
-    return new LibraryItem(
-        tr("Thermistor"),
-        "Resistive Sensors",
-        "thermistor.png",
-        "Thermistor",
-        Thermistor::construct);
+Component* Thermistor::construct( QString type, QString id ) {
+    return new Thermistor( type, id );
 }
 
-Thermistor::Thermistor( QString type, QString id )
-          : ThermistorBase( type, id  )
-{
+LibraryItem* Thermistor::libraryItem() {
+    return new LibraryItem( tr( "Thermistor" ), "Resistive Sensors", "thermistor.png", "Thermistor",
+                            Thermistor::construct );
+}
+
+Thermistor::Thermistor( QString type, QString id ) : ThermistorBase( type, id ) {
     m_bVal = 3455;
-    m_r25  = 10000;
+    m_r25 = 10000;
 
-    addPropGroup( { tr("Parameters"), {
-        new IntProp<Thermistor>("B", "B",""
-                               , this, &Thermistor::bVal, &Thermistor::setBval,0,"uint" ),
+    addPropGroup(
+        { tr( "Parameters" ),
+          { new IntProp<Thermistor>( "B", "B", "", this, &Thermistor::bVal, &Thermistor::setBval, 0, "uint" ),
 
-        new IntProp<Thermistor>("R25", "R25","Ω"
-                               , this, &Thermistor::r25, &Thermistor::setR25, 0,"uint" )
-    }, 0} );
-    addPropGroup( { tr("Dial"), Dialed::dialProps(), groupNoCopy } );
+            new IntProp<Thermistor>( "R25", "R25", "Ω", this, &Thermistor::r25, &Thermistor::setR25, 0, "uint" ) },
+          0 } );
+    addPropGroup( { tr( "Dial" ), Dialed::dialProps(), groupNoCopy } );
 }
-Thermistor::~Thermistor(){}
+Thermistor::~Thermistor() { }
 
-void Thermistor::updateStep()
-{
-    if( !m_needUpdate ) return;
+void Thermistor::updateStep() {
+    if ( !m_needUpdate )
+        return;
     m_needUpdate = false;
 
-    double t0 = 25+273.15;      // Temp in Kelvin
-    double t = m_value+273.15;
+    double t0 = 25 + 273.15; // Temp in Kelvin
+    double t = m_value + 273.15;
     double e = 2.7182;
     //double k = t*t0/(t-t0);
     //double res = m_r25/pow( e, m_bVal/k );
-    double k = (t0-t)/(t*t0);
-    double res = m_r25*qPow( e, m_bVal*k );
+    double k = ( t0 - t ) / ( t * t0 );
+    double res = m_r25 * qPow( e, m_bVal * k );
     eResistor::setResistance( res );
-    if( m_propDialog ) m_propDialog->updtValues();
-    else setValLabelText( getPropStr( showProp() ) );
+    if ( m_propDialog )
+        m_propDialog->updtValues();
+    else
+        setValLabelText( getPropStr( showProp() ) );
 }
 
-void Thermistor::setBval( int bval )
-{
+void Thermistor::setBval( int bval ) {
     m_bVal = bval;
     m_needUpdate = true;
 }
 
-void Thermistor::setR25( int r25 )
-{
+void Thermistor::setR25( int r25 ) {
     m_r25 = r25;
     m_needUpdate = true;
 }
 
-void Thermistor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
-    if( m_hidden ) return;
+void Thermistor::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
+    if ( m_hidden )
+        return;
 
     Component::paint( p, o, w );
 
-    if( m_ansiSymbol ) Resistor::drawAnsi( p, 0, 0 );
-    else               p->drawRect( QRectF(-11,-4.5, 22, 9 ));
-    
-    p->drawLine(-8, 6,  6,-8 );
-    p->drawLine( 6,-8, 10,-8 );
+    if ( m_ansiSymbol )
+        Resistor::drawAnsi( p, 0, 0 );
+    else
+        p->drawRect( QRectF( -11, -4.5, 22, 9 ) );
+
+    p->drawLine( -8, 6, 6, -8 );
+    p->drawLine( 6, -8, 10, -8 );
 
     Component::paintSelected( p );
 }

@@ -26,46 +26,41 @@ static inline void replaceBits( uint32_t val, regBits32_t bits ) // Replace bits
     *bits.reg |= val & bits.mask;
 }
 
-static inline uint32_t getRegBits( uint32_t val, regBits32_t rb )
-{
-    return (val & rb.mask);
+static inline uint32_t getRegBits( uint32_t val, regBits32_t rb ) {
+    return ( val & rb.mask );
 }
 
-static inline uint32_t getRegBitsVal( regBits32_t rb )
-{
-    return (*rb.reg & rb.mask)>>rb.bit0;
+static inline uint32_t getRegBitsVal( regBits32_t rb ) {
+    return ( *rb.reg & rb.mask ) >> rb.bit0;
 }
 
-static inline uint32_t getRegBitsVal( uint32_t val, regBits32_t rb )
-{
-    return (val & rb.mask)>>rb.bit0;
+static inline uint32_t getRegBitsVal( uint32_t val, regBits32_t rb ) {
+    return ( val & rb.mask ) >> rb.bit0;
 }
 
-static inline uint32_t getRegBitsBool( regBits32_t rb )
-{
-    return (*rb.reg & rb.mask) > 0;
+static inline uint32_t getRegBitsBool( regBits32_t rb ) {
+    return ( *rb.reg & rb.mask ) > 0;
 }
 
-static inline uint32_t getRegBitsBool( uint32_t val, regBits32_t rb )
-{
-    return (val & rb.mask) > 0;
+static inline uint32_t getRegBitsBool( uint32_t val, regBits32_t rb ) {
+    return ( val & rb.mask ) > 0;
 }
 
-static inline void setRegBits( regBits32_t bits )
-{
-    *(bits.reg) |= bits.mask;
+static inline void setRegBits( regBits32_t bits ) {
+    *( bits.reg ) |= bits.mask;
 }
 
 static inline void clearRegBits( regBits32_t bits ) // Clear bits in a Register
 {
-    *(bits.reg) &= ~bits.mask;
+    *( bits.reg ) &= ~bits.mask;
 }
 
 static inline void writeRegBits( regBits32_t bits, bool value ) // Set/Clear bits in a Register
 {
-    if( value ) setRegBits( bits );
-    else        clearRegBits( bits );
+    if ( value )
+        setRegBits( bits );
+    else
+        clearRegBits( bits );
 }
 
 //void writeBitsToReg( regBits32_t bits, bool value, DataSpace* mcu ); // Write bits in a Register calling watchers
-

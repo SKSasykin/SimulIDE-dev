@@ -5,21 +5,20 @@
 
 #pragma once
 
-#include "e-bjt.h"
 #include "component.h"
+#include "e-bjt.h"
 
 class LibraryItem;
 
-class BJT : public Component, public eBJT
-{
-    public:
-        BJT( QString type, QString id );
-        ~BJT();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class BJT : public Component, public eBJT {
+public:
+    BJT( QString type, QString id );
+    ~BJT();
 
-        void updateStep() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void updateStep() override;
+
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 };

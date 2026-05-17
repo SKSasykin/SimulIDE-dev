@@ -5,16 +5,13 @@
 
 #include "mcutimer.h"
 #include "e_mcu.h"
-#include "mcupin.h"
-#include "mcuocunit.h"
 #include "mcuicunit.h"
 #include "mcuinterrupts.h"
+#include "mcuocunit.h"
+#include "mcupin.h"
 #include "simulator.h"
 
-McuTimer::McuTimer( eMcu* mcu, QString name )
-        : McuPrescaled( mcu, name )
-        , eElement( mcu->getId()+"-"+name )
-{
+McuTimer::McuTimer( eMcu* mcu, QString name ) : McuPrescaled( mcu, name ), eElement( mcu->getId() + "-" + name ) {
     m_clockPin = nullptr;
     m_outputClk = nullptr;
     m_countL = nullptr;
@@ -23,27 +20,27 @@ McuTimer::McuTimer( eMcu* mcu, QString name )
     McuTimer::initialize();
 }
 
-McuTimer::~McuTimer()
-{
-    for( McuOcUnit* ocUnit : m_ocUnit ) delete ocUnit;
-    if( m_ICunit ) delete m_ICunit;
+McuTimer::~McuTimer() {
+    for ( McuOcUnit* ocUnit : m_ocUnit )
+        delete ocUnit;
+    if ( m_ICunit )
+        delete m_ICunit;
 }
 
-void McuTimer::initialize()
-{
+void McuTimer::initialize() {
     m_running = false;
     m_bidirec = false;
     m_reverse = false;
     m_extClock = false;
 
-    m_countVal   = 0;
+    m_countVal = 0;
     m_countStart = 0;
-    m_ovfMatch   = 0;
-    m_ovfPeriod  = 0;
-    m_ovfTime    = 0;
+    m_ovfMatch = 0;
+    m_ovfPeriod = 0;
+    m_ovfTime = 0;
     m_timeOffset = 0;
-    m_circTime   = 0;
-    m_mode       = 0;
+    m_circTime = 0;
+    m_mode = 0;
 
     m_prescaler = 1;
     m_prIndex = 0;
@@ -51,103 +48,113 @@ void McuTimer::initialize()
     //m_clkSrc  = clkMCU;
     m_clkEdge = 1;
 
-    m_psPerTick = m_prescaler*m_mcu->psInst();
+    m_psPerTick = m_prescaler * m_mcu->psInst();
 }
 
-void McuTimer::voltChanged()  // External Clock Pin changed voltage
+void McuTimer::voltChanged() // External Clock Pin changed voltage
 {
     bool state = m_clockPin->getInpState();
-    if( m_clkState == state ) return;
-    if( m_sleeping ) return;
+    if ( m_clkState == state )
+        return;
+    if ( m_sleeping )
+        return;
 
-    if( m_clkEdge == 1 )              // Rising
+    if ( m_clkEdge == 1 ) // Rising
     {
-        if( state && !m_clkState ) clockStep();
-    }
-    else if( !state && m_clkState ) clockStep();
+        if ( state && !m_clkState )
+            clockStep();
+    } else if ( !state && m_clkState )
+        clockStep();
     m_clkState = state;
 }
 
-void McuTimer::sleep( int mode )
-{
+void McuTimer::sleep( int mode ) {
     McuModule::sleep( mode );
 
-    if( m_extClock ) return;
+    if ( m_extClock )
+        return;
 
-    if( m_sleeping ) // Sleep
+    if ( m_sleeping ) // Sleep
     {
         Simulator::self()->cancelEvents( this );
-        updtCount();                              /// Update counter
-    }
-    else             // Wakeup
+        updtCount(); /// Update counter
+    } else // Wakeup
     {
-        updtCycles();                             /// update & Reshedule
+        updtCycles(); /// update & Reshedule
     }
 }
 
-void McuTimer::clockStep()  // Timer driven by external clock
+void McuTimer::clockStep() // Timer driven by external clock
 {
     m_countVal++;
-    for( McuOcUnit* ocUnit : m_ocUnit ) ocUnit->clockStep( m_countVal ); ///
-    if( m_countVal == m_ovfMatch+(uint)1 ) runEvent();
+    for ( McuOcUnit* ocUnit : m_ocUnit )
+        ocUnit->clockStep( m_countVal ); ///
+    if ( m_countVal == m_ovfMatch + (uint) 1 )
+        runEvent();
 }
 
-void McuTimer::runEvent()           // Overflow
+void McuTimer::runEvent() // Overflow
 {
-    if( !m_running ) return;
+    if ( !m_running )
+        return;
 
-    for( McuOcUnit* ocUnit : m_ocUnit ) ocUnit->tov();
+    for ( McuOcUnit* ocUnit : m_ocUnit )
+        ocUnit->tov();
 
-    m_countVal = m_countStart;      // Reset counter value
+    m_countVal = m_countStart; // Reset counter value
     m_timeOffset = 0;
 
-    if( m_bidirec ) m_reverse = !m_reverse;
-    if( !m_reverse && m_interrupt ) m_interrupt->raise();
+    if ( m_bidirec )
+        m_reverse = !m_reverse;
+    if ( !m_reverse && m_interrupt )
+        m_interrupt->raise();
 
     sheduleEvents();
 }
 
-void McuTimer::resetTimer()
-{
-    m_countVal = m_countStart;      // Reset counter value
+void McuTimer::resetTimer() {
+    m_countVal = m_countStart; // Reset counter value
     m_timeOffset = 0;
     sheduleEvents();
 }
 
-void McuTimer::sheduleEvents()
-{
-    if( !m_running ) return;
-    if( m_extClock )
-    {
+void McuTimer::sheduleEvents() {
+    if ( !m_running )
+        return;
+    if ( m_extClock ) {
         Simulator::self()->cancelEvents( this );
-        for( McuOcUnit* ocUnit : m_ocUnit ) Simulator::self()->cancelEvents( ocUnit );
-    }else{
+        for ( McuOcUnit* ocUnit : m_ocUnit )
+            Simulator::self()->cancelEvents( ocUnit );
+    } else {
         uint64_t ovfPeriod = m_ovfPeriod;
-        if( m_countVal > m_ovfMatch ) ovfPeriod += m_maxCount; // OVF before counter: next OVF missed
+        if ( m_countVal > m_ovfMatch )
+            ovfPeriod += m_maxCount; // OVF before counter: next OVF missed
 
-        uint64_t time2ovf = (ovfPeriod-m_countVal)*m_psPerTick+0.5; // time in ps from now to OVF
-        if( m_timeOffset ) time2ovf -= m_psPerTick-m_timeOffset;
+        uint64_t time2ovf = ( ovfPeriod - m_countVal ) * m_psPerTick + 0.5; // time in ps from now to OVF
+        if ( m_timeOffset )
+            time2ovf -= m_psPerTick - m_timeOffset;
 
-        uint64_t ovfTime = Simulator::self()->circTime() + time2ovf;// Absolute simulation time (ps) when OVF will occur
+        uint64_t ovfTime
+            = Simulator::self()->circTime() + time2ovf; // Absolute simulation time (ps) when OVF will occur
 
-        if( m_ovfTime != ovfTime )
-        {
+        if ( m_ovfTime != ovfTime ) {
             m_ovfTime = ovfTime;
             Simulator::self()->cancelEvents( this );
             Simulator::self()->addEvent( time2ovf, this );
         }
     }
-    for( McuOcUnit* ocUnit : m_ocUnit ) ocUnit->sheduleEvents( m_ovfMatch, m_countVal );
+    for ( McuOcUnit* ocUnit : m_ocUnit )
+        ocUnit->sheduleEvents( m_ovfMatch, m_countVal );
 }
 
-void McuTimer::enable( uint8_t en )
-{
+void McuTimer::enable( uint8_t en ) {
     bool e = en > 0;
-    if( m_running == e ) return;
+    if ( m_running == e )
+        return;
 
-    updtCount();        // If disabling, write counter values to Ram
+    updtCount(); // If disabling, write counter values to Ram
     m_running = e;
-    updtCycles();       // This will shedule or cancel events
+    updtCycles(); // This will shedule or cancel events
 }
 
 void McuTimer::countWriteL( uint8_t val ) // Someone wrote to counter low byte
@@ -156,7 +163,7 @@ void McuTimer::countWriteL( uint8_t val ) // Someone wrote to counter low byte
     *m_countL = val;
     m_countVal &= 0xFFFFFF00;
     m_countVal |= val;
-    updtCycles();       // update & Reshedule
+    updtCycles(); // update & Reshedule
 }
 
 void McuTimer::countWriteH( uint8_t val ) // Someone wrote to counter high byte
@@ -164,38 +171,42 @@ void McuTimer::countWriteH( uint8_t val ) // Someone wrote to counter high byte
     updtCount();
     *m_countH = val;
     m_countVal &= 0x000000FF;
-    m_countVal |= uint32_t(val)<<8;
-    updtCycles();                   // update & Reshedule
+    m_countVal |= uint32_t( val ) << 8;
+    updtCycles(); // update & Reshedule
 }
 
 void McuTimer::updtCount( uint8_t ) // Someone is reading Counter Registers: Write values to Ram
 {
-    if( !m_running ) return; // If no running, values were already written at timer stop.
+    if ( !m_running )
+        return; // If no running, values were already written at timer stop.
 
     calcCounter();
 
-    uint32_t countVal = m_reverse ? (m_ovfMatch-m_countVal) : m_countVal;
+    uint32_t countVal = m_reverse ? ( m_ovfMatch - m_countVal ) : m_countVal;
 
-    if( m_countL ) *m_countL = countVal & 0xFF;
-    if( m_countH ) *m_countH = (countVal>>8) & 0xFF;
+    if ( m_countL )
+        *m_countL = countVal & 0xFF;
+    if ( m_countH )
+        *m_countH = ( countVal >> 8 ) & 0xFF;
 }
 
-void McuTimer::calcCounter()
-{
-    if( m_extClock ) return;
+void McuTimer::calcCounter() {
+    if ( m_extClock )
+        return;
 
     uint64_t circTime = Simulator::self()->circTime();
-    if( m_circTime == circTime ) return;
+    if ( m_circTime == circTime )
+        return;
     m_circTime = circTime;
 
-    uint64_t time2ovf   = m_ovfTime-circTime; // Next overflow time - current time
-    uint64_t cycles2ovf = time2ovf/m_psPerTick; // Number of Timer ticks to OVF
+    uint64_t time2ovf = m_ovfTime - circTime; // Next overflow time - current time
+    uint64_t cycles2ovf = time2ovf / m_psPerTick; // Number of Timer ticks to OVF
 
-    if( m_ovfMatch > cycles2ovf )
-    {
-        m_countVal   = m_ovfMatch-cycles2ovf;
-        m_timeOffset = time2ovf%m_psPerTick;
-        if( m_timeOffset ) m_countVal--;
+    if ( m_ovfMatch > cycles2ovf ) {
+        m_countVal = m_ovfMatch - cycles2ovf;
+        m_timeOffset = time2ovf % m_psPerTick;
+        if ( m_timeOffset )
+            m_countVal--;
     }
 }
 
@@ -206,33 +217,32 @@ void McuTimer::updtCycles() // Recalculate ovf, comps, etc
     sheduleEvents();
 }
 
-uint32_t McuTimer::getCount()
-{
+uint32_t McuTimer::getCount() {
     updtCount();
     return m_countVal;
 }
 
-void McuTimer::enableExtClock( bool en )
-{
-    if( m_extClock == en ) return;
+void McuTimer::enableExtClock( bool en ) {
+    if ( m_extClock == en )
+        return;
     updtCount();
     m_extClock = en;
-    updtCycles();      // update & Reshedule
+    updtCycles(); // update & Reshedule
 
-    if( m_clockPin ){
+    if ( m_clockPin ) {
         m_clockPin->changeCallBack( this, en );
         m_clkState = m_clockPin->getInpState();
     }
 }
 
-void McuTimer::setClockPins( QStringList pinList )
-{
-    if( pinList.size() < 1 ) return;
-    QString inputClk = pinList.at(0);
+void McuTimer::setClockPins( QStringList pinList ) {
+    if ( pinList.size() < 1 )
+        return;
+    QString inputClk = pinList.at( 0 );
     m_clockPin = m_mcu->getMcuPin( inputClk );
 
-    if( pinList.size() < 2 ) return;
-    QString outputClk = pinList.at(1);
+    if ( pinList.size() < 2 )
+        return;
+    QString outputClk = pinList.at( 1 );
     m_outputClk = m_mcu->getMcuPin( outputClk );
 }
-

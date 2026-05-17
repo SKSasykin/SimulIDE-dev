@@ -9,8 +9,7 @@
 
 #include "e-resistor.h"
 
-struct diodeData_t
-{
+struct diodeData_t {
     double satCur;
     double emCoef;
     double brkDow;
@@ -19,63 +18,62 @@ struct diodeData_t
 
 class eNode;
 
-class eDiode : public eResistor
-{
-    public:
-        eDiode( QString id );
-        ~eDiode();
+class eDiode : public eResistor {
+public:
+    eDiode( QString id );
+    ~eDiode();
 
-        virtual void stamp() override;
-        virtual void voltChanged() override;
+    virtual void stamp() override;
+    virtual void voltChanged() override;
 
-        double threshold() { return m_vCriti; }
-        void   setThreshold( double vCrit );
+    double threshold() { return m_vCriti; }
+    void setThreshold( double vCrit );
 
-        double brkDownV(){ return m_bkDown; }
-        void   setBrkDownV( double bkDown );
+    double brkDownV() { return m_bkDown; }
+    void setBrkDownV( double bkDown );
 
-        double satCur() { return m_satCur; }
-        void   setSatCur( double satCur );
+    double satCur() { return m_satCur; }
+    void setSatCur( double satCur );
 
-        double emCoef() { return m_emCoef; }
-        void   setEmCoef( double emCoef );
+    double emCoef() { return m_emCoef; }
+    void setEmCoef( double emCoef );
 
-        double maxCurrent() { return m_maxCur; }
-        void   setMaxCurrent( double cur ) { m_maxCur = cur; }
+    double maxCurrent() { return m_maxCur; }
+    void setMaxCurrent( double cur ) { m_maxCur = cur; }
 
-        QString model() { return m_model; }
-        void setModel( QString model );
-        void setModelData( diodeData_t data );
+    QString model() { return m_model; }
+    void setModel( QString model );
+    void setModelData( diodeData_t data );
 
- static void getModels();
+    static void getModels();
 
-    protected:
-        double limitStep( double vnew, double vold, double scale, double vc );
-        void SetParameters( double sc, double ec, double bv, double sr );
-        void updateValues();
+protected:
+    double limitStep( double vnew, double vold, double scale, double vc );
+    void SetParameters( double sc, double ec, double bv, double sr );
+    void updateValues();
 
-        bool m_converged;
+    bool m_converged;
 
-        double m_vt;
-        double m_satCur;
-        double m_emCoef;
-        double m_vScale;
-        double m_vdCoef;
-        double m_vzCoef;
-        double m_zOfset;
-        double m_vCriti;
-        double m_vzCrit;
+    double m_vt;
+    double m_satCur;
+    double m_emCoef;
+    double m_vScale;
+    double m_vdCoef;
+    double m_vzCoef;
+    double m_zOfset;
+    double m_vCriti;
+    double m_vzCrit;
 
-        double m_bkDown;
-        double m_maxCur;
+    double m_bkDown;
+    double m_maxCur;
 
-        double m_voltPN;
-        double m_bAdmit;
+    double m_voltPN;
+    double m_bAdmit;
 
-        QString m_diodeType;
-        QString m_model;
+    QString m_diodeType;
+    QString m_model;
 
- static QMap<QString, diodeData_t> m_diodes;
- static QMap<QString, diodeData_t> m_zeners;
- static QMap<QString, diodeData_t> m_leds;
+    static QMap<QString, diodeData_t> m_diodes;
+    static QMap<QString, diodeData_t> m_zeners;
+    static QMap<QString, diodeData_t> m_leds;
 };

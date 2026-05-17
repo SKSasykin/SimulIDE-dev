@@ -4,102 +4,91 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QPainter>
-#include<math.h>
+#include <math.h>
 
-#include "ldr.h"
 #include "itemlibrary.h"
+#include "ldr.h"
 #include "resistor.h"
 
 #include "doubleprop.h"
 #include "intprop.h"
 #include "propdialog.h"
 
-#define tr(str) simulideTr("Ldr",str)
+#define tr( str ) simulideTr( "Ldr", str )
 
-Component* Ldr::construct( QString type, QString id )
-{ return new Ldr( type, id ); }
-
-LibraryItem* Ldr::libraryItem()
-{
-    return new LibraryItem(
-        tr("LDR"),
-        "Resistive Sensors",
-        "ldr.png",
-        "LDR",
-        Ldr::construct);
+Component* Ldr::construct( QString type, QString id ) {
+    return new Ldr( type, id );
 }
 
-Ldr::Ldr( QString type, QString id )
-   : VarResBase( type, id  )
-{
-    m_r1    = 127410;
+LibraryItem* Ldr::libraryItem() {
+    return new LibraryItem( tr( "LDR" ), "Resistive Sensors", "ldr.png", "LDR", Ldr::construct );
+}
+
+Ldr::Ldr( QString type, QString id ) : VarResBase( type, id ) {
+    m_r1 = 127410;
     m_gamma = 0.8582;
 
     setVal( 1 );
 
-    addPropGroup( { tr("Main"), {
-        new DoubProp<Ldr>("Lux", tr("Current Value"), "Lux"
-                         , this, &Ldr::getVal, &Ldr::setVal ),
+    addPropGroup( { tr( "Main" ),
+                    { new DoubProp<Ldr>( "Lux", tr( "Current Value" ), "Lux", this, &Ldr::getVal, &Ldr::setVal ),
 
-        new DoubProp<Ldr>("Min_Lux", tr("Minimum Value"), "Lux"
-                         , this, &Ldr::minVal, &Ldr::setMinVal ),
+                      new DoubProp<Ldr>( "Min_Lux", tr( "Minimum Value" ), "Lux", this, &Ldr::minVal, &Ldr::setMinVal ),
 
-        new DoubProp<Ldr>("Max_Lux", tr("Maximum Value"), "Lux"
-                         , this, &Ldr::maxVal, &Ldr::setMaxVal ),
+                      new DoubProp<Ldr>( "Max_Lux", tr( "Maximum Value" ), "Lux", this, &Ldr::maxVal, &Ldr::setMaxVal ),
 
-        new DoubProp<Ldr>("Dial_Step", tr("Dial Step"), "Lux"
-                         , this, &Ldr::getStep, &Ldr::setStep )
-    },0} );
-    addPropGroup( { tr("Parameters"), {
-        new DoubProp<Ldr>("Gamma", tr("Gamma"), ""
-                         , this, &Ldr::gamma, &Ldr::setGamma ),
+                      new DoubProp<Ldr>( "Dial_Step", tr( "Dial Step" ), "Lux", this, &Ldr::getStep, &Ldr::setStep ) },
+                    0 } );
+    addPropGroup( { tr( "Parameters" ),
+                    { new DoubProp<Ldr>( "Gamma", tr( "Gamma" ), "", this, &Ldr::gamma, &Ldr::setGamma ),
 
-        new IntProp <Ldr>("R1", tr("R1"), "Ω"
-                         , this, &Ldr::r1, &Ldr::setR1,0,"uint" )
-    },0} );
-    addPropGroup( { tr("Dial"), Dialed::dialProps(), 0} );
+                      new IntProp<Ldr>( "R1", tr( "R1" ), "Ω", this, &Ldr::r1, &Ldr::setR1, 0, "uint" ) },
+                    0 } );
+    addPropGroup( { tr( "Dial" ), Dialed::dialProps(), 0 } );
 }
-Ldr::~Ldr(){}
+Ldr::~Ldr() { }
 
-void Ldr::updateStep()
-{
-    if( !m_needUpdate ) return;
+void Ldr::updateStep() {
+    if ( !m_needUpdate )
+        return;
     m_needUpdate = false;
 
-    double res = double(m_r1)*pow( m_value, -m_gamma );
+    double res = double( m_r1 ) * pow( m_value, -m_gamma );
     eResistor::setResistance( res );
-    if( m_propDialog ) m_propDialog->updtValues();
-    else setValLabelText( getPropStr( showProp() ) );
+    if ( m_propDialog )
+        m_propDialog->updtValues();
+    else
+        setValLabelText( getPropStr( showProp() ) );
 }
 
-void Ldr::setR1( int r1 )
-{
+void Ldr::setR1( int r1 ) {
     m_r1 = r1;
     m_needUpdate = true;
 }
 
-void Ldr::setGamma( double ga )
-{
+void Ldr::setGamma( double ga ) {
     m_gamma = ga;
     m_needUpdate = true;
 }
 
-void Ldr::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
-    if( m_hidden ) return;
+void Ldr::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
+    if ( m_hidden )
+        return;
 
     Component::paint( p, o, w );
 
-    if( m_ansiSymbol ) Resistor::drawAnsi( p, 0, 0 );
-    else               p->drawRect( QRectF(-11,-4.5, 22, 9 ));
-    
-    p->drawLine(-5,-11,-1,-7 );
-    p->drawLine(-1, -7,-1,-9 );
-    p->drawLine(-1, -7,-3,-7 );
+    if ( m_ansiSymbol )
+        Resistor::drawAnsi( p, 0, 0 );
+    else
+        p->drawRect( QRectF( -11, -4.5, 22, 9 ) );
 
-    p->drawLine( 1,-11, 5,-7 );
-    p->drawLine( 5, -7, 5,-9 );
-    p->drawLine( 5, -7, 3,-7 );
+    p->drawLine( -5, -11, -1, -7 );
+    p->drawLine( -1, -7, -1, -9 );
+    p->drawLine( -1, -7, -3, -7 );
+
+    p->drawLine( 1, -11, 5, -7 );
+    p->drawLine( 5, -7, 5, -9 );
+    p->drawLine( 5, -7, 3, -7 );
 
     Component::paintSelected( p );
 }

@@ -5,27 +5,26 @@
 
 #pragma once
 
-#include "ui_pathval.h"
 #include "propval.h"
+#include "ui_pathval.h"
 
 class Component;
 class PropDialog;
 
-class PathVal : public PropVal, private Ui::PathVal
-{
+class PathVal : public PropVal, private Ui::PathVal {
     Q_OBJECT
-    
-    public:
-        PathVal( PropDialog* parent, CompBase* comp, ComProperty* prop, bool isFile );
-        ~PathVal();
 
-        virtual void setup( bool ) override;
-        virtual void updtValues() override;
+public:
+    PathVal( PropDialog* parent, CompBase* comp, ComProperty* prop, bool isFile );
+    ~PathVal();
 
-    public slots:
-        void on_value_editingFinished();
-        void on_setPathButton_clicked();
+    virtual void setup( bool ) override;
+    virtual void updtValues() override;
 
-    private:
-        bool m_isFile;
+public slots:
+    void on_value_editingFinished();
+    void on_setPathButton_clicked();
+
+private:
+    bool m_isFile;
 };

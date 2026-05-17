@@ -15,68 +15,70 @@ class LibraryItem;
 class CustomButton;
 class QGraphicsProxyWidget;
 
-class SerialPort : public Component, public UsartModule, public eElement
-{
-    public:
-        SerialPort( QString type, QString id );
-        ~SerialPort();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class SerialPort : public Component, public UsartModule, public eElement {
+public:
+    SerialPort( QString type, QString id );
+    ~SerialPort();
 
-        void stamp() override;
-        void updateStep() override;
-        void runEvent() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        bool autoOpen() { return m_autoOpen; }
-        void setAutoOpen( bool a ) { m_autoOpen = a; }
+    void stamp() override;
+    void updateStep() override;
+    void runEvent() override;
 
-        QString port(){return m_portName;}
-        void setPort( QString name ){ m_portName = name; update();}
+    bool autoOpen() { return m_autoOpen; }
+    void setAutoOpen( bool a ) { m_autoOpen = a; }
 
-        QSerialPort::FlowControl flowControl() { return m_flowControl; }
-        void setFlowControl( QSerialPort::FlowControl fc ) { m_flowControl = fc; }
+    QString port() { return m_portName; }
+    void setPort( QString name ) {
+        m_portName = name;
+        update();
+    }
 
-        void setSerialMon( bool s );
+    QSerialPort::FlowControl flowControl() { return m_flowControl; }
+    void setFlowControl( QSerialPort::FlowControl fc ) { m_flowControl = fc; }
 
-        void setIdLabel( QString id ) override;
+    void setSerialMon( bool s );
 
-        void byteReceived( uint8_t byte ) override;
-        void frameSent( uint8_t data ) override;
+    void setIdLabel( QString id ) override;
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void byteReceived( uint8_t byte ) override;
+    void frameSent( uint8_t data ) override;
 
-        void onbuttonclicked();
-        void slotClose();
-        void slotOpenTerm();
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    private slots:
-        void readData();
+    void onbuttonclicked();
+    void slotClose();
+    void slotOpenTerm();
 
-    protected:
-        virtual void setflip() override;
-        virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+private slots:
+    void readData();
 
-    private:
-        void open();
-        void close();
+protected:
+    virtual void setflip() override;
+    virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        CustomButton* m_button;
-        QGraphicsProxyWidget* m_proxy;
+private:
+    void open();
+    void close();
 
-        QSerialPort* m_serial;
+    CustomButton* m_button;
+    QGraphicsProxyWidget* m_proxy;
 
-        bool m_receiving;
-        bool m_sending;
-        bool m_autoOpen;
+    QSerialPort* m_serial;
 
-        QByteArray m_serData;
-        QByteArray m_uartData;
+    bool m_receiving;
+    bool m_sending;
+    bool m_autoOpen;
 
-        QString m_portName;
+    QByteArray m_serData;
+    QByteArray m_uartData;
 
-        /*QSerialPort::DataBits    m_dataBits;
+    QString m_portName;
+
+    /*QSerialPort::DataBits    m_dataBits;
         QSerialPort::Parity      m_parity;
         QSerialPort::StopBits    m_stopBits;*/
-        QSerialPort::FlowControl m_flowControl;
+    QSerialPort::FlowControl m_flowControl;
 };

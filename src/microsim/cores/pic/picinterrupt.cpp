@@ -4,12 +4,10 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "picinterrupt.h"
-#include "e_mcu.h"
 #include "datautils.h"
+#include "e_mcu.h"
 
-PicInterrupt::PicInterrupt( QString name, uint16_t vector, eMcu* mcu )
-            : Interrupt( name, vector, mcu )
-{
+PicInterrupt::PicInterrupt( QString name, uint16_t vector, eMcu* mcu ) : Interrupt( name, vector, mcu ) {
     //m_GIE = getRegBits( "GIE", mcu );
 
     m_autoClear = false;
@@ -17,7 +15,7 @@ PicInterrupt::PicInterrupt( QString name, uint16_t vector, eMcu* mcu )
 
     m_wakeup = 0xFF; // Any interrupt triggered during sleep will wakeup MCU
 }
-PicInterrupt::~PicInterrupt(){}
+PicInterrupt::~PicInterrupt() { }
 
 /*void PicInterrupt::execute()
 {
@@ -32,4 +30,3 @@ void PicInterrupt::exitInt()
     m_interrupts->enableGlobal( 1 );  // Enable interrupts
     Interrupt::exitInt();
 }*/
-

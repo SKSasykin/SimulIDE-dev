@@ -4,40 +4,28 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "flipflopt.h"
-#include "itemlibrary.h"
 #include "iopin.h"
+#include "itemlibrary.h"
 
-#define tr(str) simulideTr("FlipFlopT",str)
+#define tr( str ) simulideTr( "FlipFlopT", str )
 
-Component* FlipFlopT::construct( QString type, QString id )
-{ return new FlipFlopT( type, id ); }
-
-LibraryItem* FlipFlopT::libraryItem()
-{
-    return new LibraryItem(
-        tr("FlipFlop T"),
-        "Memory",
-        "2to2.png",
-        "FlipFlopT",
-        FlipFlopT::construct );
+Component* FlipFlopT::construct( QString type, QString id ) {
+    return new FlipFlopT( type, id );
 }
 
-FlipFlopT::FlipFlopT( QString type, QString id )
-         : FlipFlopBase( type, id )
-{
-    m_width  = 3;
+LibraryItem* FlipFlopT::libraryItem() {
+    return new LibraryItem( tr( "FlipFlop T" ), "Memory", "2to2.png", "FlipFlopT", FlipFlopT::construct );
+}
+
+FlipFlopT::FlipFlopT( QString type, QString id ) : FlipFlopBase( type, id ) {
+    m_width = 3;
     m_height = 3;
     m_dataPins = 1;
 
-    init({         // Inputs:
-            "IL01T",
-            "IU01S",
-            "ID02R",
-            "IL02>",
-                   // Outputs:
-            "OR01Q",
-            "OR02!Q"
-        });
+    init( { // Inputs:
+            "IL01T", "IU01S", "ID02R", "IL02>",
+            // Outputs:
+            "OR01Q", "OR02!Q" } );
 
     m_setPin = m_inpPin[1];
     m_rstPin = m_inpPin[2];
@@ -45,14 +33,14 @@ FlipFlopT::FlipFlopT( QString type, QString id )
 
     //setSrInv( true );       // Inver Set & Reset pins
     //setClockInv( false );   // Don't Invert Clock pin
-    m_setPin->setInverted( true );  // Set
+    m_setPin->setInverted( true ); // Set
     m_rstPin->setInverted( true ); // Reset
-    setTriggerStr("Clock");
+    setTriggerStr( "Clock" );
 }
-FlipFlopT::~FlipFlopT(){}
+FlipFlopT::~FlipFlopT() { }
 
-void FlipFlopT::calcOutput()
-{
+void FlipFlopT::calcOutput() {
     bool T = m_inpPin[0]->getInpState();
-    if( T ) m_nextOutVal = m_outPin[1]->getOutState()? 1:2; // !Q state = Toggle
+    if ( T )
+        m_nextOutVal = m_outPin[1]->getOutState() ? 1 : 2; // !Q state = Toggle
 }

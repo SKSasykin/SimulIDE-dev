@@ -5,43 +5,42 @@
 
 #pragma once
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
 class McuPin;
 class McuTimer;
 
-class McuIcUnit : public McuModule, public eElement
-{
-        friend class McuCreator;
+class McuIcUnit : public McuModule, public eElement {
+    friend class McuCreator;
 
-    public:
-        McuIcUnit( eMcu* mcu, QString name );
-        virtual ~McuIcUnit();
+public:
+    McuIcUnit( eMcu* mcu, QString name );
+    virtual ~McuIcUnit();
 
-        virtual void initialize() override;
-        virtual void voltChanged() override;
+    virtual void initialize() override;
+    virtual void voltChanged() override;
 
-        virtual void configure( uint8_t val ) {;}
+    virtual void configure( uint8_t val ) { ; }
 
-        void enable( bool en );
+    void enable( bool en );
 
-    protected:
-        void clear();
+protected:
+    void clear();
 
-        McuTimer* m_timer;
-        McuPin*   m_icPin;
+    McuTimer* m_timer;
+    McuPin* m_icPin;
 
-        uint8_t* m_icRegL;
-        uint8_t* m_icRegH;
+    uint8_t* m_icRegL;
+    uint8_t* m_icRegH;
 
-        bool m_enabled;
-        bool m_inState;
+    bool m_enabled;
+    bool m_inState;
 
-        uint8_t m_mode;
+    uint8_t m_mode;
 
-        bool m_fallingEdge;
+    bool m_fallingEdge;
 
-        uint64_t m_prescaler;
-        uint64_t m_counter;
+    uint64_t m_prescaler;
+    uint64_t m_counter;
 };

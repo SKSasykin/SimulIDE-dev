@@ -12,17 +12,16 @@ class eMcu;
 class McuPin;
 class Component;
 
-class PicPort : public McuPort
-{
-    public:
-        PicPort( eMcu* mcu, QString name );
-        ~PicPort();
+class PicPort : public McuPort {
+public:
+    PicPort( eMcu* mcu, QString name );
+    ~PicPort();
 
-        virtual void configureA( uint8_t newANSEL ) override;
+    virtual void configureA( uint8_t newANSEL ) override;
 
-        virtual void outChanged( uint8_t val ) override;
-        virtual void readPort( uint8_t ) override;
+    virtual void outChanged( uint8_t val ) override;
+    virtual void readPort( uint8_t ) override;
 
-    protected:
-        virtual McuPin* createPin( int i, QString id , Component* mcu ) override;
+protected:
+    virtual McuPin* createPin( int i, QString id, Component* mcu ) override;
 };

@@ -5,37 +5,29 @@
 
 #include <math.h>
 
-#include "testunit.h"
-#include "itemlibrary.h"
-#include "truthtable.h"
-#include "circuitwidget.h"
-#include "simulator.h"
 #include "batchtest.h"
+#include "circuitwidget.h"
 #include "iopin.h"
+#include "itemlibrary.h"
+#include "simulator.h"
+#include "testunit.h"
+#include "truthtable.h"
 
-#include "stringprop.h"
 #include "doubleprop.h"
+#include "stringprop.h"
 
-#define tr(str) simulideTr("TestUnit",str)
+#define tr( str ) simulideTr( "TestUnit", str )
 
-Component* TestUnit::construct( QString type, QString id )
-{ return new TestUnit( type, id ); }
-
-LibraryItem* TestUnit::libraryItem()
-{
-    return new LibraryItem(
-        tr("Test Unit"),
-        "Other",
-        "bug.png",
-        "TestUnit",
-        TestUnit::construct );
+Component* TestUnit::construct( QString type, QString id ) {
+    return new TestUnit( type, id );
 }
 
-TestUnit::TestUnit( QString type, QString id )
-        : IoComponent( type, id )
-        , eElement( id )
-{
-    m_width  = 4;
+LibraryItem* TestUnit::libraryItem() {
+    return new LibraryItem( tr( "Test Unit" ), "Other", "bug.png", "TestUnit", TestUnit::construct );
+}
+
+TestUnit::TestUnit( QString type, QString id ) : IoComponent( type, id ), eElement( id ) {
+    m_width = 4;
     m_height = 4;
 
     m_steps = 0;
@@ -43,41 +35,42 @@ TestUnit::TestUnit( QString type, QString id )
     m_period = 1e-7; // 100 ns
     m_truthTable = nullptr;
 
-    setInputs("O");
-    setOutputs("I0,I1");
+    setInputs( "O" );
+    setOutputs( "I0,I1" );
 
     Simulator::self()->addToUpdateList( this );
 
-    addPropGroup( { tr("Main"), {
-        new StrProp<TestUnit>("Inputs", tr("Inputs"),""
-                             , this, &TestUnit::inputs, &TestUnit::setInputs, propNoCopy ),
+    addPropGroup(
+        { tr( "Main" ),
+          {
+              new StrProp<TestUnit>( "Inputs", tr( "Inputs" ), "", this, &TestUnit::inputs, &TestUnit::setInputs,
+                                     propNoCopy ),
 
-        new StrProp<TestUnit>("Outputs", tr("Outputs"),""
-                             , this, &TestUnit::outputs, &TestUnit::setOutputs, propNoCopy ),
+              new StrProp<TestUnit>( "Outputs", tr( "Outputs" ), "", this, &TestUnit::outputs, &TestUnit::setOutputs,
+                                     propNoCopy ),
 
-        new StrProp<TestUnit>("Truth", "Truth",""
-                             , this, &TestUnit::truth, &TestUnit::setTruth, propHidden ),
-    },0} );
+              new StrProp<TestUnit>( "Truth", "Truth", "", this, &TestUnit::truth, &TestUnit::setTruth, propHidden ),
+          },
+          0 } );
 
-    addPropGroup( { tr("Test"), {
-        new DoubProp<TestUnit>("Period",tr("Period"),"ns"
-                              , this, &TestUnit::period, &TestUnit::setPeriod,0  ),
+    addPropGroup( { tr( "Test" ),
+                    {
+                        new DoubProp<TestUnit>( "Period", tr( "Period" ), "ns", this, &TestUnit::period,
+                                                &TestUnit::setPeriod, 0 ),
 
-        //new BoolProp<TestUnit>("DoTest",tr("Do Test"),""
-        //                      , this, &TestUnit::doTest, &TestUnit::setDoTest,0 ),
-    }, 0 } );
+                        //new BoolProp<TestUnit>("DoTest",tr("Do Test"),""
+                        //                      , this, &TestUnit::doTest, &TestUnit::setDoTest,0 ),
+                    },
+                    0 } );
 }
-TestUnit::~TestUnit()
-{
-    if( m_truthTable )
-    {
+TestUnit::~TestUnit() {
+    if ( m_truthTable ) {
         //m_truthTable->clear();
         delete m_truthTable;
     }
 }
 
-void TestUnit::stamp()
-{
+void TestUnit::stamp() {
     IoComponent::initState();
 
     m_read = false;
@@ -85,46 +78,47 @@ void TestUnit::stamp()
 
     resizeVectors();
 
-    if( BatchTest::isRunning() )
-    {
+    if ( BatchTest::isRunning() ) {
         createTable();
         BatchTest::addTestUnit( this );
-        Simulator::self()->addEvent( m_period*1e12/2, this );
+        Simulator::self()->addEvent( m_period * 1e12 / 2, this );
     }
 }
 
-void TestUnit::updateStep()
-{
-    if( !m_changed ) return;
+void TestUnit::updateStep() {
+    if ( !m_changed )
+        return;
     m_changed = false;
 
     CircuitWidget::self()->powerCircOff();
     bool testOk = m_truthTable->checkThruth( &m_samples );
-    if( !BatchTest::isRunning() ) BatchTest::testCompleted( this, testOk );
+    if ( !BatchTest::isRunning() )
+        BatchTest::testCompleted( this, testOk );
 }
 
 void TestUnit::runEvent() // Running test
 {
-    if( m_read ) {
+    if ( m_read ) {
         m_read = false;
 
         uint inputVal = 0;
-        for( uint i=0; i<m_inpPin.size(); ++i )
-            if( m_inpPin[i]->getInpState() ) inputVal |= 1<<i;
+        for ( uint i = 0; i < m_inpPin.size(); ++i )
+            if ( m_inpPin[i]->getInpState() )
+                inputVal |= 1 << i;
 
         m_samples[m_outValue] = inputVal;
 
-        if( ++m_outValue < (uint)m_steps )
-            Simulator::self()->addEvent( m_period*1e12/2, this );
-        else m_changed = true;
-    }else{
+        if ( ++m_outValue < (uint) m_steps )
+            Simulator::self()->addEvent( m_period * 1e12 / 2, this );
+        else
+            m_changed = true;
+    } else {
         m_read = true;
-        for( uint i=0; i<m_outPin.size(); ++i )
-        {
-            bool state = m_outValue & (1<<i);
+        for ( uint i = 0; i < m_outPin.size(); ++i ) {
+            bool state = m_outValue & ( 1 << i );
             m_outPin[i]->setOutState( state );
         }
-        Simulator::self()->addEvent( m_period*1e12/2, this );
+        Simulator::self()->addEvent( m_period * 1e12 / 2, this );
     }
 }
 
@@ -132,12 +126,11 @@ void TestUnit::runTest() // Run test fron TruthTable
 {
     CircuitWidget::self()->powerCircOff();
     CircuitWidget::self()->powerCircOn();
-    Simulator::self()->addEvent( m_period*1e12/2, this );
+    Simulator::self()->addEvent( m_period * 1e12 / 2, this );
 }
 
-void TestUnit::createTable()
-{
-    if( !m_truthTable )
+void TestUnit::createTable() {
+    if ( !m_truthTable )
         m_truthTable = new TruthTable( this, CircuitView::self() );
 
     m_truthTable->setup( m_inputStr, m_outputStr, m_truthT );
@@ -149,64 +142,60 @@ void TestUnit::save( std::vector<uint> outValues ) // Save current samples as tr
     m_truthT = outValues;
 }
 
-void TestUnit::loadTest()
-{
-}
+void TestUnit::loadTest() { }
 
-QString TestUnit::truth()
-{
+QString TestUnit::truth() {
     QString truthStr;
-    for( uint i=0; i<m_truthT.size(); ++i )
-    {
-        truthStr += QString::number( m_truthT[i],16 )+",";
+    for ( uint i = 0; i < m_truthT.size(); ++i ) {
+        truthStr += QString::number( m_truthT[i], 16 ) + ",";
     }
     return truthStr;
 }
 
-void TestUnit::setTruth( QString t )
-{
-    QStringList truthList = t.split(",");
+void TestUnit::setTruth( QString t ) {
+    QStringList truthList = t.split( "," );
 
     bool ok;
     uint size = m_truthT.size();
     m_truthT.clear();
-    for( QString valStr : truthList )
-    {
-        if( valStr.isEmpty() ) continue;
+    for ( QString valStr : truthList ) {
+        if ( valStr.isEmpty() )
+            continue;
         m_truthT.push_back( valStr.toUInt( &ok, 16 ) );
-        if( m_truthT.size() == size ) break;
+        if ( m_truthT.size() == size )
+            break;
     }
 }
 
-void TestUnit::setInputs( QString i )
-{
-    if( i.isEmpty() ) i = " "; // Force property save
+void TestUnit::setInputs( QString i ) {
+    if ( i.isEmpty() )
+        i = " "; // Force property save
     m_inputStr = i;
-    QStringList inputList = i.split(",");
-    inputList.removeAll(" ");
+    QStringList inputList = i.split( "," );
+    inputList.removeAll( " " );
 
     int size = inputList.size();
     IoComponent::setNumOuts( size, "I" );
 
-    for( int i=0; i<size; ++i )
-        m_outPin[i]->setLabelText( inputList.at(i) );
+    for ( int i = 0; i < size; ++i )
+        m_outPin[i]->setLabelText( inputList.at( i ) );
 
     updtOutPins();
     resizeVectors();
 }
 
-void TestUnit::setOutputs( QString o )
-{
-    if( o.isEmpty() ) o = " "; // Force property save
+void TestUnit::setOutputs( QString o ) {
+    if ( o.isEmpty() )
+        o = " "; // Force property save
     m_outputStr = o;
-    QStringList outputList = o.split(",");
-    outputList.removeAll(" ");
+    QStringList outputList = o.split( "," );
+    outputList.removeAll( " " );
 
     int size = outputList.size();
     IoComponent::setNumInps( size, "O" );
 
-    for( int i=0; i<size; ++i )
-        m_inpPin[i]->setLabelText( outputList.at(i) );
+    for ( int i = 0; i < size; ++i )
+        m_inpPin[i]->setLabelText( outputList.at( i ) );
 
     updtInPins();
     resizeVectors();
@@ -218,18 +207,17 @@ void TestUnit::resizeVectors() // Vector size is nº of combinations, bits in ui
     m_samples.clear();
     m_samples.resize( m_steps, 0 );
 
-    if( m_truthT.size() == (uint)m_steps ) return;
+    if ( m_truthT.size() == (uint) m_steps )
+        return;
     m_truthT.clear();
     m_truthT.resize( m_steps, 0 );
 }
 
-void TestUnit::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu )
-{
-    QAction* tableAction = menu->addAction( QIcon(":/list.svg"),tr("Show Table") );
-    QObject::connect( tableAction, &QAction::triggered, [=](){ createTable(); } );
+void TestUnit::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) {
+    QAction* tableAction = menu->addAction( QIcon( ":/list.svg" ), tr( "Show Table" ) );
+    QObject::connect( tableAction, &QAction::triggered, [=]() { createTable(); } );
 
     menu->addSeparator();
 
     Component::contextMenu( event, menu );
 }
-

@@ -7,12 +7,11 @@
 
 #include <QToolButton>
 
-class CustomButton : public QToolButton
-{
+class CustomButton : public QToolButton {
     Q_OBJECT
-    public:
-        CustomButton( QWidget* parent=nullptr );
+public:
+    CustomButton( QWidget* parent = nullptr );
 
-    private:
-        virtual void paintEvent( QPaintEvent* ) override;
+private:
+    virtual void paintEvent( QPaintEvent* ) override;
 };

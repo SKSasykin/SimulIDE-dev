@@ -9,26 +9,25 @@
 
 class LibraryItem;
 
-class Inductor : public Reactive
-{
-    public:
-        Inductor( QString type, QString id );
-        ~Inductor();
+class Inductor : public Reactive {
+public:
+    Inductor( QString type, QString id );
+    ~Inductor();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double indCurrent() { return m_curSource; }
+    double indCurrent() { return m_curSource; }
 
-        virtual void setCurrentValue( double c ) override;
+    virtual void setCurrentValue( double c ) override;
 
-        Pin* getPin( int n ) { return m_pin[n]; }
-        
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    Pin* getPin( int n ) { return m_pin[n]; }
 
-    protected:
-        double updtRes()  override { return m_inductance/m_tStep; }
-        double updtCurr() override { return m_curSource - m_volt*m_admit; }
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-        double m_inductance;
+protected:
+    double updtRes() override { return m_inductance / m_tStep; }
+    double updtCurr() override { return m_curSource - m_volt * m_admit; }
+
+    double m_inductance;
 };

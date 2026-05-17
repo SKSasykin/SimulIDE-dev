@@ -9,12 +9,11 @@
 
 #include "ui_labelval.h"
 
-class LabelVal : public QWidget, private Ui::LabelVal
-{
+class LabelVal : public QWidget, private Ui::LabelVal {
     Q_OBJECT
-    
-    public:
-        LabelVal( QWidget* parent );
 
-        void setLabelVal( QString caption );
+public:
+    LabelVal( QWidget* parent );
+
+    void setLabelVal( QString caption );
 };

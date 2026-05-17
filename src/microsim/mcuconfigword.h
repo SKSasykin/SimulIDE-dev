@@ -9,19 +9,19 @@
 
 class eMcu;
 
-class ConfigWord
-{
-        friend class McuCreator;
-    public:
-        ConfigWord( eMcu* mcu, QString name );
-        ~ConfigWord();
+class ConfigWord {
+    friend class McuCreator;
 
-        virtual bool setCfgWord( uint16_t addr, uint16_t data );
-        uint16_t getCfgWord( uint16_t addr=0 );
+public:
+    ConfigWord( eMcu* mcu, QString name );
+    ~ConfigWord();
 
-    protected:
-        QString m_name;
-        eMcu*   m_mcu;
+    virtual bool setCfgWord( uint16_t addr, uint16_t data );
+    uint16_t getCfgWord( uint16_t addr = 0 );
 
-        QHash<uint16_t, uint16_t> m_cfgWords; // Config words
+protected:
+    QString m_name;
+    eMcu* m_mcu;
+
+    QHash<uint16_t, uint16_t> m_cfgWords; // Config words
 };

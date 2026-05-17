@@ -7,16 +7,15 @@
 
 #include "mcuocm.h"
 
-class AvrOcm : public McuOcm
-{
+class AvrOcm : public McuOcm {
     friend class McuCreator;
 
-    public:
-        AvrOcm( eMcu* mcu, QString name);
-        ~AvrOcm();
+public:
+    AvrOcm( eMcu* mcu, QString name );
+    ~AvrOcm();
 
-        virtual void configureA( uint8_t newVal ) override;
+    virtual void configureA( uint8_t newVal ) override;
 
-    protected:
-        virtual void OutputOcm() override;
+protected:
+    virtual void OutputOcm() override;
 };

@@ -5,46 +5,45 @@
 
 #pragma once
 
-#include "iocomponent.h"
 #include "e-clocked_device.h"
+#include "iocomponent.h"
 
 class IoPin;
 
-class LogicComponent : public IoComponent, public eClockedDevice
-{
-    public:
-        LogicComponent( QString type, QString id );
-        ~LogicComponent();
+class LogicComponent : public IoComponent, public eClockedDevice {
+public:
+    LogicComponent( QString type, QString id );
+    ~LogicComponent();
 
-        virtual void stamp() override;
+    virtual void stamp() override;
 
-        void createOePin ( QString d, QString id ) { setOePin( createPin( d, id ) ); }
-        void setOePin( IoPin* pin );
-        void enableOutputs( bool en );
-        void updateOutEnabled();
-        bool outputEnabled();
+    void createOePin( QString d, QString id ) { setOePin( createPin( d, id ) ); }
+    void setOePin( IoPin* pin );
+    void enableOutputs( bool en );
+    void updateOutEnabled();
+    bool outputEnabled();
 
-        virtual void setInpHighV( double volt ) override;
-        virtual void setInpLowV( double volt ) override;
-        virtual void setInputImp( double imp ) override;
+    virtual void setInpHighV( double volt ) override;
+    virtual void setInpLowV( double volt ) override;
+    virtual void setInputImp( double imp ) override;
 
-        bool tristate() { return m_tristate; }
-        virtual void setTristate( bool t );
+    bool tristate() { return m_tristate; }
+    virtual void setTristate( bool t );
 
-        QString triggerStr() { return m_triggerStr; }
-        void setTriggerStr( QString t );
+    QString triggerStr() { return m_triggerStr; }
+    void setTriggerStr( QString t );
 
-        virtual std::vector<Pin*> getPins() override;
+    virtual std::vector<Pin*> getPins() override;
 
-        virtual void remove() override;
+    virtual void remove() override;
 
- static const QString m_triggerList;
+    static const QString m_triggerList;
 
-    protected:
-        bool m_outEnable;
-        bool m_tristate;
+protected:
+    bool m_outEnable;
+    bool m_tristate;
 
-        QString m_triggerStr;
+    QString m_triggerStr;
 
-        IoPin* m_oePin;
+    IoPin* m_oePin;
 };

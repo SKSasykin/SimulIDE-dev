@@ -5,9 +5,7 @@
 
 #include "qemuocunit.h"
 
-QemuOcUnit::QemuOcUnit( QemuDevice* mcu, QString name, int number, uint32_t* frequency, uint64_t memStart, uint64_t memEnd )
-          : QemuModule( mcu, name, number, frequency, memStart, memEnd )
-{
-}
-QemuOcUnit::~QemuOcUnit() {}
-
+QemuOcUnit::QemuOcUnit( QemuDevice* mcu, QString name, int number, uint32_t* frequency, uint64_t memStart,
+                        uint64_t memEnd )
+    : QemuModule( mcu, name, number, frequency, memStart, memEnd ) { }
+QemuOcUnit::~QemuOcUnit() { }

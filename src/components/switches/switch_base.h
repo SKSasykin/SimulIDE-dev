@@ -10,35 +10,34 @@
 class CustomButton;
 class QGraphicsProxyWidget;
 
-class SwitchBase : public MechContact
-{
-    public:
-        SwitchBase( QString type, QString id );
-        ~SwitchBase();
+class SwitchBase : public MechContact {
+public:
+    SwitchBase( QString type, QString id );
+    ~SwitchBase();
 
-        virtual void updateStep() override;
+    virtual void updateStep() override;
 
-        virtual void setAngle( double angle ) override;
-        virtual void rotateAngle( double a ) override;
-        void rotateText( double angle );
+    virtual void setAngle( double angle ) override;
+    virtual void rotateAngle( double a ) override;
+    void rotateText( double angle );
 
-        virtual void setHidden( bool hid, bool hidArea=false, bool hidLabel=false ) override;
+    virtual void setHidden( bool hid, bool hidArea = false, bool hidLabel = false ) override;
 
-        QString key() { return m_key; }
-        void setKey( QString key );
-        
-        CustomButton* button() { return m_button; }
+    QString key() { return m_key; }
+    void setKey( QString key );
 
-        virtual void onbuttonclicked();
-        virtual void keyEvent( QString key, bool pressed ){;}
+    CustomButton* button() { return m_button; }
 
-    protected:
-        //virtual void setflip() override;
+    virtual void onbuttonclicked();
+    virtual void keyEvent( QString key, bool pressed ) { ; }
 
-        QString m_key;
-        
-        CustomButton* m_button;
-        QGraphicsProxyWidget* m_proxy;
+protected:
+    //virtual void setflip() override;
 
-        QMetaObject::Connection m_keyEventConn;
+    QString m_key;
+
+    CustomButton* m_button;
+    QGraphicsProxyWidget* m_proxy;
+
+    QMetaObject::Connection m_keyEventConn;
 };

@@ -5,47 +5,47 @@
 
 #pragma once
 
-#include "usartmodule.h"
 #include "qemumodule.h"
+#include "usartmodule.h"
 
-class QemuUsart : public QemuModule, public UsartModule
-{
-    public:
-        QemuUsart( QemuDevice* mcu, QString name, int n, uint32_t* clk=nullptr, uint64_t memStart=0, uint64_t memEnd=0 );
-        virtual ~QemuUsart();
+class QemuUsart : public QemuModule, public UsartModule {
+public:
+    QemuUsart( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
+               uint64_t memEnd = 0 );
+    virtual ~QemuUsart();
 
-        enum qemuUsartAction_t{
-            QEMU_USART_RECEIVE=1,
-            QEMU_USART_SENT,
-        };
+    enum qemuUsartAction_t {
+        QEMU_USART_RECEIVE = 1,
+        QEMU_USART_SENT,
+    };
 
-        virtual void enable( bool e );
+    virtual void enable( bool e );
 
-        //void sendByte( uint8_t data ) override{ UsartModule::sendByte( data ); }
-        void bufferEmpty() override;
-        void frameSent( uint8_t data ) override;
-        void readByte( uint8_t data ) override;
-        //void byteReceived( uint8_t data ) override;
+    //void sendByte( uint8_t data ) override{ UsartModule::sendByte( data ); }
+    void bufferEmpty() override;
+    void frameSent( uint8_t data ) override;
+    void readByte( uint8_t data ) override;
+    //void byteReceived( uint8_t data ) override;
 
-        uint8_t getBit9Tx() override;
-        void setBit9Rx( uint8_t bit ) override;
+    uint8_t getBit9Tx() override;
+    void setBit9Rx( uint8_t bit ) override;
 
-        void setPins( QList<IoPin*> pinList );
-        void setTxPin( IoPin* pin );
-        void setRxPin( IoPin* pin );
+    void setPins( QList<IoPin*> pinList );
+    void setTxPin( IoPin* pin );
+    void setRxPin( IoPin* pin );
 
-        IoPin** getTxPinPtr();
-        IoPin** getRxPinPtr();
+    IoPin** getTxPinPtr();
+    IoPin** getRxPinPtr();
 
-        virtual void doAction() override;
+    virtual void doAction() override;
 
-    protected:
-        //void readBuffer();
+protected:
+    //void readBuffer();
 
-        uint8_t m_enabled;
+    uint8_t m_enabled;
 
-        bool m_speedx2;
+    bool m_speedx2;
 
-        regBits_t m_bit9Tx;
-        regBits_t m_bit9Rx;
+    regBits_t m_bit9Tx;
+    regBits_t m_bit9Rx;
 };

@@ -27,7 +27,7 @@
    Andreas Jonsson
    andreas@angelcode.com
 */
- 
+
 //
 // as_atomic.cpp
 //
@@ -38,53 +38,51 @@
 
 BEGIN_AS_NAMESPACE
 
-asCAtomic::asCAtomic()
-{
-	value = 0;
+asCAtomic::asCAtomic() {
+    value = 0;
 }
 
-asDWORD asCAtomic::get() const
-{
-	// A very high ref count is highly unlikely. It most likely a problem with
-	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+asDWORD asCAtomic::get() const {
+    // A very high ref count is highly unlikely. It most likely a problem with
+    // memory that has been overwritten or is being accessed after it was deleted.
+    asASSERT( value < 1000000 );
 
-	return value;
+    return value;
 }
 
-void asCAtomic::set(asDWORD val)
-{
-	// A very high ref count is highly unlikely. It most likely a problem with
-	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+void asCAtomic::set( asDWORD val ) {
+    // A very high ref count is highly unlikely. It most likely a problem with
+    // memory that has been overwritten or is being accessed after it was deleted.
+    asASSERT( value < 1000000 );
 
-	value = val;
+    value = val;
 }
 
-asDWORD asCAtomic::atomicInc()
-{
-	// A very high ref count is highly unlikely. It most likely a problem with
-	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+asDWORD asCAtomic::atomicInc() {
+    // A very high ref count is highly unlikely. It most likely a problem with
+    // memory that has been overwritten or is being accessed after it was deleted.
+    asASSERT( value < 1000000 );
 
-	return asAtomicInc((int&)value);
+    return asAtomicInc( (int&) value );
 }
 
-asDWORD asCAtomic::atomicDec()
-{
-	// A very high ref count is highly unlikely. It most likely a problem with
-	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+asDWORD asCAtomic::atomicDec() {
+    // A very high ref count is highly unlikely. It most likely a problem with
+    // memory that has been overwritten or is being accessed after it was deleted.
+    asASSERT( value < 1000000 );
 
-	return asAtomicDec((int&)value);
+    return asAtomicDec( (int&) value );
 }
 
 //
 // The following code implements the atomicInc and atomicDec on different platforms
 //
 
-int asAtomicInc(int &value) { return ++value; }
-int asAtomicDec(int &value){ return --value; }
+int asAtomicInc( int& value ) {
+    return ++value;
+}
+int asAtomicDec( int& value ) {
+    return --value;
+}
 
 END_AS_NAMESPACE
-

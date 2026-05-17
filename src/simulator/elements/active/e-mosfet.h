@@ -7,39 +7,44 @@
 
 #include "e-resistor.h"
 
-class eMosfet : public eResistor
-{
-    public:
-        eMosfet( QString id );
-        ~eMosfet();
+class eMosfet : public eResistor {
+public:
+    eMosfet( QString id );
+    ~eMosfet();
 
-        virtual void initialize() override;
-        virtual void stamp() override;
-        virtual void voltChanged() override;
+    virtual void initialize() override;
+    virtual void stamp() override;
+    virtual void voltChanged() override;
 
-        bool pChannel() { return m_Pchannel; }
-        virtual void setPchannel( bool p ) { m_Pchannel = p; m_changed = true; }
+    bool pChannel() { return m_Pchannel; }
+    virtual void setPchannel( bool p ) {
+        m_Pchannel = p;
+        m_changed = true;
+    }
 
-        bool depletion() { return m_depletion; }
-        virtual void setDepletion( bool d ) { m_depletion = d; m_changed = true; }
+    bool depletion() { return m_depletion; }
+    virtual void setDepletion( bool d ) {
+        m_depletion = d;
+        m_changed = true;
+    }
 
-        double rdson() { return m_RDSon; }
-        void setRDSon( double rdson );
+    double rdson() { return m_RDSon; }
+    void setRDSon( double rdson );
 
-        double threshold() { return m_threshold; }
-        void setThreshold( double th );
-        
-    protected:
-        void updateValues();
+    double threshold() { return m_threshold; }
+    void setThreshold( double th );
 
-        double m_accuracy;
-        double m_lastCurrent;
-        double m_threshold;
-        double m_kRDSon;
-        double m_RDSon;
-        double m_gateV;
-        double m_Gth;
+protected:
+    void updateValues();
 
-        bool m_Pchannel;
-        bool m_depletion;
+    double m_accuracy;
+    double m_lastCurrent;
+    double m_threshold;
+    double m_kRDSon;
+    double m_RDSon;
+    double m_gateV;
+    double m_Gth;
+
+    bool m_Pchannel;
+    bool m_depletion;
 };

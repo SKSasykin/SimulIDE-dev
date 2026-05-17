@@ -5,25 +5,22 @@
 
 #pragma once
 
-#include "twimodule.h"
 #include "qemumodule.h"
+#include "twimodule.h"
 
-
-class QemuTwi : public QemuModule, public TwiModule
-{
+class QemuTwi : public QemuModule, public TwiModule {
     friend class I2cRunner;
 
-    public:
-        QemuTwi( QemuDevice* mcu, QString name, int n, uint32_t* clk=nullptr, uint64_t memStart=0, uint64_t memEnd=0 );
-        virtual ~QemuTwi();
+public:
+    QemuTwi( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
+             uint64_t memEnd = 0 );
+    virtual ~QemuTwi();
 
-        void setMode( twiMode_t mode ) override;
+    void setMode( twiMode_t mode ) override;
 
-        IoPin** getSclPinPtr() { return &m_scl; }
-        IoPin** getSdaPinPtr() { return &m_sda; }
+    IoPin** getSclPinPtr() { return &m_scl; }
+    IoPin** getSdaPinPtr() { return &m_sda; }
 
-    protected:
-
-        //uint8_t m_txAddress;
+protected:
+    //uint8_t m_txAddress;
 };
-

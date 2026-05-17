@@ -7,34 +7,33 @@
 
 #include <QList>
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
 class McuPin;
 
-class McuVref : public McuModule, public eElement
-{
-        friend class McuCreator;
+class McuVref : public McuModule, public eElement {
+    friend class McuCreator;
 
-    public:
-        McuVref( eMcu* mcu, QString name );
-        ~McuVref();
+public:
+    McuVref( eMcu* mcu, QString name );
+    ~McuVref();
 
-        virtual void initialize() override;
+    virtual void initialize() override;
 
-        //double getVref() { return m_vref; }
+    //double getVref() { return m_vref; }
 
-        void addCallBack( McuModule* mod, bool call );
+    void addCallBack( McuModule* mod, bool call );
 
-    protected:
-        //virtual void setMode( uint8_t mode );
+protected:
+    //virtual void setMode( uint8_t mode );
 
-        bool m_enabled;
-        uint8_t m_mode;
+    bool m_enabled;
+    uint8_t m_mode;
 
-        double m_vref;
+    double m_vref;
 
-        McuPin* m_pinOut;
+    McuPin* m_pinOut;
 
-        QList<McuModule*> m_callBacks;
+    QList<McuModule*> m_callBacks;
 };

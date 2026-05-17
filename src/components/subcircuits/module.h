@@ -7,17 +7,16 @@
 
 #include "shield.h"
 
-class ModuleSubc : public ShieldSubc
-{
-    public:
-        ModuleSubc( QString type, QString id, QString device );
-        ~ModuleSubc();
-        
-        double zVal() { return zValue(); }
-        void setZVal( double v);
+class ModuleSubc : public ShieldSubc {
+public:
+    ModuleSubc( QString type, QString id, QString device );
+    ~ModuleSubc();
 
-        virtual void slotAttach() override;
+    double zVal() { return zValue(); }
+    void setZVal( double v );
 
-    protected:
-        virtual void renameTunnels() override;
+    virtual void slotAttach() override;
+
+protected:
+    virtual void renameTunnels() override;
 };

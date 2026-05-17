@@ -6,13 +6,11 @@
 #include <QDial>
 #include <QVBoxLayout>
 
-#include "dialwidget.h"
 #include "customdial.h"
 #include "customslider.h"
+#include "dialwidget.h"
 
-DialWidget::DialWidget( QWidget* parent )
-          : QWidget( parent )
-{
+DialWidget::DialWidget( QWidget* parent ) : QWidget( parent ) {
     m_size = 24;
     m_scale = 1;
     m_slider = nullptr;
@@ -27,48 +25,45 @@ DialWidget::DialWidget( QWidget* parent )
 
     setAttribute( Qt::WA_TranslucentBackground );
 }
-DialWidget::~DialWidget() {}
+DialWidget::~DialWidget() { }
 
-void DialWidget::setSize( int size )
-{
+void DialWidget::setSize( int size ) {
     m_knob->setFixedSize( size, size );
-    if( m_slider ) m_slider->setFixedSize( double(size*2.5), 12 );
+    if ( m_slider )
+        m_slider->setFixedSize( double( size * 2.5 ), 12 );
     this->setFixedSize( m_dial->size() );
 }
 
-void DialWidget::setScale( double s )
-{
+void DialWidget::setScale( double s ) {
     m_scale = s;
-    setSize( m_size*s );
+    setSize( m_size * s );
 }
 
-void DialWidget::setSingleStep( int s )
-{
+void DialWidget::setSingleStep( int s ) {
     m_knob->setSingleStep( s );
-    if( m_slider ) m_slider->setSingleStep( s );
+    if ( m_slider )
+        m_slider->setSingleStep( s );
 }
 
-void DialWidget::setMaximum( int m )
-{
+void DialWidget::setMaximum( int m ) {
     m_knob->setMaximum( m );
-    if( m_slider ) m_slider->setMaximum( m );
+    if ( m_slider )
+        m_slider->setMaximum( m );
 }
 
-void DialWidget::setType( int type )
-{
-    if( type == 0 ) // Knob
+void DialWidget::setType( int type ) {
+    if ( type == 0 ) // Knob
     {
         m_dial = m_knob;
-        if( m_slider ) m_slider->setVisible( false );
+        if ( m_slider )
+            m_slider->setVisible( false );
         m_knob->setVisible( true );
-    }
-    else            // Slider
+    } else // Slider
     {
         m_verticalLayout->removeWidget( m_knob );
-        if( !m_slider )
-        {
+        if ( !m_slider ) {
             m_slider = new CustomSlider( this );
-            m_slider->setFixedSize( double(m_size*2.5), 12 );
+            m_slider->setFixedSize( double( m_size * 2.5 ), 12 );
             m_slider->setSingleStep( m_knob->singleStep() );
             m_slider->setMaximum( m_knob->maximum() );
             m_slider->setValue( m_knob->value() );
@@ -82,18 +77,14 @@ void DialWidget::setType( int type )
     this->setFixedSize( m_dial->size() );
 }
 
-void DialWidget::setValue( int v )
-{
+void DialWidget::setValue( int v ) {
     m_dial->setValue( v );
 }
 
-int DialWidget::value()
-{
+int DialWidget::value() {
     return m_dial->value();
 }
 
-void DialWidget::paintEvent( QPaintEvent* e )
-{
-}
+void DialWidget::paintEvent( QPaintEvent* e ) { }
 
 #include "moc_dialwidget.cpp"

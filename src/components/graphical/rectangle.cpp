@@ -5,44 +5,34 @@
 
 #include <QPainter>
 
-#include "rectangle.h"
 #include "itemlibrary.h"
+#include "rectangle.h"
 
-#define tr(str) simulideTr("Rectangle",str)
+#define tr( str ) simulideTr( "Rectangle", str )
 
-Component* Rectangle::construct( QString type, QString id )
-{ return new Rectangle( type, id ); }
-
-LibraryItem* Rectangle::libraryItem()
-{
-    return new LibraryItem(
-        tr("Rectangle"),
-        "Graphical",
-        "rectangle.png",
-        "Rectangle",
-        Rectangle::construct);
+Component* Rectangle::construct( QString type, QString id ) {
+    return new Rectangle( type, id );
 }
 
-Rectangle::Rectangle( QString type, QString id )
-         : Shape( type, id )
-{
+LibraryItem* Rectangle::libraryItem() {
+    return new LibraryItem( tr( "Rectangle" ), "Graphical", "rectangle.png", "Rectangle", Rectangle::construct );
 }
-Rectangle::~Rectangle(){}
 
-void Rectangle::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
+Rectangle::Rectangle( QString type, QString id ) : Shape( type, id ) { }
+Rectangle::~Rectangle() { }
+
+void Rectangle::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
     Component::paint( p, o, w );
 
-    QPen pen(Qt::black, m_border, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen( Qt::black, m_border, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin );
     p->setPen( pen );
-    
+
     double opacity = p->opacity();
-    p->setOpacity( opacity*m_opac );
+    p->setOpacity( opacity * m_opac );
     p->fillRect( m_area, m_color );
     p->setOpacity( opacity );
 
-    if( m_border > 0 )
-    {
+    if ( m_border > 0 ) {
         p->setBrush( Qt::transparent );
         p->drawRect( m_area );
     }

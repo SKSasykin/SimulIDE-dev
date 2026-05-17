@@ -5,30 +5,28 @@
 
 #pragma once
 
-#include "scriptperif.h"
 #include "display.h"
+#include "scriptperif.h"
 
 class asIScriptFunction;
 
-class ScriptDisplay : public DisplayArea, public ScriptPerif
-{
-    public:
-        ScriptDisplay( int width, int height, QString name, QWidget* parent );
-        ~ScriptDisplay();
+class ScriptDisplay : public DisplayArea, public ScriptPerif {
+public:
+    ScriptDisplay( int width, int height, QString name, QWidget* parent );
+    ~ScriptDisplay();
 
-        virtual void initialize() override;
+    virtual void initialize() override;
 
-        virtual QStringList registerScript( ScriptCpu* cpu ) override;
-        virtual void startScript() override;
+    virtual QStringList registerScript( ScriptCpu* cpu ) override;
+    virtual void startScript() override;
 
-        void setData( CScriptArray* d );
-        void setPalette( CScriptArray* p );
+    void setData( CScriptArray* d );
+    void setPalette( CScriptArray* p );
 
-    private:
+private:
+    asIScriptFunction* m_clear;
 
-        asIScriptFunction* m_clear;
+    std::vector<int> m_palette;
 
-        std::vector<int> m_palette;
-
- static void registerScriptMetods( asIScriptEngine* engine );
+    static void registerScriptMetods( asIScriptEngine* engine );
 };

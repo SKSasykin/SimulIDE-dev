@@ -6,12 +6,12 @@
 #pragma once
 
 #include "component.h"
-#include "updatable.h"
 #include "e-pin.h"
+#include "updatable.h"
 
-enum pinState_t{
-    undef_state=0,
-    driven_low,    // State is open high, but driven low externally
+enum pinState_t {
+    undef_state = 0,
+    driven_low, // State is open high, but driven low externally
     open_low,
     open_high,
     out_low,
@@ -23,124 +23,117 @@ enum pinState_t{
 class Connector;
 class LaChannel;
 
-class Pin : public QGraphicsItem, public ePin, public Updatable
-{
-    Q_INTERFACES(QGraphicsItem)
+class Pin : public QGraphicsItem, public ePin, public Updatable {
+    Q_INTERFACES( QGraphicsItem )
 
-    public:
-        Pin( int angle, const QPoint pos, QString id, int index, Component* parent=0, int length=8 );
-        ~Pin();
+public:
+    Pin( int angle, const QPoint pos, QString id, int index, Component* parent = 0, int length = 8 );
+    ~Pin();
 
-        enum pinType_t{
-            pinNormal=0,
-            pinSocket,
-            pinHeader,
-            pinNull,
-            pinRst
-        };
+    enum pinType_t { pinNormal = 0, pinSocket, pinHeader, pinNull, pinRst };
 
-        enum { Type = UserType + 3 };
-        int type() const override { return Type; }
+    enum { Type = UserType + 3 };
+    int type() const override { return Type; }
 
-        QRectF boundingRect() const override { return m_area; }
+    QRectF boundingRect() const override { return m_area; }
 
-        QString pinId() { return m_id; }
-        
-        bool unused() { return m_unused; }
-        void setUnused( bool unused );
+    QString pinId() { return m_id; }
 
-        int length() { return m_length; }
-        virtual void setLength( double length );
+    bool unused() { return m_unused; }
+    void setUnused( bool unused );
 
-        void setColor( QColor color ) { m_color[0] = color; }
-        void setPinAngle( int angle );
-        int pinAngle() { return m_angle; }
+    int length() { return m_length; }
+    virtual void setLength( double length );
 
-        void setX( double x );
-        void setY( double y );
+    void setColor( QColor color ) { m_color[0] = color; }
+    void setPinAngle( int angle );
+    int pinAngle() { return m_angle; }
 
-        void setBoundingRect( QRect area ) { m_area = area; }
-        
-        Component* component() { return m_component; }
+    void setX( double x );
+    void setY( double y );
 
-        Connector* connector() { return my_connector; }
-        void setConnector( Connector* c );
-        void removeConnector();
+    void setBoundingRect( QRect area ) { m_area = area; }
 
-        void setConPin( Pin* pin ) { m_conPin = pin; }
-        Pin* conPin(){ return m_conPin; }
+    Component* component() { return m_component; }
 
-        Pin* connectPin( bool connect );
+    Connector* connector() { return my_connector; }
+    void setConnector( Connector* c );
+    void removeConnector();
 
-        QString getLabelText() { return m_labelText; }
-        virtual void setLabelText( QString label, bool over=true );
-        void setLabelPos();
-        void setLabelColor( QColor color );
-        void setFontSize( int size );
-        int  labelSizeX() { return m_labelWidth; }
+    void setConPin( Pin* pin ) { m_conPin = pin; }
+    Pin* conPin() { return m_conPin; }
 
-        void setSpace( double s );
-        double space() { return m_space; }
+    Pin* connectPin( bool connect );
 
-        void setPinId( QString id ) { m_id = id; }
-        void setVisible( bool visible );
+    QString getLabelText() { return m_labelText; }
+    virtual void setLabelText( QString label, bool over = true );
+    void setLabelPos();
+    void setLabelColor( QColor color );
+    void setFontSize( int size );
+    int labelSizeX() { return m_labelWidth; }
 
-        void moveBy( int dx, int dy );
+    void setSpace( double s );
+    double space() { return m_space; }
 
-        void connectorRemoved();
+    void setPinId( QString id ) { m_id = id; }
+    void setVisible( bool visible );
 
-        void registerEnode( eNode* enode, int n=-1 );
-        void registerPinsW( eNode* enode, int n=-1 );
-        
-        void setIsBus( bool bus );
-        bool isBus() { return m_isBus; }
+    void moveBy( int dx, int dy );
 
-        void setPinType( pinType_t ty ) { m_pinType = ty; }
-        pinType_t pinType() { return m_pinType; }
+    void connectorRemoved();
 
-        void setDataChannel( LaChannel* ch ) { m_dataCannel = ch; }
+    void registerEnode( eNode* enode, int n = -1 );
+    void registerPinsW( eNode* enode, int n = -1 );
 
-        void warning( bool w );
-        void animate( bool an );
-        virtual void updateStep() override;
+    void setIsBus( bool bus );
+    bool isBus() { return m_isBus; }
 
-        virtual Pin* getPin() override { return this; }
+    void setPinType( pinType_t ty ) { m_pinType = ty; }
+    pinType_t pinType() { return m_pinType; }
 
-        void isMoved();
-        void flip( int h, int v );
+    void setDataChannel( LaChannel* ch ) { m_dataCannel = ch; }
 
-    protected:
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
-        void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
+    void warning( bool w );
+    void animate( bool an );
+    virtual void updateStep() override;
 
-        pinType_t  m_pinType;
-        pinState_t m_pinState;
+    virtual Pin* getPin() override { return this; }
 
-        double m_space;
-        double m_length;
-        int m_angle;
-        int m_Hflip;
-        int m_Vflip;
-        int m_overScore;
-        int m_labelheight;
-        int m_labelWidth;
+    void isMoved();
+    void flip( int h, int v );
 
-        bool m_blocked;
-        bool m_isBus;
-        bool m_unused;
-        bool m_animate;
-        bool m_warning;
+protected:
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
 
-        double  m_opCount;
+    pinType_t m_pinType;
+    pinState_t m_pinState;
 
-        QString m_labelText;
-        
-        QColor m_color[8];
-        QRectF     m_area;
-        Connector* my_connector;
-        Component* m_component;
-        LaChannel* m_dataCannel;    // connect to Logic Analyzer
-        Pin*       m_conPin;        // Pin at the other side of connector
+    double m_space;
+    double m_length;
+    int m_angle;
+    int m_Hflip;
+    int m_Vflip;
+    int m_overScore;
+    int m_labelheight;
+    int m_labelWidth;
 
-        QGraphicsSimpleTextItem m_label;
+    bool m_blocked;
+    bool m_isBus;
+    bool m_unused;
+    bool m_animate;
+    bool m_warning;
+
+    double m_opCount;
+
+    QString m_labelText;
+
+    QColor m_color[8];
+    QRectF m_area;
+    Connector* my_connector;
+    Component* m_component;
+    LaChannel* m_dataCannel; // connect to Logic Analyzer
+    Pin* m_conPin; // Pin at the other side of connector
+
+    QGraphicsSimpleTextItem m_label;
 };

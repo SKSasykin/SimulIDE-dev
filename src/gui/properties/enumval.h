@@ -5,29 +5,28 @@
 
 #pragma once
 
-#include "ui_enumval.h"
 #include "propval.h"
+#include "ui_enumval.h"
 
 class Component;
 class PropDialog;
 
-class EnumVal : public PropVal, private Ui::EnumVal
-{
+class EnumVal : public PropVal, private Ui::EnumVal {
     Q_OBJECT
-    
-    public:
-        EnumVal( PropDialog* parent, CompBase* comp, ComProperty* prop );
-        ~EnumVal();
 
-        virtual void setup( bool isComp ) override;
-        virtual void updtValues() override;
+public:
+    EnumVal( PropDialog* parent, CompBase* comp, ComProperty* prop );
+    ~EnumVal();
 
-        void setEnums( QString e );
+    virtual void setup( bool isComp ) override;
+    virtual void updtValues() override;
 
-    public slots:
-        void on_showVal_toggled( bool checked );
-        void on_valueBox_currentIndexChanged( QString val );
+    void setEnums( QString e );
 
-    protected:
-        QStringList m_enums;
+public slots:
+    void on_showVal_toggled( bool checked );
+    void on_valueBox_currentIndexChanged( QString val );
+
+protected:
+    QStringList m_enums;
 };

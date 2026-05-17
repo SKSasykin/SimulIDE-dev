@@ -11,31 +11,30 @@
 class LibraryItem;
 class eNode;
 
-class Bus : public Component, public eElement
-{
-    public:
-        Bus( QString type, QString id );
-        ~Bus();
+class Bus : public Component, public eElement {
+public:
+    Bus( QString type, QString id );
+    ~Bus();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
-        
-        int numLines() { return m_numLines; }
-        void setNumLines( int lines );
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        int startBit() { return m_startBit; }
-        void setStartBit( int bit );
+    int numLines() { return m_numLines; }
+    void setNumLines( int lines );
 
-        void registerEnode( eNode* enode, int n=-1 ) override;
+    int startBit() { return m_startBit; }
+    void setStartBit( int bit );
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget );
-        
-    protected:
-        int m_height;
+    void registerEnode( eNode* enode, int n = -1 ) override;
 
-        int m_numLines;
-        int m_startBit;
-        
-        Pin* m_busPin0;
-        Pin* m_busPin1;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget );
+
+protected:
+    int m_height;
+
+    int m_numLines;
+    int m_startBit;
+
+    Pin* m_busPin0;
+    Pin* m_busPin1;
 };

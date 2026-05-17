@@ -7,69 +7,65 @@
 
 #include "mcuintosc.h"
 
-class PicIntOsc : public McuIntOsc
-{
-    public:
-        PicIntOsc( eMcu* mcu, QString name );
-        ~PicIntOsc();
+class PicIntOsc : public McuIntOsc {
+public:
+    PicIntOsc( eMcu* mcu, QString name );
+    ~PicIntOsc();
 
-        virtual void stamp() override;
+    virtual void stamp() override;
 
-        virtual void setPin( int n, McuPin* p ) override;
+    virtual void setPin( int n, McuPin* p ) override;
 
- static PicIntOsc* createIntOsc( eMcu* mcu, QString name, QString type );
+    static PicIntOsc* createIntOsc( eMcu* mcu, QString name, QString type );
 
-    protected:
-        bool m_cfgWordCtrl;
+protected:
+    bool m_cfgWordCtrl;
 };
 
-class PicIntOsc00 : public PicIntOsc
-{
-    public:
-        PicIntOsc00( eMcu* mcu, QString name );
-        ~PicIntOsc00();
+class PicIntOsc00 : public PicIntOsc {
+public:
+    PicIntOsc00( eMcu* mcu, QString name );
+    ~PicIntOsc00();
 
-        virtual void setup() override;
+    virtual void setup() override;
 
-        virtual void configureA( uint8_t newOSCCON ) override;
+    virtual void configureA( uint8_t newOSCCON ) override;
 
-        virtual bool freqChanged() override;
+    virtual bool freqChanged() override;
 
-    protected:
-        regBits_t m_SCS;
-        regBits_t m_IRCF;
+protected:
+    regBits_t m_SCS;
+    regBits_t m_IRCF;
 };
 
-class PicIntOsc01 : public PicIntOsc
-{
-    public:
-        PicIntOsc01( eMcu* mcu, QString name );
-        ~PicIntOsc01();
+class PicIntOsc01 : public PicIntOsc {
+public:
+    PicIntOsc01( eMcu* mcu, QString name );
+    ~PicIntOsc01();
 
-        virtual void setup() override;
+    virtual void setup() override;
 
-        virtual void configureA( uint8_t newOSCCON ) override;
+    virtual void configureA( uint8_t newOSCCON ) override;
 
-        virtual bool freqChanged() override;
+    virtual bool freqChanged() override;
 
-    protected:
-        regBits_t m_OSCF;
+protected:
+    regBits_t m_OSCF;
 };
 
-class PicIntOsc02 : public PicIntOsc
-{
-    public:
-        PicIntOsc02( eMcu* mcu, QString name );
-        ~PicIntOsc02();
+class PicIntOsc02 : public PicIntOsc {
+public:
+    PicIntOsc02( eMcu* mcu, QString name );
+    ~PicIntOsc02();
 
-        virtual void setup() override;
+    virtual void setup() override;
 
-        virtual void configureA( uint8_t newOSCCON ) override;
+    virtual void configureA( uint8_t newOSCCON ) override;
 
-        virtual bool freqChanged() override;
+    virtual bool freqChanged() override;
 
-    protected:
-        regBits_t m_SCS;
-        regBits_t m_IRCF;
-        regBits_t m_SPLLEN;
+protected:
+    regBits_t m_SCS;
+    regBits_t m_IRCF;
+    regBits_t m_SPLLEN;
 };

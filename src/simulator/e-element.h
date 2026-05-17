@@ -5,51 +5,50 @@
 
 #pragma once
 
-#include <vector>
 #include <QString>
+#include <vector>
 
 class ePin;
 
-class eElement
-{
-    public:
-        eElement( QString id );
-        virtual ~eElement();
+class eElement {
+public:
+    eElement( QString id );
+    virtual ~eElement();
 
-        virtual void initialize(){;}
-        virtual void stamp(){;}
+    virtual void initialize() { ; }
+    virtual void stamp() { ; }
 
-        virtual void runEvent(){;}
-        virtual void voltChanged(){;}
+    virtual void runEvent() { ; }
+    virtual void voltChanged() { ; }
 
-        virtual void setNumEpins( int n );
+    virtual void setNumEpins( int n );
 
-        virtual ePin* getEpin( int num );
-        virtual void setEpin( int num, ePin* pin );
+    virtual ePin* getEpin( int num );
+    virtual void setEpin( int num, ePin* pin );
 
-        QString getId(){ return m_elmId; }
+    QString getId() { return m_elmId; }
 
-        void pauseEvents();
-        void resumeEvents();
+    void pauseEvents();
+    void resumeEvents();
 
-        static constexpr double cero_doub = 1e-9;
-        static constexpr double low_imp   = 1e-7;
-        static constexpr double high_imp  = 1e7;
+    static constexpr double cero_doub = 1e-9;
+    static constexpr double low_imp = 1e-7;
+    static constexpr double high_imp = 1e7;
 
-        // Simulator engine
-        eElement* nextChanged;
-        bool added;
+    // Simulator engine
+    eElement* nextChanged;
+    bool added;
 
-        eElement* nextEvent;
-        uint64_t eventTime;
+    eElement* nextEvent;
+    uint64_t eventTime;
 
-    protected:
-        uint64_t m_pendingTime;
+protected:
+    uint64_t m_pendingTime;
 
-        std::vector<ePin*> m_ePin;
+    std::vector<ePin*> m_ePin;
 
-        QString m_elmId;
+    QString m_elmId;
 
-        bool m_changed;
-        double m_step;
+    bool m_changed;
+    double m_step;
 };

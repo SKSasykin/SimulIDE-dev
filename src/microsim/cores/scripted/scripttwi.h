@@ -5,32 +5,31 @@
 
 #pragma once
 
-#include "scriptperif.h"
 #include "mcutwi.h"
+#include "scriptperif.h"
 
 class asIScriptFunction;
 
-class ScriptTwi : public McuTwi, public ScriptPerif
-{
-    public:
-        ScriptTwi( eMcu* mcu, QString name );
-        ~ScriptTwi();
+class ScriptTwi : public McuTwi, public ScriptPerif {
+public:
+    ScriptTwi( eMcu* mcu, QString name );
+    ~ScriptTwi();
 
-        virtual void reset() override;
+    virtual void reset() override;
 
-        void setAddress( uint8_t a );
+    void setAddress( uint8_t a );
 
-        virtual void readByte() override;
+    virtual void readByte() override;
 
-        virtual void writeByte() override;
-        void sendByte( uint8_t data );
+    virtual void writeByte() override;
+    void sendByte( uint8_t data );
 
-        virtual QStringList registerScript( ScriptCpu* cpu ) override;
-        virtual void startScript() override;
+    virtual QStringList registerScript( ScriptCpu* cpu ) override;
+    virtual void startScript() override;
 
-    private:
-        uint8_t getStaus() { return *m_statReg &= 0b11111000; }
+private:
+    uint8_t getStaus() { return *m_statReg &= 0b11111000; }
 
-        asIScriptFunction* m_byteReceived;
-        asIScriptFunction* m_writeByte;
+    asIScriptFunction* m_byteReceived;
+    asIScriptFunction* m_writeByte;
 };

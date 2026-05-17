@@ -12,37 +12,36 @@
 class CompBase;
 class PropVal;
 
-class PropDialog : public QDialog, private Ui::PropDialog
-{
+class PropDialog : public QDialog, private Ui::PropDialog {
     Q_OBJECT
-    
-    public:
-        PropDialog( QWidget* parent=0, QString help="" );
 
-        void setComponent( CompBase* comp, bool isComp=true );
-        void showProp( QString name, bool show );
-        void enableProp( QString name, bool en );
-        void updtValues();
+public:
+    PropDialog( QWidget* parent = 0, QString help = "" );
 
-        void changed();
+    void setComponent( CompBase* comp, bool isComp = true );
+    void showProp( QString name, bool show );
+    void enableProp( QString name, bool en );
+    void updtValues();
 
-        PropVal* getPropWidget( QString propName );
+    void changed();
 
-    public slots:
-        void on_labelBox_editingFinished();
-        void on_showButton_toggled( bool checked );
-        void on_tabList_currentChanged( int );
-        void on_helpButton_clicked();
-        void adjustWidgets();
+    PropVal* getPropWidget( QString propName );
 
-    private:
-        CompBase* m_component;
+public slots:
+    void on_labelBox_editingFinished();
+    void on_showButton_toggled( bool checked );
+    void on_tabList_currentChanged( int );
+    void on_helpButton_clicked();
+    void adjustWidgets();
 
-        bool m_helpExpanded;
+private:
+    CompBase* m_component;
 
-        float m_scale;
-        int m_minW;
-        int m_minH;
+    bool m_helpExpanded;
 
-        QList<PropVal*> m_propList;
+    float m_scale;
+    int m_minW;
+    int m_minH;
+
+    QList<PropVal*> m_propList;
 };

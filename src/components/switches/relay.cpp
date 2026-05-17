@@ -6,43 +6,36 @@
 #include <QPainter>
 #include <math.h>
 
-#include "relay.h"
-#include "itemlibrary.h"
-#include "simulator.h"
 #include "circuit.h"
 #include "e-node.h"
+#include "itemlibrary.h"
+#include "relay.h"
+#include "simulator.h"
 
-#include "doubleprop.h"
 #include "boolprop.h"
+#include "doubleprop.h"
 #include "intprop.h"
 
-#define tr(str) simulideTr("Relay",str)
+#define tr( str ) simulideTr( "Relay", str )
 
-Component* Relay::construct( QString type, QString id )
-{ return new Relay( type, id ); }
-
-LibraryItem* Relay::libraryItem()
-{
-    return new LibraryItem(
-        tr( "Relay (all)" ),
-        "Switches",
-        "relay-spst.png",
-        "RelaySPST",
-        Relay::construct);
+Component* Relay::construct( QString type, QString id ) {
+    return new Relay( type, id );
 }
 
-Relay::Relay( QString type, QString id )
-     : MechContact( type, id )
-{
-    m_ePin.resize(4);
-    m_pin.resize(2);
+LibraryItem* Relay::libraryItem() {
+    return new LibraryItem( tr( "Relay (all)" ), "Switches", "relay-spst.png", "RelaySPST", Relay::construct );
+}
+
+Relay::Relay( QString type, QString id ) : MechContact( type, id ) {
+    m_ePin.resize( 4 );
+    m_pin.resize( 2 );
 
     m_pin0 = 4;
 
-    m_inductor = new Inductor( "Inductor", m_id+"-inductor" );
+    m_inductor = new Inductor( "Inductor", m_id + "-inductor" );
     m_inductor->setParentItem( this );
     m_inductor->moveTo( QPointF( 0, 0 ) );
-    m_inductor->setValue( 0.1 );  // 100 mH
+    m_inductor->setValue( 0.1 ); // 100 mH
     m_inductor->setResist( 100 );
     m_inductor->setShowVal( false );
 
@@ -52,76 +45,77 @@ Relay::Relay( QString type, QString id )
     addSignalPin( m_pin[1] );
 
     m_trigCurrent = 0.02;
-    m_relCurrent  = 0.01;
+    m_relCurrent = 0.01;
 
-    setValLabelPos(-16, 6, 0);
-    setLabelPos(-16, 8, 0);
+    setValLabelPos( -16, 6, 0 );
+    setLabelPos( -16, 8, 0 );
 
     SetupSwitches( 1, 1 );
 
-    addPropGroup( { tr("Main"), {
-        new BoolProp<Relay>("Norm_Close", tr("Normally Closed"),""
-                           , this, &Relay::nClose, &Relay::setNClose ),
+    addPropGroup(
+        { tr( "Main" ),
+          {
+              new BoolProp<Relay>( "Norm_Close", tr( "Normally Closed" ), "", this, &Relay::nClose, &Relay::setNClose ),
 
-        new BoolProp<Relay>("DT", tr("Double Throw"),""
-                           , this, &Relay::dt, &Relay::setDt, propNoCopy ),
+              new BoolProp<Relay>( "DT", tr( "Double Throw" ), "", this, &Relay::dt, &Relay::setDt, propNoCopy ),
 
-        new IntProp <Relay>("Poles", tr("Poles"),""
-                           , this, &Relay::poles, &Relay::setPoles, propNoCopy,"uint" ),
-    }, 0} );
+              new IntProp<Relay>( "Poles", tr( "Poles" ), "", this, &Relay::poles, &Relay::setPoles, propNoCopy,
+                                  "uint" ),
+          },
+          0 } );
 
-    addPropGroup( { tr("Electric"), {
-        new DoubProp<Relay>("IOn" , tr("IOn"),"mA"
-                           , this, &Relay::iTrig, &Relay::setITrig),
+    addPropGroup( { tr( "Electric" ),
+                    { new DoubProp<Relay>( "IOn", tr( "IOn" ), "mA", this, &Relay::iTrig, &Relay::setITrig ),
 
-        new DoubProp<Relay>("IOff", tr("IOff"),"mA"
-                           , this, &Relay::iRel, &Relay::setIRel )
-    }, 0} );
+                      new DoubProp<Relay>( "IOff", tr( "IOff" ), "mA", this, &Relay::iRel, &Relay::setIRel ) },
+                    0 } );
 
-    addPropGroup( { tr("Coil"), {
-        new DoubProp<Inductor>("Inductance", tr("Inductance"),"mH"
-                              , m_inductor, &Inductor::value , &Inductor::setValue ),
+    addPropGroup( { tr( "Coil" ),
+                    {
+                        new DoubProp<Inductor>( "Inductance", tr( "Inductance" ), "mH", m_inductor, &Inductor::value,
+                                                &Inductor::setValue ),
 
-        new DoubProp<Inductor>("Rcoil", tr("Resistance"),"Ω"
-                              , m_inductor, &Inductor::resist, &Inductor::setResist),
+                        new DoubProp<Inductor>( "Rcoil", tr( "Resistance" ), "Ω", m_inductor, &Inductor::resist,
+                                                &Inductor::setResist ),
 
-        //new DoubProp<Inductor>("ReaStep", tr("Reactive Step"),"ns"
-        //                      ,m_inductor, &Inductor::reaStep, &Inductor::setReaStep,0,"uint" )
-    }, 0} );
+                        //new DoubProp<Inductor>("ReaStep", tr("Reactive Step"),"ns"
+                        //                      ,m_inductor, &Inductor::reaStep, &Inductor::setReaStep,0,"uint" )
+                    },
+                    0 } );
 }
-Relay::~Relay(){}
+Relay::~Relay() { }
 
-void Relay::initialize()
-{
+void Relay::initialize() {
     m_relayOn = false;
 
-    if( Simulator::self()->isRunning() )
-        m_internalEnode = new eNode( m_id+"-internaleNode" );
+    if ( Simulator::self()->isRunning() )
+        m_internalEnode = new eNode( m_id + "-internaleNode" );
 }
 
-void Relay::stamp()
-{
+void Relay::stamp() {
     MechContact::stamp();
 
     m_inductor->getPin( 0 )->changeCallBack( this );
     m_inductor->getPin( 1 )->changeCallBack( this );
 }
 
-void Relay::voltChanged()
-{
+void Relay::voltChanged() {
     double indCurr = fabs( m_inductor->indCurrent() );
     bool relayOn;
 
-    if( m_relayOn ) relayOn = ( indCurr > m_relCurrent );
-    else            relayOn = ( indCurr > m_trigCurrent );
+    if ( m_relayOn )
+        relayOn = ( indCurr > m_relCurrent );
+    else
+        relayOn = ( indCurr > m_trigCurrent );
     m_relayOn = relayOn;
 
-    if( m_nClose ) relayOn = !relayOn;
-    if( relayOn != m_closed ) setSwitch( relayOn );
+    if ( m_nClose )
+        relayOn = !relayOn;
+    if ( relayOn != m_closed )
+        setSwitch( relayOn );
 }
 
-void Relay::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w )
-{
+void Relay::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) {
     Component::paint( p, o, w );
 
     p->drawRect( m_area );

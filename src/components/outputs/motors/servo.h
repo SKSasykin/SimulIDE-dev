@@ -9,39 +9,38 @@
 
 class LibraryItem;
 
-class Servo : public LogicComponent
-{
-    public:
-        Servo( QString type, QString id );
-        ~Servo();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class Servo : public LogicComponent {
+public:
+    Servo( QString type, QString id );
+    ~Servo();
 
-        double speed() { return m_speed; }
-        void setSpeed( double speed ) { m_speed = speed; }
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double minPulse() { return m_minPulse; }
-        void setMinPulse( double w );
+    double speed() { return m_speed; }
+    void setSpeed( double speed ) { m_speed = speed; }
 
-        double maxPulse() { return m_maxPulse; }
-        void setMaxPulse( double w );
+    double minPulse() { return m_minPulse; }
+    void setMinPulse( double w );
 
-        virtual void stamp() override;
-        virtual void updateStep() override;
-        virtual void voltChanged() override;
+    double maxPulse() { return m_maxPulse; }
+    void setMaxPulse( double w );
 
-        virtual QPainterPath shape() const override;
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void stamp() override;
+    virtual void updateStep() override;
+    virtual void voltChanged() override;
 
-    private:
-        double m_pos;            // Actual Angular position 0-180
-        double m_targetPos;      // Target Angular position 0-180
-        double m_speed;          // Angular speed sec/60º
-        double m_minPulse;       // Minimum pulse width,   0º
-        double m_maxPulse;       // Maximum pulse width, 180º
-        double m_minAngle;       // Angle to move evrey repaint
+    virtual QPainterPath shape() const override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-        uint64_t m_pulseStart;   // Simulation step
-        uint64_t m_lastUpdate;   // Simulation step
+private:
+    double m_pos; // Actual Angular position 0-180
+    double m_targetPos; // Target Angular position 0-180
+    double m_speed; // Angular speed sec/60º
+    double m_minPulse; // Minimum pulse width,   0º
+    double m_maxPulse; // Maximum pulse width, 180º
+    double m_minAngle; // Angle to move evrey repaint
+
+    uint64_t m_pulseStart; // Simulation step
+    uint64_t m_lastUpdate; // Simulation step
 };

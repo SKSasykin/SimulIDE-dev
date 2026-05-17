@@ -9,14 +9,13 @@
 
 class LibraryItem;
 
-class Amperimeter : public Meter
-{
-    public:
-        Amperimeter( QString type, QString id );
-        ~Amperimeter();
+class Amperimeter : public Meter {
+public:
+    Amperimeter( QString type, QString id );
+    ~Amperimeter();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void updateStep() override;
+    void updateStep() override;
 };

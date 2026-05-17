@@ -9,10 +9,8 @@
 #include "headerwidget.h"
 #include "mainwindow.h"
 
-HeaderWidget::HeaderWidget( QString name, QString type, QWidget* parent )
-            : QWidget( parent )
-{
-    setupUi(this);
+HeaderWidget::HeaderWidget( QString name, QString type, QWidget* parent ) : QWidget( parent ) {
+    setupUi( this );
 
     m_name = name;
     m_type = type;
@@ -23,14 +21,13 @@ HeaderWidget::HeaderWidget( QString name, QString type, QWidget* parent )
 
     nameLabel->setText( m_name );
     typeLabel->setText( m_type );
-    valueLine->setText("Value");
+    valueLine->setText( "Value" );
 
     float scale = MainWindow::self()->fontScale();
 
-    valueLine->setFixedWidth( round(120*scale) );
+    valueLine->setFixedWidth( round( 120 * scale ) );
 }
 
-void HeaderWidget::setValueStr( QString str )
-{
+void HeaderWidget::setValueStr( QString str ) {
     valueLine->setText( str );
 }

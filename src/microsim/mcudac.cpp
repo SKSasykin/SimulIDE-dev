@@ -6,21 +6,17 @@
 #include "mcudac.h"
 #include "e_mcu.h"
 
-McuDac::McuDac( eMcu* mcu, QString name )
-      : McuModule( mcu, name )
-      , eElement( mcu->getId()+"-"+name )
-{
+McuDac::McuDac( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) {
     m_dacReg = nullptr;
 
     m_pRefPin = nullptr;
     m_nRefPin = nullptr;
-    m_outPin  = nullptr;
+    m_outPin = nullptr;
 }
-McuDac::~McuDac(){}
+McuDac::~McuDac() { }
 
-void McuDac::initialize()
-{
-    m_enabled   = false;
+void McuDac::initialize() {
+    m_enabled = false;
     m_outVoltEn = false;
 
     m_outVal = 0;

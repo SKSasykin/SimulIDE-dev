@@ -5,27 +5,24 @@
 
 #include <QDebug>
 
-#include "qemuusart.h"
+#include "iopin.h"
 #include "qemudevice.h"
+#include "qemuusart.h"
 #include "serialmon.h"
 #include "usartrx.h"
 #include "usarttx.h"
-#include "iopin.h"
 
 #include "simulator.h"
 
 QemuUsart::QemuUsart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
-         : QemuModule( mcu, name, n, clk, memStart, memEnd )
-         , UsartModule( nullptr, mcu->getId()+"-"+name )
-{
+    : QemuModule( mcu, name, n, clk, memStart, memEnd ), UsartModule( nullptr, mcu->getId() + "-" + name ) {
     /// FIXME ----------------------------
 
     this->setBaudRate( 9600 );
 }
-QemuUsart::~QemuUsart(){}
+QemuUsart::~QemuUsart() { }
 
-void QemuUsart::enable( bool e )
-{
+void QemuUsart::enable( bool e ) {
     m_enabled = e;
     //m_serData.clear();
     //m_uartData.clear();
@@ -35,46 +32,38 @@ void QemuUsart::enable( bool e )
     //m_receiving = false;
 }
 
-void QemuUsart::setTxPin( IoPin* pin )
-{
+void QemuUsart::setTxPin( IoPin* pin ) {
     //qDebug() << "QemuUsart::setTxPin" << pin->pinId();
-    m_sender->setPins({pin});
+    m_sender->setPins( { pin } );
 }
-void QemuUsart::setRxPin( IoPin* pin )
-{
+void QemuUsart::setRxPin( IoPin* pin ) {
     ///qDebug() << "QemuUsart::setRxPin" << pin->pinId();
-    m_receiver->setPins({pin});
+    m_receiver->setPins( { pin } );
 }
 
-IoPin** QemuUsart::getTxPinPtr()
-{
+IoPin** QemuUsart::getTxPinPtr() {
     return m_sender->getPinPointer();
 }
 
-IoPin** QemuUsart::getRxPinPtr()
-{
+IoPin** QemuUsart::getRxPinPtr() {
     return m_receiver->getPinPointer();
 }
 
-void QemuUsart::doAction()
-{
-    qDebug() << "QemuUsart::doAction Uart ERROR:"<< m_number;
+void QemuUsart::doAction() {
+    qDebug() << "QemuUsart::doAction Uart ERROR:" << m_number;
 }
 
-void QemuUsart::bufferEmpty()
-{
+void QemuUsart::bufferEmpty() {
     //if( m_interrupt ) m_interrupt->raise(); // USART Data Register Empty Interrupt
 }
 
-void QemuUsart::frameSent( uint8_t data )
-{
+void QemuUsart::frameSent( uint8_t data ) {
     //qDebug() << "QemuUsart::frameSent"<< m_number;
     printOut( data );
     //m_sender->raiseInt();
 }
 
-void QemuUsart::readByte( uint8_t )
-{
+void QemuUsart::readByte( uint8_t ) {
     //if( m_mcu->isCpuRead() ) m_mcu->m_regOverride = m_receiver->getData();
 }
 
@@ -93,19 +82,16 @@ void QemuUsart::readByte( uint8_t )
 //    // m_arena->qemuAction = SIM_USART;
 //}
 
-uint8_t QemuUsart::getBit9Tx()
-{
+uint8_t QemuUsart::getBit9Tx() {
     //return getRegBitsVal( m_bit9Tx );
     return 0;
 }
 
-void QemuUsart::setBit9Rx( uint8_t bit )
-{
+void QemuUsart::setBit9Rx( uint8_t bit ) {
     //writeRegBits( m_bit9Rx, bit );
 }
 
-void QemuUsart::setPins( QList<IoPin*> pinList )
-{
-    m_sender->setPins( {pinList.at(0)} );
-    m_receiver->setPins( {pinList.at(1)} );
+void QemuUsart::setPins( QList<IoPin*> pinList ) {
+    m_sender->setPins( { pinList.at( 0 ) } );
+    m_receiver->setPins( { pinList.at( 1 ) } );
 }

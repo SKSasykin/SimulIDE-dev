@@ -9,11 +9,10 @@
 
 class CustomButton;
 
-class SourceWidget : public DialWidget
-{
-    public:
-        SourceWidget();
-        ~SourceWidget();
+class SourceWidget : public DialWidget {
+public:
+    SourceWidget();
+    ~SourceWidget();
 
-        CustomButton* pushButton;
+    CustomButton* pushButton;
 };

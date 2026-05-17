@@ -5,35 +5,34 @@
 
 #pragma once
 
-#include "hd44780_base.h"
 #include "e-element.h"
+#include "hd44780_base.h"
 
 class IoPin;
 class LibraryItem;
 
-class Hd44780 : public Hd44780_Base, public eElement
-{
-    public:
-        Hd44780( QString type, QString id );
-        ~Hd44780();
-        
-        static Component* construct( QString type, QString id );
-        static LibraryItem* libraryItem();
+class Hd44780 : public Hd44780_Base, public eElement {
+public:
+    Hd44780( QString type, QString id );
+    ~Hd44780();
 
-        virtual void initialize() override;
-        virtual void stamp() override;
-        virtual void updateStep() override;
-        virtual void voltChanged() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void showPins( bool show );
+    virtual void initialize() override;
+    virtual void stamp() override;
+    virtual void updateStep() override;
+    virtual void voltChanged() override;
 
-    private:
-        void readData();
-        void readBusy();
+    void showPins( bool show );
 
-        void initPuPin( int n, QString l, IoPin* pin );
-        IoPin* m_pinRS;
-        IoPin* m_pinRW;
-        IoPin* m_pinEn;
-        std::vector<IoPin*> m_dataPin;
+private:
+    void readData();
+    void readBusy();
+
+    void initPuPin( int n, QString l, IoPin* pin );
+    IoPin* m_pinRS;
+    IoPin* m_pinRW;
+    IoPin* m_pinEn;
+    std::vector<IoPin*> m_dataPin;
 };

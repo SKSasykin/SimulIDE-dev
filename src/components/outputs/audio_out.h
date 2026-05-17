@@ -7,56 +7,55 @@
 
 #include <QAudioOutput>
 
-#include "e-resistor.h"
 #include "component.h"
+#include "e-resistor.h"
 
 class LibraryItem;
 class QAudioSink;
 
-class AudioOut : public Component, public eResistor
-{
-    public:
-        AudioOut( QString type, QString id );
-        ~AudioOut();
-    
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+class AudioOut : public Component, public eResistor {
+public:
+    AudioOut( QString type, QString id );
+    ~AudioOut();
 
-        virtual void initialize() override;
-        virtual void stamp() override;
-        virtual void updateStep() override;
-        virtual void runEvent() override;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        double impedance() { return m_impedance; }
-        void setImpedance( double i );
+    virtual void initialize() override;
+    virtual void stamp() override;
+    virtual void updateStep() override;
+    virtual void runEvent() override;
 
-        bool buzzer() { return m_buzzer; }
-        void setBuzzer( bool b );
+    double impedance() { return m_impedance; }
+    void setImpedance( double i );
 
-        double frequency() { return m_frequency; }
-        void setFrequency( double f ) { m_frequency = f; }
-        
-        virtual QPainterPath shape() const override;
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    bool buzzer() { return m_buzzer; }
+    void setBuzzer( bool b );
 
-    protected:
-        virtual void slotProperties() override;
-        void updtProperties();
+    double frequency() { return m_frequency; }
+    void setFrequency( double f ) { m_frequency = f; }
 
-    private:
-        QAudioDeviceInfo m_deviceinfo;
-        QAudioFormat     m_format;
+    virtual QPainterPath shape() const override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-        QAudioOutput* m_audioOutput;
-        QIODevice*    m_audioBuffer;
-        QByteArray    m_dataBuffer;
+protected:
+    virtual void slotProperties() override;
+    void updtProperties();
 
-        double m_frequency;
-        double m_impedance;
+private:
+    QAudioDeviceInfo m_deviceinfo;
+    QAudioFormat m_format;
 
-        int m_dataSize;
-        int m_dataCount;
+    QAudioOutput* m_audioOutput;
+    QIODevice* m_audioBuffer;
+    QByteArray m_dataBuffer;
 
-        bool m_started;
-        bool m_buzzer;
+    double m_frequency;
+    double m_impedance;
+
+    int m_dataSize;
+    int m_dataCount;
+
+    bool m_started;
+    bool m_buzzer;
 };

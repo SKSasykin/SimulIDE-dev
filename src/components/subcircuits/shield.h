@@ -7,29 +7,28 @@
 
 #include "board.h"
 
-class ShieldSubc : public BoardSubc
-{
-    public:
-        ShieldSubc( QString type, QString id, QString device );
-        ~ShieldSubc();
+class ShieldSubc : public BoardSubc {
+public:
+    ShieldSubc( QString type, QString id, QString device );
+    ~ShieldSubc();
 
-        QString boardId() { return m_boardId; }
-        void setBoardId( QString id ) { m_boardId = id; }
+    QString boardId() { return m_boardId; }
+    void setBoardId( QString id ) { m_boardId = id; }
 
-        void setBoard( BoardSubc* board );
+    void setBoard( BoardSubc* board );
 
-        void connectBoard();
+    void connectBoard();
 
-        virtual void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
-        virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+    virtual void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
+    virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        virtual void slotAttach();
-        virtual void slotDetach();
+    virtual void slotAttach();
+    virtual void slotDetach();
 
-    protected:
-        virtual void attachToBoard();
-        virtual void renameTunnels();
+protected:
+    virtual void attachToBoard();
+    virtual void renameTunnels();
 
-        QString m_boardId;
-        QPointF m_boardPos;
+    QString m_boardId;
+    QPointF m_boardPos;
 };

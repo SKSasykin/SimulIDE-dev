@@ -5,29 +5,27 @@
 
 #pragma once
 
-#include "spimodule.h"
 #include "qemumodule.h"
+#include "spimodule.h"
 
+class QemuSpi : public QemuModule, public SpiModule {
+public:
+    QemuSpi( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
+             uint64_t memEnd = 0 );
+    virtual ~QemuSpi();
 
-class QemuSpi : public QemuModule, public SpiModule
-{
-    public:
-        QemuSpi( QemuDevice* mcu, QString name, int n, uint32_t* clk=nullptr, uint64_t memStart=0, uint64_t memEnd=0 );
-        virtual ~QemuSpi();
+    //void setMode( spiMode_t mode ) override;
+    //void endTransaction() override;
 
-        //void setMode( spiMode_t mode ) override;
-        //void endTransaction() override;
+    IoPin** getMoPinPtr() { return &m_MOSI; }
+    IoPin** getMiPinPtr() { return &m_MISO; }
+    IoPin** getCkPinPtr() { return &m_clkPin; }
+    IoPin** getSsPinPtr() { return &m_SS; }
 
-        IoPin** getMoPinPtr() { return &m_MOSI; }
-        IoPin** getMiPinPtr() { return &m_MISO; }
-        IoPin** getCkPinPtr() { return &m_clkPin; }
-        IoPin** getSsPinPtr() { return &m_SS; }
+protected:
+    uint8_t m_dataReg;
 
-    protected:
-        uint8_t m_dataReg;
-
-        uint8_t  m_prIndex;                 // Prescaler index
-        uint16_t m_prescaler;               // Actual Prescaler value
-        std::vector<uint16_t> m_prescList;  // Prescaler values
+    uint8_t m_prIndex; // Prescaler index
+    uint16_t m_prescaler; // Actual Prescaler value
+    std::vector<uint16_t> m_prescList; // Prescaler values
 };
-

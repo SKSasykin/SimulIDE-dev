@@ -9,15 +9,14 @@
 
 class LibraryItem;
 
-class FlipFlopJK : public FlipFlopBase
-{
-    public:
-        FlipFlopJK( QString type, QString id );
-        ~FlipFlopJK();
+class FlipFlopJK : public FlipFlopBase {
+public:
+    FlipFlopJK( QString type, QString id );
+    ~FlipFlopJK();
 
- static Component* construct( QString type, QString id );
- static LibraryItem *libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-    protected:
-        void calcOutput() override;
+protected:
+    void calcOutput() override;
 };

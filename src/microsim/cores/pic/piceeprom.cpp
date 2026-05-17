@@ -8,23 +8,18 @@
 #include "e_mcu.h"
 #include "simulator.h"
 
-PicEeprom::PicEeprom( eMcu* mcu, QString name )
-         : McuEeprom( mcu, name )
-{
-}
-PicEeprom::~PicEeprom(){}
+PicEeprom::PicEeprom( eMcu* mcu, QString name ) : McuEeprom( mcu, name ) { }
+PicEeprom::~PicEeprom() { }
 
-void PicEeprom::setup()
-{
-    m_EEPGD = getRegBits("EEPGD", m_mcu );
-    m_WRERR = getRegBits("WRERR", m_mcu );
-    m_WREN  = getRegBits("WREN", m_mcu );
-    m_WR    = getRegBits("WR", m_mcu );
-    m_RD    = getRegBits("RD", m_mcu );
+void PicEeprom::setup() {
+    m_EEPGD = getRegBits( "EEPGD", m_mcu );
+    m_WRERR = getRegBits( "WRERR", m_mcu );
+    m_WREN = getRegBits( "WREN", m_mcu );
+    m_WR = getRegBits( "WR", m_mcu );
+    m_RD = getRegBits( "RD", m_mcu );
 }
 
-void PicEeprom::initialize()
-{
+void PicEeprom::initialize() {
     m_writeEnable = false;
     m_nextCycle = 0;
     m_wrMask = 0;
@@ -41,42 +36,38 @@ void PicEeprom::runEvent() // Write cycle end reached
 
 void PicEeprom::configureA( uint8_t newEECON1 ) // EECR is being written
 {
-    if( getRegBitsBool( newEECON1, m_EEPGD ) ) // PGM operation
+    if ( getRegBitsBool( newEECON1, m_EEPGD ) ) // PGM operation
         return;
 
-    if( m_writeEnable ) // Write enabled
+    if ( m_writeEnable ) // Write enabled
     {
         m_writeEnable = false;
 
-        if( m_mcu->cycle() == m_nextCycle ) // Must happen in next cycle
+        if ( m_mcu->cycle() == m_nextCycle ) // Must happen in next cycle
         {
             bool wren = getRegBitsBool( newEECON1, m_WREN );
             bool write = wren && getRegBitsBool( newEECON1, m_WR );
-            if( write )
-            {
+            if ( write ) {
                 m_wrMask = m_WR.mask; // Don't clear WR until write finished
                 Simulator::self()->addEvent( 5e9, this ); // Write time = 5 ms
             }
         }
         m_nextCycle = 0;
-    }
-    else if( getRegBitsBool( newEECON1, m_RD ) ) // Read enable
+    } else if ( getRegBitsBool( newEECON1, m_RD ) ) // Read enable
     {
         readEeprom();
     }
-    newEECON1 &= ~(m_WR.mask);                                    // Clear WR if not in write cycle
-    m_mcu->m_regOverride = (newEECON1 | m_wrMask) & ~(m_RD.mask); // Clear RD, set WR if in write cycle
+    newEECON1 &= ~( m_WR.mask ); // Clear WR if not in write cycle
+    m_mcu->m_regOverride = ( newEECON1 | m_wrMask ) & ~( m_RD.mask ); // Clear RD, set WR if in write cycle
 }
 
-void PicEeprom::configureB( uint8_t newEECON2 )
-{
-    if     ( newEECON2 == 0x55 ) m_nextCycle = m_mcu->cycle()+2;
-    else if( newEECON2 == 0xAA )
-    {
+void PicEeprom::configureB( uint8_t newEECON2 ) {
+    if ( newEECON2 == 0x55 )
+        m_nextCycle = m_mcu->cycle() + 2;
+    else if ( newEECON2 == 0xAA ) {
         uint64_t cycle = m_mcu->cycle();
-        if( cycle == m_nextCycle )
-        {
-            m_nextCycle = cycle+1;
+        if ( cycle == m_nextCycle ) {
+            m_nextCycle = cycle + 1;
             m_writeEnable = true;
         }
     }
@@ -105,4 +96,3 @@ void PicEeprom::configureB( uint8_t newEECON2 )
 
     Simulator::self()->addEvent( time, this ); // Shedule Write cycle end
 }*/
-

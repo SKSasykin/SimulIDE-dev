@@ -9,34 +9,33 @@
 
 class LibraryItem;
 
-class LatchD : public LogicComponent
-{
-    public:
-        LatchD( QString type, QString id );
-        ~LatchD();
+class LatchD : public LogicComponent {
+public:
+    LatchD( QString type, QString id );
+    ~LatchD();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override{ IoComponent::runOutputs(); }
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        int channels() { return m_channels; }
-        void setChannels( int channels );
+    int channels() { return m_channels; }
+    void setChannels( int channels );
 
-        bool pinReset() { return m_useReset; }
-        void setPinReset( bool r );
+    bool pinReset() { return m_useReset; }
+    void setPinReset( bool r );
 
-        void setTristate( bool t ) override;
-        void setTrigger( trigger_t trigger ) override;
+    void setTristate( bool t ) override;
+    void setTrigger( trigger_t trigger ) override;
 
-    private:
-        void updateSize();
-        
-        int m_channels;
+private:
+    void updateSize();
 
-        bool m_useReset;
+    int m_channels;
 
-        IoPin* m_resetPin;
+    bool m_useReset;
+
+    IoPin* m_resetPin;
 };

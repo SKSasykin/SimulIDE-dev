@@ -6,48 +6,47 @@
 #pragma once
 
 #include "component.h"
-#include "sourcewidget.h"
 #include "e-element.h"
+#include "sourcewidget.h"
 
-class VarSource : public Component, public eElement
-{
-    public:
-        VarSource( QString type, QString id );
-        ~VarSource();
+class VarSource : public Component, public eElement {
+public:
+    VarSource( QString type, QString id );
+    ~VarSource();
 
-        double getVal() { return m_outValue; }
-        void setVal( double val );
+    double getVal() { return m_outValue; }
+    void setVal( double val );
 
-        double maxValue() { return m_maxValue; }
-        void setMaxValue( double v );
+    double maxValue() { return m_maxValue; }
+    void setMaxValue( double v );
 
-        double minValue() { return m_minValue; }
-        void setMinValue( double v );
+    double minValue() { return m_minValue; }
+    void setMinValue( double v );
 
-        bool running();
-        void setRunning( bool r );
+    bool running();
+    void setRunning( bool r );
 
-        void initialize() override;
+    void initialize() override;
 
-    public slots:
-        void onbuttonclicked();
-        void dialChanged( int val );
+public slots:
+    void onbuttonclicked();
+    void dialChanged( int val );
 
-    protected:
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
-        void updateButton();
-        void updtValue( double v );
+protected:
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void updateButton();
+    void updtValue( double v );
 
-        virtual void setflip() override;
-        
-        double m_maxValue;
-        double m_minValue;
-        double m_outValue;
+    virtual void setflip() override;
 
-        QString m_unit;
-        
-        SourceWidget m_voltw;
+    double m_maxValue;
+    double m_minValue;
+    double m_outValue;
 
-        CustomButton* m_button;
-        QGraphicsProxyWidget* m_proxy;
+    QString m_unit;
+
+    SourceWidget m_voltw;
+
+    CustomButton* m_button;
+    QGraphicsProxyWidget* m_proxy;
 };

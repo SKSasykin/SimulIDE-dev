@@ -7,17 +7,15 @@
 #include "circuitwidget.h"
 #include "serialmon.h"
 
-TransModule::TransModule( QString name )
-{
-    m_moduleName = name.split("-").last();
+TransModule::TransModule( QString name ) {
+    m_moduleName = name.split( "-" ).last();
     m_monitor = nullptr;
     m_monOpen = false;
 }
-TransModule::~TransModule(){}
+TransModule::~TransModule() { }
 
-void TransModule::openMonitor( QString id, int num, bool send )
-{
-    if( !m_monitor )
+void TransModule::openMonitor( QString id, int num, bool send ) {
+    if ( !m_monitor )
         m_monitor = new SerialMonitor( CircuitWidget::self(), this, send );
 
     //if( num > 0 ) id.append( QString::number(num) );
@@ -26,28 +24,26 @@ void TransModule::openMonitor( QString id, int num, bool send )
     m_monOpen = true;
 }
 
-void TransModule::closeMonitor()
-{
-    if( m_monitor ) m_monitor->close();
+void TransModule::closeMonitor() {
+    if ( m_monitor )
+        m_monitor->close();
 }
 
-void TransModule::printOut( uint8_t data )
-{
-    if( m_monitor ) m_monitor->printOut( data );
+void TransModule::printOut( uint8_t data ) {
+    if ( m_monitor )
+        m_monitor->printOut( data );
 }
 
-void TransModule::printIn( uint8_t data )
-{
-    if( m_monitor ) m_monitor->printIn( data );
+void TransModule::printIn( uint8_t data ) {
+    if ( m_monitor )
+        m_monitor->printIn( data );
 }
 
-void TransModule::setMonitorTittle( QString t )
-{
-    if( m_monitor ) m_monitor->setWindowTitle( t+"-"+m_moduleName );
+void TransModule::setMonitorTittle( QString t ) {
+    if ( m_monitor )
+        m_monitor->setWindowTitle( t + "-" + m_moduleName );
 }
 
-void TransModule::monitorClosed()
-{
+void TransModule::monitorClosed() {
     m_monOpen = false;
 }
-

@@ -4,23 +4,19 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "mcuocunit.h"
-#include "mcupin.h"
 #include "e_mcu.h"
+#include "mcupin.h"
 #include "simulator.h"
 
-McuOcUnit::McuOcUnit( eMcu* mcu, QString name )
-         : McuModule( mcu, name )
-         , eElement( mcu->getId()+"-"+name )
-{
+McuOcUnit::McuOcUnit( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) {
     m_timer = nullptr;
     m_ocPin = nullptr;
-    m_ocm   = nullptr;
+    m_ocm = nullptr;
     m_ocPinInv = nullptr;
 }
-McuOcUnit::~McuOcUnit( ){}
+McuOcUnit::~McuOcUnit() { }
 
-void McuOcUnit::initialize()
-{
+void McuOcUnit::initialize() {
     m_comMatch = 0;
     m_extMatch = 0;
     m_ocPin->controlPin( false, false );
@@ -28,8 +24,7 @@ void McuOcUnit::initialize()
     clear();
 }
 
-void McuOcUnit::clear()
-{
+void McuOcUnit::clear() {
     m_enabled = false;
     m_ctrlPin = false;
     m_mode = 0;
@@ -38,88 +33,87 @@ void McuOcUnit::clear()
     m_tovAct = ocNON;
 }
 
-void McuOcUnit::clockStep( uint16_t count )
-{
-    if( count == m_extMatch ) runEvent();
+void McuOcUnit::clockStep( uint16_t count ) {
+    if ( count == m_extMatch )
+        runEvent();
 }
 
-void McuOcUnit::runEvent()  // Compare match
+void McuOcUnit::runEvent() // Compare match
 {
-    m_interrupt->raise();   // Trigger interrupt
-    if( m_enabled ) drivePin( m_comAct, m_mcu->psInst() );
+    m_interrupt->raise(); // Trigger interrupt
+    if ( m_enabled )
+        drivePin( m_comAct, m_mcu->psInst() );
 }
 
-void McuOcUnit::comMatch()
-{
+void McuOcUnit::comMatch() {
     drivePin( m_comAct, m_mcu->psInst() );
 }
 
-void McuOcUnit::drivePin( ocAct_t act, uint64_t time )
-{
-    if( !act ) return;
+void McuOcUnit::drivePin( ocAct_t act, uint64_t time ) {
+    if ( !act )
+        return;
     bool pinState = false;
 
-    if     ( act == ocTOG ) pinState = !m_ocPin->getOutState();
-    else if( act == ocCLR ) pinState = !m_pinSet;
-    else if( act == ocSET ) pinState =  m_pinSet;
+    if ( act == ocTOG )
+        pinState = !m_ocPin->getOutState();
+    else if ( act == ocCLR )
+        pinState = !m_pinSet;
+    else if ( act == ocSET )
+        pinState = m_pinSet;
 
     setPinSate( pinState, time );
 }
 
-void McuOcUnit::setPinSate( bool state, uint64_t time )
-{
+void McuOcUnit::setPinSate( bool state, uint64_t time ) {
     m_ocPin->scheduleState( state, time );
 }
 
-void McuOcUnit::sheduleEvents( uint32_t ovf, uint32_t countVal, int rot )
-{
-    if( rot ){
-        ovf      <<= rot;  // Used by Pic CCP PWM mode: 8+2 bits (rot=2)
+void McuOcUnit::sheduleEvents( uint32_t ovf, uint32_t countVal, int rot ) {
+    if ( rot ) {
+        ovf <<= rot; // Used by Pic CCP PWM mode: 8+2 bits (rot=2)
         countVal <<= rot;
     }
     uint64_t match;
 
-    if( m_timer->reverse() )
-    {
-        match = ovf-m_comMatch;
+    if ( m_timer->reverse() ) {
+        match = ovf - m_comMatch;
         m_pinSet = false;
-    }else{
+    } else {
         match = m_comMatch;
         m_pinSet = true;
     }
     Simulator::self()->cancelEvents( this );
 
-    if( m_timer->extClocked() ) // Using external clock
+    if ( m_timer->extClocked() ) // Using external clock
     {
         m_extMatch = match;
-    }
-    else if( match <= ovf && match >= countVal ) // be sure next comp match is still ahead
+    } else if ( match <= ovf && match >= countVal ) // be sure next comp match is still ahead
     {
-        uint64_t psPerTick  = m_timer->psPerTick();
+        uint64_t psPerTick = m_timer->psPerTick();
         uint64_t timeOffset = m_timer->timeOffset();
 
-        uint64_t time2ovf = (match-countVal)*psPerTick+0.5; // Time in ps
-        if( timeOffset ) time2ovf -= psPerTick-timeOffset;
+        uint64_t time2ovf = ( match - countVal ) * psPerTick + 0.5; // Time in ps
+        if ( timeOffset )
+            time2ovf -= psPerTick - timeOffset;
 
         uint64_t nextTime = time2ovf;
-        if( rot ) nextTime >>= rot;
+        if ( rot )
+            nextTime >>= rot;
         Simulator::self()->addEvent( nextTime, this );
     }
 }
 
-void McuOcUnit::setOcActs( ocAct_t comAct, ocAct_t tovAct )
-{
+void McuOcUnit::setOcActs( ocAct_t comAct, ocAct_t tovAct ) {
     m_comAct = comAct;
     m_tovAct = tovAct;
 }
 
-void McuOcUnit::ocrWriteL( uint8_t val )
-{
-    m_comMatch = (m_comMatch & 0xFF00) | val;
-    if( m_timer->running() ) sheduleEvents( m_timer->ovfMatch(), m_timer->getCount() );
+void McuOcUnit::ocrWriteL( uint8_t val ) {
+    m_comMatch = ( m_comMatch & 0xFF00 ) | val;
+    if ( m_timer->running() )
+        sheduleEvents( m_timer->ovfMatch(), m_timer->getCount() );
 }
 
-void McuOcUnit::ocrWriteH( uint8_t val )
-{
-    m_comMatch = (m_comMatch & 0x00FF) | (uint16_t)val<<8;
+void McuOcUnit::ocrWriteH( uint8_t val ) {
+    m_comMatch = ( m_comMatch & 0x00FF ) | (uint16_t) val << 8;
 }

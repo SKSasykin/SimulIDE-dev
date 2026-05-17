@@ -7,12 +7,11 @@
 
 #include <QSlider>
 
-class CustomSlider : public QSlider
-{
+class CustomSlider : public QSlider {
     Q_OBJECT
-    public:
-        CustomSlider( QWidget* parent=nullptr );
+public:
+    CustomSlider( QWidget* parent = nullptr );
 
-    private:
-        virtual void paintEvent( QPaintEvent* ) override;
+private:
+    virtual void paintEvent( QPaintEvent* ) override;
 };

@@ -34,109 +34,105 @@
 // A container class for the script code to be compiled
 //
 
-#include "as_config.h"
 #include "as_scriptcode.h"
+#include "as_config.h"
 
 BEGIN_AS_NAMESPACE
 
-asCScriptCode::asCScriptCode()
-{
-	lineOffset = 0;
-	code = 0;
-	codeLength = 0;
-	sharedCode = false;
+asCScriptCode::asCScriptCode() {
+    lineOffset = 0;
+    code = 0;
+    codeLength = 0;
+    sharedCode = false;
 }
 
-asCScriptCode::~asCScriptCode()
-{
-	if( !sharedCode && code ) 
-	{
-		asDELETEARRAY(code);
-	}
+asCScriptCode::~asCScriptCode() {
+    if ( !sharedCode && code ) {
+        asDELETEARRAY( code );
+    }
 }
 
-int asCScriptCode::SetCode(const char *in_name, const char *in_code, bool in_makeCopy)
-{
-	return SetCode(in_name, in_code, 0, in_makeCopy);
+int asCScriptCode::SetCode( const char* in_name, const char* in_code, bool in_makeCopy ) {
+    return SetCode( in_name, in_code, 0, in_makeCopy );
 }
 
-int asCScriptCode::SetCode(const char *in_name, const char *in_code, size_t in_length, bool in_makeCopy)
-{
-	if( !in_code) return asINVALID_ARG;
-	this->name = in_name ? in_name : "";
-	if( !sharedCode && code ) 
-		asDELETEARRAY(code);
+int asCScriptCode::SetCode( const char* in_name, const char* in_code, size_t in_length, bool in_makeCopy ) {
+    if ( !in_code )
+        return asINVALID_ARG;
+    this->name = in_name ? in_name : "";
+    if ( !sharedCode && code )
+        asDELETEARRAY( code );
 
-    if( in_length == 0 ) in_length = strlen(in_code);
-	if( in_makeCopy )
-	{
-		codeLength = in_length;
-		sharedCode = false;
-		code = asNEWARRAY(char, in_length);
-        if( code == 0 ) return asOUT_OF_MEMORY;
-		memcpy(code, in_code, in_length);
-	}
-	else
-	{
-		codeLength = in_length;
-		code = const_cast<char*>(in_code);
-		sharedCode = true;
-	}
+    if ( in_length == 0 )
+        in_length = strlen( in_code );
+    if ( in_makeCopy ) {
+        codeLength = in_length;
+        sharedCode = false;
+        code = asNEWARRAY( char, in_length );
+        if ( code == 0 )
+            return asOUT_OF_MEMORY;
+        memcpy( code, in_code, in_length );
+    } else {
+        codeLength = in_length;
+        code = const_cast<char*>( in_code );
+        sharedCode = true;
+    }
 
-	// Find the positions of each line
-	linePositions.PushLast(0);
-	for( size_t n = 0; n < in_length; n++ )
-		if( in_code[n] == '\n' ) linePositions.PushLast(n+1);
-	linePositions.PushLast(in_length);
+    // Find the positions of each line
+    linePositions.PushLast( 0 );
+    for ( size_t n = 0; n < in_length; n++ )
+        if ( in_code[n] == '\n' )
+            linePositions.PushLast( n + 1 );
+    linePositions.PushLast( in_length );
 
-	return asSUCCESS;
+    return asSUCCESS;
 }
 
-void asCScriptCode::ConvertPosToRowCol(size_t pos, int *row, int *col)
-{
-	if( linePositions.GetLength() == 0 ) 
-	{
-		if( row ) *row = lineOffset;
-		if( col ) *col = 1;
-		return;
-	}
+void asCScriptCode::ConvertPosToRowCol( size_t pos, int* row, int* col ) {
+    if ( linePositions.GetLength() == 0 ) {
+        if ( row )
+            *row = lineOffset;
+        if ( col )
+            *col = 1;
+        return;
+    }
 
-	// Do a binary search in the buffer
-	int max = (int)linePositions.GetLength() - 1;
-	int min = 0;
-	int i = max/2;
+    // Do a binary search in the buffer
+    int max = (int) linePositions.GetLength() - 1;
+    int min = 0;
+    int i = max / 2;
 
-	for(;;)
-	{
-		if( linePositions[i] < pos )
-		{
-			// Have we found the largest number < programPosition?
-			if( min == i ) break;
+    for ( ;; ) {
+        if ( linePositions[i] < pos ) {
+            // Have we found the largest number < programPosition?
+            if ( min == i )
+                break;
 
-			min = i;
-			i = (max + min)/2;
-		}
-		else if( linePositions[i] > pos )
-		{
-			// Have we found the smallest number > programPoisition?
-			if( max == i ) break;
+            min = i;
+            i = ( max + min ) / 2;
+        } else if ( linePositions[i] > pos ) {
+            // Have we found the smallest number > programPoisition?
+            if ( max == i )
+                break;
 
-			max = i;
-			i = (max + min)/2;
-		}
-        else break; // We found the exact position
-	}
+            max = i;
+            i = ( max + min ) / 2;
+        } else
+            break; // We found the exact position
+    }
 
-	if( row ) *row = i + 1 + lineOffset;
-	if( col ) *col = (int)(pos - linePositions[i]) + 1;
+    if ( row )
+        *row = i + 1 + lineOffset;
+    if ( col )
+        *col = (int) ( pos - linePositions[i] ) + 1;
 }
 
-bool asCScriptCode::TokenEquals(size_t pos, size_t len, const char *str)
-{
-	if( pos + len > codeLength ) return false;
-	if( strncmp(code + pos, str, len) == 0 && strlen(str) == len )
-		return true;
-	return false;
+bool asCScriptCode::TokenEquals( size_t pos, size_t len, const char* str ) {
+    if ( pos + len > codeLength )
+        return false;
+    if ( strncmp( code + pos, str, len ) == 0 && strlen( str ) == len )
+        return true;
+    return false;
 }
 
 END_AS_NAMESPACE

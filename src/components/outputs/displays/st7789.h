@@ -9,12 +9,11 @@
 
 class LibraryItem;
 
-class St7789 : public St77xx
-{
-    public:
-        St7789( QString type, QString id );
-        ~St7789();
+class St7789 : public St77xx {
+public:
+    St7789( QString type, QString id );
+    ~St7789();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 };

@@ -11,25 +11,24 @@
 
 class Watched;
 
-class ValLabelWidget : public QWidget, private Ui::ValLabelWidget
-{
+class ValLabelWidget : public QWidget, private Ui::ValLabelWidget {
     Q_OBJECT
 
-    public:
-        ValLabelWidget( QString name, QString type, QString unit, Watched* core, QWidget* parent=0 );
+public:
+    ValLabelWidget( QString name, QString type, QString unit, Watched* core, QWidget* parent = 0 );
 
-        void updateValue();
+    void updateValue();
 
-        void setValueDbl( double val );
-        void setValueInt( int val );
-        void setValueStr( QString str );
+    void setValueDbl( double val );
+    void setValueInt( int val );
+    void setValueStr( QString str );
 
-    private:
-        QString m_name;
-        QString m_type;
+private:
+    QString m_name;
+    QString m_type;
 
-        QString m_strVal;
-        int m_intVal;
+    QString m_strVal;
+    int m_intVal;
 
-        Watched* m_watched;
+    Watched* m_watched;
 };

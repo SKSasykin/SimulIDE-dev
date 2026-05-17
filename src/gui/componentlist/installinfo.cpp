@@ -6,17 +6,15 @@
 #include "installinfo.h"
 
 #include <QLabel>
-InstallInfo::InstallInfo( InstallItem* parent , QString tittle, QString author, QStringList items )
-           : QDialog( (QWidget*)parent )
-{
+InstallInfo::InstallInfo( InstallItem* parent, QString tittle, QString author, QStringList items )
+    : QDialog( (QWidget*) parent ) {
     setupUi( this );
 
-    tittleLabel->setText("**"+tittle+"**");
-    authorLabel->setText("**By:** "+author);
+    tittleLabel->setText( "**" + tittle + "**" );
+    authorLabel->setText( "**By:** " + author );
 
     QString list;
-    for( QString item : items )
-    {
+    for ( QString item : items ) {
         list += item + "\n";
     }
     listEdit->setText( list );

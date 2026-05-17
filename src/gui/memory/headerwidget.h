@@ -9,18 +9,17 @@
 
 #include "ui_headerwidget.h"
 
-class HeaderWidget : public QWidget, private Ui::HeaderWidget
-{
+class HeaderWidget : public QWidget, private Ui::HeaderWidget {
     Q_OBJECT
 
-    public:
-        HeaderWidget( QString name, QString type, QWidget* parent=0 );
+public:
+    HeaderWidget( QString name, QString type, QWidget* parent = 0 );
 
-        void setValueStr( QString str );
+    void setValueStr( QString str );
 
-    private:
-        QString m_name;
-        QString m_type;
+private:
+    QString m_name;
+    QString m_type;
 
-        QString m_strVal;
+    QString m_strVal;
 };

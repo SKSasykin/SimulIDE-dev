@@ -12,58 +12,57 @@ class Circuit;
 class SimuProp;
 class QPlainTextEdit;
 
-class CircuitView : public QGraphicsView
-{
-    public:
-        CircuitView( QWidget *parent );
-        ~CircuitView();
+class CircuitView : public QGraphicsView {
+public:
+    CircuitView( QWidget* parent );
+    ~CircuitView();
 
- static CircuitView* self() { return m_pSelf; }
- 
-        void clear();
+    static CircuitView* self() { return m_pSelf; }
 
-        bool showScroll() { return m_showScroll; }
-        void setShowScroll( bool show );
+    void clear();
 
-        QRectF selectedRect();
+    bool showScroll() { return m_showScroll; }
+    void setShowScroll( bool show );
 
-        void overrideCursor( const QCursor &cursor );
+    QRectF selectedRect();
 
-        qreal getScale() { return m_scale; }
+    void overrideCursor( const QCursor& cursor );
 
-    public slots:
-        void saveImage();
-        void slotPaste();
-        void importCirc();
-        void zoomToFit();
-        void zoomSelected();
-        void zoomOne();
-        
-    protected:
-        void wheelEvent( QWheelEvent* event ) override;
-        void dragMoveEvent( QDragMoveEvent* event ) override;
-        void dragEnterEvent( QDragEnterEvent* event ) override;
-        void dragLeaveEvent( QDragLeaveEvent* event ) override;
+    qreal getScale() { return m_scale; }
 
-        void mousePressEvent( QMouseEvent* event ) override;
-        void mouseMoveEvent( QMouseEvent *event ) override;
-        void mouseReleaseEvent( QMouseEvent* event ) override;
-        void contextMenuEvent( QContextMenuEvent* event ) override;
-        void drawBackground( QPainter* painter, const QRectF &rect ) override;
+public slots:
+    void saveImage();
+    void slotPaste();
+    void importCirc();
+    void zoomToFit();
+    void zoomSelected();
+    void zoomOne();
 
-    private:
- static CircuitView*  m_pSelf;
+protected:
+    void wheelEvent( QWheelEvent* event ) override;
+    void dragMoveEvent( QDragMoveEvent* event ) override;
+    void dragEnterEvent( QDragEnterEvent* event ) override;
+    void dragLeaveEvent( QDragLeaveEvent* event ) override;
 
-        bool m_showScroll;
+    void mousePressEvent( QMouseEvent* event ) override;
+    void mouseMoveEvent( QMouseEvent* event ) override;
+    void mouseReleaseEvent( QMouseEvent* event ) override;
+    void contextMenuEvent( QContextMenuEvent* event ) override;
+    void drawBackground( QPainter* painter, const QRectF& rect ) override;
 
-        qreal m_scale;
-        QString m_help;
- 
-        Component* m_enterItem;
-        Circuit*   m_circuit;
+private:
+    static CircuitView* m_pSelf;
 
-        QPointF m_eventpoint;
+    bool m_showScroll;
 
-        QPoint m_mousePressPos;
-        bool m_waitForDragStart;
+    qreal m_scale;
+    QString m_help;
+
+    Component* m_enterItem;
+    Circuit* m_circuit;
+
+    QPointF m_eventpoint;
+
+    QPoint m_mousePressPos;
+    bool m_waitForDragStart;
 };

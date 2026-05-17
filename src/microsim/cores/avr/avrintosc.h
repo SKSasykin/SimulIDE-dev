@@ -7,21 +7,20 @@
 
 #include "mcuintosc.h"
 
-class AvrIntOsc : public McuIntOsc
-{
-    public:
-        AvrIntOsc(eMcu* mcu, QString name );
-        virtual ~AvrIntOsc();
+class AvrIntOsc : public McuIntOsc {
+public:
+    AvrIntOsc( eMcu* mcu, QString name );
+    virtual ~AvrIntOsc();
 
-        virtual void setup() override;
-        virtual void reset() override;
+    virtual void setup() override;
+    virtual void reset() override;
 
-        virtual void configureA(uint8_t newCLKPR) override;
+    virtual void configureA( uint8_t newCLKPR ) override;
 
-        virtual bool freqChanged() override;
+    virtual bool freqChanged() override;
 
-    private:
-        uint8_t m_prIndex;
+private:
+    uint8_t m_prIndex;
 
-        regBits_t m_CLKPS;
+    regBits_t m_CLKPS;
 };

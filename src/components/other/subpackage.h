@@ -11,110 +11,112 @@
 class LibraryItem;
 class QAction;
 
-class SubPackage : public Chip, public Linker
-{
-        friend class Circuit;
+class SubPackage : public Chip, public Linker {
+    friend class Circuit;
 
-    public:
-        SubPackage( QString type, QString id );
-        ~SubPackage();
-        
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+public:
+    SubPackage( QString type, QString id );
+    ~SubPackage();
 
-        int width() { return m_width; }
-        void setWidth( int width );
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        int height() { return m_height; }
-        void setHeight( int height );
+    int width() { return m_width; }
+    void setWidth( int width );
 
-        QString packageFile() { return m_pkgeFile; }
-        void setPackageFile( QString package );
+    int height() { return m_height; }
+    void setHeight( int height );
 
-        QString bckGndData() { return m_bckGndData; }
-        void setBckGndData( QString data ) override;
+    QString packageFile() { return m_pkgeFile; }
+    void setPackageFile( QString package );
 
-        void setCustomColor( bool c ) override;
+    QString bckGndData() { return m_bckGndData; }
+    void setBckGndData( QString data ) override;
 
-        void setLogicSymbol( bool ls ) override;
+    void setCustomColor( bool c ) override;
 
-        QString packagePins();
-        void setPackagePins( QString pinsStr );
+    void setLogicSymbol( bool ls ) override;
 
-        std::vector<Pin*> getPins() override { std::vector<Pin*> p; return p; } // Used to access wires (we have no wires)
+    QString packagePins();
+    void setPackagePins( QString pinsStr );
 
-        void setEventPin( Pin* pin ) { m_eventPin = pin; }
+    std::vector<Pin*> getPins() override {
+        std::vector<Pin*> p;
+        return p;
+    } // Used to access wires (we have no wires)
 
-        void savePackage( QString fileName );
+    void setEventPin( Pin* pin ) { m_eventPin = pin; }
 
-        void setSubcTypeStr( QString s ) override;
+    void savePackage( QString fileName );
 
-        void compSelected( Component* comp ) override;  // Use link mechanism to select main components
+    void setSubcTypeStr( QString s ) override;
 
-        void moveSignal() override {;}
+    void compSelected( Component* comp ) override; // Use link mechanism to select main components
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void moveSignal() override { ; }
 
-        void invertPin( bool invert );
-        void setPinId( QString id );
-        void setPinName( QString name );
-        void setPinAngle( int i );
-        void setPinSpace( double space );
-        void boardModeSlot();
-        void setBoardMode( bool mode );
-        void mainComp() { Linker::startLinking(); }
-        void unusePin( bool unuse );
-        void setPointPin( bool point );
-        void setBusPin( bool bus );
-        void editPin();
-        void deleteEventPin();
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    protected:
-        void loadPackage();
-        void slotSave();
-        void editFinished( int r );
+    void invertPin( bool invert );
+    void setPinId( QString id );
+    void setPinName( QString name );
+    void setPinAngle( int i );
+    void setPinSpace( double space );
+    void boardModeSlot();
+    void setBoardMode( bool mode );
+    void mainComp() { Linker::startLinking(); }
+    void unusePin( bool unuse );
+    void setPointPin( bool point );
+    void setBusPin( bool bus );
+    void editPin();
+    void deleteEventPin();
 
-        void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
-        void hoverMoveEvent( QGraphicsSceneHoverEvent* event ) override;
-        void hoverLeaveEvent( QGraphicsSceneHoverEvent* event ) override;
-        
-        void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
+protected:
+    void loadPackage();
+    void slotSave();
+    void editFinished( int r );
 
-        void addNewPin( QString id, QString type, QString label,
-                            int pos, int xpos, int ypos, int angle, int length=8, int space=0 ) override;
+    void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
+    void hoverMoveEvent( QGraphicsSceneHoverEvent* event ) override;
+    void hoverLeaveEvent( QGraphicsSceneHoverEvent* event ) override;
 
-        void embeedBackground( QString pixmapPath ) override;
-        void setBackground( QString bck ) override;
+    void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
-        void slotProperties() override;
+    void addNewPin( QString id, QString type, QString label, int pos, int xpos, int ypos, int angle, int length = 8,
+                    int space = 0 ) override;
 
-    private:
-        QString pinEntry( Pin* pin );
-        QString pinStrEntry( Pin* pin );
-        QString adjustSize( QString str, int size );
+    void embeedBackground( QString pixmapPath ) override;
+    void setBackground( QString bck ) override;
 
-        void updtProperties();
+    void slotProperties() override;
 
- static QString m_lastPkg;
+private:
+    QString pinEntry( Pin* pin );
+    QString pinStrEntry( Pin* pin );
+    QString adjustSize( QString str, int size );
 
-        bool m_fakePin; // Data for drawing pin when hovering
-        
-        int m_angle;  
-        int m_p1X;
-        int m_p1Y;
-        int m_p2X;
-        int m_p2Y;
+    void updtProperties();
 
-        bool m_circPosSaved;
-        bool m_boardMode;
-        QAction* m_boardModeAction;
+    static QString m_lastPkg;
 
-        QString m_pkgeFile;     // file containig package defs
+    bool m_fakePin; // Data for drawing pin when hovering
 
-        QString m_bckGndData;   // Embedded background png data
+    int m_angle;
+    int m_p1X;
+    int m_p1Y;
+    int m_p2X;
+    int m_p2Y;
 
-        Pin* m_eventPin;
-        QList<Pin*> m_pkgePins;
+    bool m_circPosSaved;
+    bool m_boardMode;
+    QAction* m_boardModeAction;
+
+    QString m_pkgeFile; // file containig package defs
+
+    QString m_bckGndData; // Embedded background png data
+
+    Pin* m_eventPin;
+    QList<Pin*> m_pkgePins;
 };
 
 #include <QDialog>
@@ -125,31 +127,30 @@ class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 
-class EditDialog : public QDialog
-{
-    public:
-        EditDialog( SubPackage* pack, Pin* eventPin, QWidget* parent = 0 );
+class EditDialog : public QDialog {
+public:
+    EditDialog( SubPackage* pack, Pin* eventPin, QWidget* parent = 0 );
 
-    private:
-        void setPointPin( bool p );
-        void setBusPin( bool b );
+private:
+    void setPointPin( bool p );
+    void setBusPin( bool b );
 
-        SubPackage* m_package;
+    SubPackage* m_package;
 
-        QLabel*    m_nameLabel;
-        QLineEdit* m_nameLineEdit;
+    QLabel* m_nameLabel;
+    QLineEdit* m_nameLineEdit;
 
-        QLabel*    m_idLabel;
-        QLineEdit* m_idLineEdit;
+    QLabel* m_idLabel;
+    QLineEdit* m_idLineEdit;
 
-        QLabel*    m_spaceLabel;
-        QDoubleSpinBox* m_spaceBox;
+    QLabel* m_spaceLabel;
+    QDoubleSpinBox* m_spaceBox;
 
-        QLabel*    m_angleLabel;
-        QComboBox* m_angleBox;
+    QLabel* m_angleLabel;
+    QComboBox* m_angleBox;
 
-        QCheckBox* m_invertCheckBox;
-        QCheckBox* m_unuseCheckBox;
-        QCheckBox* m_pointCheckBox;
-        QCheckBox* m_busCheckBox;
+    QCheckBox* m_invertCheckBox;
+    QCheckBox* m_unuseCheckBox;
+    QCheckBox* m_pointCheckBox;
+    QCheckBox* m_busCheckBox;
 };

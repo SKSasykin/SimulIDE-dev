@@ -6,19 +6,15 @@
 #include "mcucomparator.h"
 #include "e_mcu.h"
 
-McuComp::McuComp( eMcu* mcu, QString name )
-       : McuModule( mcu, name )
-       , eElement( mcu->getId()+"-"+name )
-{
+McuComp::McuComp( eMcu* mcu, QString name ) : McuModule( mcu, name ), eElement( mcu->getId() + "-" + name ) {
     m_pinP = nullptr;
     m_pinN = nullptr;
     m_pinOut = nullptr;
     m_enabled = false;
 }
-McuComp::~McuComp(){}
+McuComp::~McuComp() { }
 
-void McuComp::initialize()
-{
+void McuComp::initialize() {
     m_fixVref = false;
     m_enabled = true;
     m_compOut = false;
@@ -29,5 +25,6 @@ void McuComp::initialize()
 void McuComp::callBackDoub( double vref ) // Called from Vref module
 {
     m_vref = vref;
-    if( m_enabled ) voltChanged();
+    if ( m_enabled )
+        voltChanged();
 }

@@ -38,97 +38,94 @@
 #include <stdio.h>
 #include <string.h>
 
-class asCString
-{
+class asCString {
 public:
-	asCString();
-	~asCString();
+    asCString();
+    ~asCString();
 
 #ifdef AS_CAN_USE_CPP11
-	asCString(asCString &&);
-	asCString &operator =(asCString &&);
+    asCString( asCString&& );
+    asCString& operator=( asCString&& );
 #endif // c++11
 
-	asCString(const asCString &);
-	asCString(const char *);
-	asCString(const char *, size_t length);
-	explicit asCString(char);
+    asCString( const asCString& );
+    asCString( const char* );
+    asCString( const char*, size_t length );
+    explicit asCString( char );
 
-	void   Allocate(size_t len, bool keepData);
-	void   SetLength(size_t len);
-	size_t GetLength() const;
+    void Allocate( size_t len, bool keepData );
+    void SetLength( size_t len );
+    size_t GetLength() const;
 
-	void Concatenate(const char *str, size_t length);
-	asCString &operator +=(const asCString &);
-	asCString &operator +=(const char *);
-	asCString &operator +=(char);
+    void Concatenate( const char* str, size_t length );
+    asCString& operator+=( const asCString& );
+    asCString& operator+=( const char* );
+    asCString& operator+=( char );
 
-	void Assign(const char *str, size_t length);
-	asCString &operator =(const asCString &);
-	asCString &operator =(const char *);
-	asCString &operator =(char);
+    void Assign( const char* str, size_t length );
+    asCString& operator=( const asCString& );
+    asCString& operator=( const char* );
+    asCString& operator=( char );
 
-	asCString SubString(size_t start, size_t length = (size_t)(-1)) const;
+    asCString SubString( size_t start, size_t length = (size_t) ( -1 ) ) const;
 
-	int FindLast(const char *str, int *count = 0) const;
+    int FindLast( const char* str, int* count = 0 ) const;
 
-	size_t Format(const char *fmt, ...);
+    size_t Format( const char* fmt, ... );
 
-	int Compare(const char *str) const;
-	int Compare(const asCString &str) const;
-	int Compare(const char *str, size_t length) const;
+    int Compare( const char* str ) const;
+    int Compare( const asCString& str ) const;
+    int Compare( const char* str, size_t length ) const;
 
-	char *AddressOf();
-	const char *AddressOf() const;
-	char &operator [](size_t index);
-	const char &operator[](size_t index) const;
-	size_t RecalculateLength();
+    char* AddressOf();
+    const char* AddressOf() const;
+    char& operator[]( size_t index );
+    const char& operator[]( size_t index ) const;
+    size_t RecalculateLength();
 
 protected:
-	unsigned int length;
-	union
-	{
-		char *dynamic;
-		char local[12];
-	};
+    unsigned int length;
+    union {
+        char* dynamic;
+        char local[12];
+    };
 };
 
 // Helper functions
 
-bool operator ==(const asCString &, const asCString &);
-bool operator !=(const asCString &, const asCString &);
+bool operator==( const asCString&, const asCString& );
+bool operator!=( const asCString&, const asCString& );
 
-bool operator ==(const asCString &, const char *);
-bool operator !=(const asCString &, const char *);
+bool operator==( const asCString&, const char* );
+bool operator!=( const asCString&, const char* );
 
-bool operator ==(const char *, const asCString &);
-bool operator !=(const char *, const asCString &);
+bool operator==( const char*, const asCString& );
+bool operator!=( const char*, const asCString& );
 
-bool operator <(const asCString &, const asCString &);
+bool operator<( const asCString&, const asCString& );
 
-asCString operator +(const asCString &, const char *);
-asCString operator +(const char *, const asCString &);
-asCString operator +(const asCString &, const asCString &);
+asCString operator+( const asCString&, const char* );
+asCString operator+( const char*, const asCString& );
+asCString operator+( const asCString&, const asCString& );
 
 // a wrapper for using the pointer of asCString in asCMap
-class asCStringPointer
-{
+class asCStringPointer {
 public:
-	asCStringPointer();
-	asCStringPointer(const char *str, size_t len);
-	asCStringPointer(asCString *cstr);
+    asCStringPointer();
+    asCStringPointer( const char* str, size_t len );
+    asCStringPointer( asCString* cstr );
 
-	const char *AddressOf() const;
-	size_t GetLength() const;
+    const char* AddressOf() const;
+    size_t GetLength() const;
 
-	bool operator==(const asCStringPointer& other) const;
-	bool operator<(const asCStringPointer& other) const;
+    bool operator==( const asCStringPointer& other ) const;
+    bool operator<( const asCStringPointer& other ) const;
 
 private:
-	// Either string/length or cstring is stored
-	const char *string;
-	size_t      length;
-	asCString  *cstring;
+    // Either string/length or cstring is stored
+    const char* string;
+    size_t length;
+    asCString* cstring;
 };
 
 #endif

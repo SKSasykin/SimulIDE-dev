@@ -5,29 +5,28 @@
 
 #pragma once
 
-#include "spimodule.h"
 #include "iopin.h"
+#include "spimodule.h"
 
-class Spi5Pins : public SpiModule
-{
-    public:
-        Spi5Pins( QString id, Component* comp );
-        ~Spi5Pins();
+class Spi5Pins : public SpiModule {
+public:
+    Spi5Pins( QString id, Component* comp );
+    ~Spi5Pins();
 
-        void stamp() override;
+    void stamp() override;
 
-        virtual void endTransaction() override;
+    virtual void endTransaction() override;
 
-    protected:
-        void reset();
+protected:
+    void reset();
 
-        uint8_t m_isData;
-        uint8_t m_buffer;
+    uint8_t m_isData;
+    uint8_t m_buffer;
 
-        IoPin m_pinDC;
-        IoPin m_pinRS;
-        IoPin m_pinCS;
-        IoPin m_pinDI;
-        IoPin m_pinCK;
-        IoPin m_pinDO;
+    IoPin m_pinDC;
+    IoPin m_pinRS;
+    IoPin m_pinCS;
+    IoPin m_pinDI;
+    IoPin m_pinCK;
+    IoPin m_pinDO;
 };

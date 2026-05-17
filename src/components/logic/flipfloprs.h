@@ -9,14 +9,13 @@
 
 class LibraryItem;
 
-class FlipFlopRS : public FlipFlopBase
-{
-    public:
-        FlipFlopRS( QString type, QString id );
-        ~FlipFlopRS();
+class FlipFlopRS : public FlipFlopBase {
+public:
+    FlipFlopRS( QString type, QString id );
+    ~FlipFlopRS();
 
- static Component* construct( QString type, QString id );
- static LibraryItem *libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        void voltChanged() override;
+    void voltChanged() override;
 };

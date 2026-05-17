@@ -5,9 +5,7 @@
 
 #include "xc8debugger.h"
 
-Xc8Debugger::Xc8Debugger( CodeEditor* parent, OutPanelText* outPane )
-           : AvrGccDebugger( parent, outPane )
-{
+Xc8Debugger::Xc8Debugger( CodeEditor* parent, OutPanelText* outPane ) : AvrGccDebugger( parent, outPane ) {
     m_addrBytes = 2;
 }
-Xc8Debugger::~Xc8Debugger(){}
+Xc8Debugger::~Xc8Debugger() { }

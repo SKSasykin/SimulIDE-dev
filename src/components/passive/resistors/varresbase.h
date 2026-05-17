@@ -5,18 +5,17 @@
 
 #pragma once
 
-#include "e-resistor.h"
 #include "dialed.h"
 #include "dialwidget.h"
+#include "e-resistor.h"
 
-class VarResBase : public Dialed, public eResistor
-{
-    public:
-        VarResBase( QString type, QString id );
-        ~VarResBase();
+class VarResBase : public Dialed, public eResistor {
+public:
+    VarResBase( QString type, QString id );
+    ~VarResBase();
 
-        void initialize() override;
+    void initialize() override;
 
-    protected:
-        void updateProxy() override;
+protected:
+    void updateProxy() override;
 };

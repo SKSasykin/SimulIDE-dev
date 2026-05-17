@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <QMainWindow>
 #include <QDir>
+#include <QMainWindow>
 
 class ComponentList;
 class CircuitWidget;
@@ -24,118 +24,116 @@ enum Langs {
     Chinese,
     Traditional_Chinese,
     Czech,
-//    Dutch,
-//    French,
+    //    Dutch,
+    //    French,
     German,
-//    Italian,
-//    Russian,
+    //    Italian,
+    //    Russian,
     Spanish,
-//    Portuguese,
+    //    Portuguese,
     Pt_Brasil,
-//    Slovak,
-//    Turkish
+    //    Slovak,
+    //    Turkish
 };
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
-    public:
-        MainWindow();
-        ~MainWindow();
+public:
+    MainWindow();
+    ~MainWindow();
 
-        QSettings* settings();
-        QSettings* compSettings();
+    QSettings* settings();
+    QSettings* compSettings();
 
-        void hideGui();
-        
-        void readSettings();
-        
-        void setFile( QString file );
-        void setState( QString state );
+    void hideGui();
 
-        QString loc();
-        void setLoc( QString loc );
+    void readSettings();
 
-        Langs lang() { return m_lang; }
-        void setLang( Langs lang );
+    void setFile( QString file );
+    void setState( QString state );
 
-        void setDefaultFontName( const QString& fontName );
-        QString defaultFontName() { return m_fontName; }
-        
-        float fontScale() { return m_fontScale; }
-        void setFontScale( float scale ) { m_fontScale = scale; }
+    QString loc();
+    void setLoc( QString loc );
 
-        int autoBck() { return m_autoBck; }
-        void setAutoBck( int secs ) { m_autoBck = secs; }
+    Langs lang() { return m_lang; }
+    void setLang( Langs lang );
 
-        int autoupdate() { return m_autoUpdt; }
-        void setAutoUpdate( int a ) { m_autoUpdt = a; }
+    void setDefaultFontName( const QString& fontName );
+    QString defaultFontName() { return m_fontName; }
 
-        int revision() { return m_revision; }
+    float fontScale() { return m_fontScale; }
+    void setFontScale( float scale ) { m_fontScale = scale; }
 
-        QString getHelp( QString name, bool save=true );
+    int autoBck() { return m_autoBck; }
+    void setAutoBck( int secs ) { m_autoBck = secs; }
 
-        QString getConfigPath( QString file );            // Get file path in config folder
-        QString getDataFilePath( QString file );          // Get file path in data folder, first user folder, if not SimulIDE folder
-        QString getCircFilePath( QString file );          // Get file path in circuit folder
-        QString getUserFilePath( QString f );             // Get file path in user folder
-        QString userPath() { return m_userDir; }          // User folder path
-        void setUserPath( QString p );
-        void getUserPath();                               // File open Dialog
-        
+    int autoupdate() { return m_autoUpdt; }
+    void setAutoUpdate( int a ) { m_autoUpdt = a; }
 
-        Installer* installer() { return m_installer; }
+    int revision() { return m_revision; }
 
- static MainWindow* self() { return m_pSelf; }
+    QString getHelp( QString name, bool save = true );
 
-    protected:
-        void closeEvent( QCloseEvent* event );
-        void keyPressEvent( QKeyEvent* event );
+    QString getConfigPath( QString file ); // Get file path in config folder
+    QString getDataFilePath( QString file ); // Get file path in data folder, first user folder, if not SimulIDE folder
+    QString getCircFilePath( QString file ); // Get file path in circuit folder
+    QString getUserFilePath( QString f ); // Get file path in user folder
+    QString userPath() { return m_userDir; } // User folder path
+    void setUserPath( QString p );
+    void getUserPath(); // File open Dialog
 
-    private slots:
-        void searchChanged();
-        void clearSearch();
+    Installer* installer() { return m_installer; }
 
-    private:
-        void createWidgets();
-        void writeSettings();
-        QString getFilePath( QString filename, QString directory );
+    static MainWindow* self() { return m_pSelf; }
 
-        Langs m_lang;
+protected:
+    void closeEvent( QCloseEvent* event );
+    void keyPressEvent( QKeyEvent* event );
 
-        bool m_blocked;
+private slots:
+    void searchChanged();
+    void clearSearch();
 
-        QString m_fontName;
-        float m_fontScale;
-        int m_autoBck;
-        int m_autoUpdt;
+private:
+    void createWidgets();
+    void writeSettings();
+    QString getFilePath( QString filename, QString directory );
 
-        QDir m_configDir;
+    Langs m_lang;
 
-        QSettings* m_settings;
-        QSettings* m_compSettings;
-        
-        int m_revision;
-        QString m_version;
-        QString m_styleSheet;
-        QString m_state;
-        QString m_file;
-        QString m_userDir;
+    bool m_blocked;
 
-        QHash<QString, QString> m_help;
+    QString m_fontName;
+    float m_fontScale;
+    int m_autoBck;
+    int m_autoUpdt;
 
-        Installer*     m_installer;
-        CircuitWidget* m_circuitW;
-        ComponentList* m_components;
-        QWidget*       m_listWidget;
-        QLineEdit*     m_searchComponent;
-        QPushButton*   m_clearButton;
-        FileWidget*    m_fileTree;
-        EditorWindow*  m_editor;
-        QTabWidget*    m_sidepanel;
-        
-        QSplitter*  m_mainSplitter;
+    QDir m_configDir;
 
- static MainWindow* m_pSelf;
+    QSettings* m_settings;
+    QSettings* m_compSettings;
+
+    int m_revision;
+    QString m_version;
+    QString m_styleSheet;
+    QString m_state;
+    QString m_file;
+    QString m_userDir;
+
+    QHash<QString, QString> m_help;
+
+    Installer* m_installer;
+    CircuitWidget* m_circuitW;
+    ComponentList* m_components;
+    QWidget* m_listWidget;
+    QLineEdit* m_searchComponent;
+    QPushButton* m_clearButton;
+    FileWidget* m_fileTree;
+    EditorWindow* m_editor;
+    QTabWidget* m_sidepanel;
+
+    QSplitter* m_mainSplitter;
+
+    static MainWindow* m_pSelf;
 };

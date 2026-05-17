@@ -9,15 +9,14 @@
 
 class LibraryItem;
 
-class Ground : public Component
-{
-    public:
-        Ground( QString type, QString id );
-        ~Ground();
+class Ground : public Component {
+public:
+    Ground( QString type, QString id );
+    ~Ground();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-    protected:
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+protected:
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 };

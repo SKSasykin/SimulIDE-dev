@@ -5,11 +5,10 @@
 
 #pragma once
 
-class Updatable
-{
-    public:
-        Updatable();
-        ~Updatable();
+class Updatable {
+public:
+    Updatable();
+    ~Updatable();
 
-        virtual void updateStep(){;}
+    virtual void updateStep() { ; }
 };

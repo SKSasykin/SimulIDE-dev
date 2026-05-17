@@ -5,71 +5,70 @@
 
 #pragma once
 
-#include "mcumodule.h"
 #include "e-element.h"
+#include "mcumodule.h"
 
 class McuPin;
 class McuTimer;
 class McuOcm;
 
-enum ocAct_t{
-    ocNON=0,
+enum ocAct_t {
+    ocNON = 0,
     ocTOG,
     ocCLR,
     ocSET,
 };
 
-class McuOcUnit : public McuModule, public eElement
-{
-        friend class McuCreator;
+class McuOcUnit : public McuModule, public eElement {
+    friend class McuCreator;
 
-    public:
-        McuOcUnit( eMcu* mcu, QString name );
-         ~McuOcUnit();
+public:
+    McuOcUnit( eMcu* mcu, QString name );
+    ~McuOcUnit();
 
-        virtual void initialize() override;
-        virtual void runEvent() override;
-        virtual void configure( uint8_t ){;}
-        virtual void ocrWriteL( uint8_t val );
-        virtual void ocrWriteH( uint8_t val );
-        virtual void sheduleEvents( uint32_t ovf, uint32_t countVal, int rot=0 );
-        virtual void tov() { drivePin( m_tovAct ); }
-        virtual void comMatch();
+    virtual void initialize() override;
+    virtual void runEvent() override;
+    virtual void configure( uint8_t ) { ; }
+    virtual void ocrWriteL( uint8_t val );
+    virtual void ocrWriteH( uint8_t val );
+    virtual void sheduleEvents( uint32_t ovf, uint32_t countVal, int rot = 0 );
+    virtual void tov() { drivePin( m_tovAct ); }
+    virtual void comMatch();
 
-        virtual void setOcActs( ocAct_t comAct, ocAct_t tovAct );
+    virtual void setOcActs( ocAct_t comAct, ocAct_t tovAct );
 
-        void setCtrlPin( bool c ) { m_ctrlPin = c; }
+    void setCtrlPin( bool c ) { m_ctrlPin = c; }
 
-        void clockStep( uint16_t count );
+    void clockStep( uint16_t count );
 
-        uint8_t getMode() { return m_mode; }
-        McuPin* getPin() { return m_ocPin; }
+    uint8_t getMode() { return m_mode; }
+    McuPin* getPin() { return m_ocPin; }
 
-        void setPinInnv( McuPin* p ) { m_ocPinInv = p; }
+    void setPinInnv( McuPin* p ) { m_ocPinInv = p; }
 
-    protected:
-        virtual void drivePin( ocAct_t act, uint64_t time=0 );
-        virtual void setPinSate( bool state, uint64_t time=0 );
+protected:
+    virtual void drivePin( ocAct_t act, uint64_t time = 0 );
+    virtual void setPinSate( bool state, uint64_t time = 0 );
 
-        void clear();
+    void clear();
 
-        McuOcm*   m_ocm;
-        McuTimer* m_timer;
-        McuPin*   m_ocPin;
-        McuPin*   m_ocPinInv;
+    McuOcm* m_ocm;
+    McuTimer* m_timer;
+    McuPin* m_ocPin;
+    McuPin* m_ocPinInv;
 
-        uint8_t* m_ocRegL;
-        uint8_t* m_ocRegH;
+    uint8_t* m_ocRegL;
+    uint8_t* m_ocRegH;
 
-        ocAct_t  m_comAct;
-        ocAct_t  m_tovAct;
+    ocAct_t m_comAct;
+    ocAct_t m_tovAct;
 
-        bool m_enabled;
-        bool m_ctrlPin;
-        uint8_t m_mode;
+    bool m_enabled;
+    bool m_ctrlPin;
+    uint8_t m_mode;
 
-        uint16_t m_comMatch;  // counter vale to match a comparation
-        uint16_t m_extMatch;  // counter vale to match a comparation (external clock)
+    uint16_t m_comMatch; // counter vale to match a comparation
+    uint16_t m_extMatch; // counter vale to match a comparation (external clock)
 
-        bool m_pinSet;
+    bool m_pinSet;
 };

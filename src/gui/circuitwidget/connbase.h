@@ -9,35 +9,34 @@
 #include "e-element.h"
 #include "pin.h"
 
-class ConnBase : public Component, public eElement
-{
-    public:
-        ConnBase( QString type, QString id );
-        ~ConnBase();
+class ConnBase : public Component, public eElement {
+public:
+    ConnBase( QString type, QString id );
+    ~ConnBase();
 
-        int  size() { return m_size; }
-        void setSize( int size );
+    int size() { return m_size; }
+    void setSize( int size );
 
-        virtual void registerEnode( eNode*, int n=-1 ) override;
+    virtual void registerEnode( eNode*, int n = -1 ) override;
 
-        virtual void setHidden( bool hid, bool hidArea=false, bool hidLabel=false ) override;
+    virtual void setHidden( bool hid, bool hidArea = false, bool hidLabel = false ) override;
 
-        void createPins( int c );
-        void deletePins( int d );
+    void createPins( int c );
+    void deletePins( int d );
 
-        virtual void updatePins(){;}
+    virtual void updatePins() { ; }
 
-        virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    protected:
-        virtual void updatePixmap(){;}
+protected:
+    virtual void updatePixmap() { ; }
 
-        int m_size;
+    int m_size;
 
-        std::vector<Pin*> m_connPins;
-        std::vector<Pin*> m_sockPins;
+    std::vector<Pin*> m_connPins;
+    std::vector<Pin*> m_sockPins;
 
-        Pin::pinType_t m_pinType;
+    Pin::pinType_t m_pinType;
 
-        QPixmap m_pinPixmap;
+    QPixmap m_pinPixmap;
 };

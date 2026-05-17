@@ -5,40 +5,39 @@
 
 #pragma once
 
-#include <QSet>
 #include <QCursor>
+#include <QSet>
 
 class Component;
 
-class Linker
-{
-    public:
-        Linker();
-        ~Linker();
+class Linker {
+public:
+    Linker();
+    ~Linker();
 
-        QString getLinks();
-        void setLinks( QString links );
+    QString getLinks();
+    void setLinks( QString links );
 
-        void removeLinked( Component* comp ) { m_linkedComp.removeOne( comp ); }
+    void removeLinked( Component* comp ) { m_linkedComp.removeOne( comp ); }
 
-        Component* getLinkedComp( int i ) { return m_linkedComp.value( i ); }
+    Component* getLinkedComp( int i ) { return m_linkedComp.value( i ); }
 
-        bool hasLinks() { return !m_linkedStr.isEmpty(); }
+    bool hasLinks() { return !m_linkedStr.isEmpty(); }
 
-        void startLinking();
- static void stopLinking();
+    void startLinking();
+    static void stopLinking();
 
- static Linker* m_selecComp;
+    static Linker* m_selecComp;
 
-        virtual void createLinks( QList<Component*>* );
-        virtual void compSelected( Component* comp );
+    virtual void createLinks( QList<Component*>* );
+    virtual void compSelected( Component* comp );
 
-        void showLinked( bool show );
+    void showLinked( bool show );
 
-    protected:
-        QList<Component*> m_linkedComp;
+protected:
+    QList<Component*> m_linkedComp;
 
-        QString m_linkedStr;
+    QString m_linkedStr;
 
-        QCursor m_linkCursor;
+    QCursor m_linkCursor;
 };

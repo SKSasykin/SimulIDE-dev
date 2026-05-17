@@ -6,9 +6,7 @@
 #include "labelval.h"
 #include "mainwindow.h"
 
-LabelVal::LabelVal( QWidget* parent )
-        : QWidget( parent )
-{
+LabelVal::LabelVal( QWidget* parent ) : QWidget( parent ) {
     setupUi( this );
 
     //float scale = MainWindow::self()->fontScale();
@@ -17,8 +15,6 @@ LabelVal::LabelVal( QWidget* parent )
     //label->setFont( font );
 }
 
-void LabelVal::setLabelVal( QString caption )
-{
+void LabelVal::setLabelVal( QString caption ) {
     label->setText( caption );
 }
-

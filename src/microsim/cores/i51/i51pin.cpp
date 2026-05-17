@@ -4,17 +4,15 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "i51pin.h"
-#include "iopin.h"
-#include "simulator.h"
 #include "datautils.h"
+#include "iopin.h"
 #include "mcuinterrupts.h"
+#include "simulator.h"
 
-I51Pin::I51Pin( McuPort* port, int i, QString id, Component* mcu )
-      : McuPin( port, i, id, mcu )
-{
+I51Pin::I51Pin( McuPort* port, int i, QString id, Component* mcu ) : McuPin( port, i, id, mcu ) {
     /// m_changeCB = false; // Call VoltChanged() only for Inputs
 }
-I51Pin::~I51Pin() {}
+I51Pin::~I51Pin() { }
 
 /*void I51Pin::initialize()
 {
@@ -32,20 +30,17 @@ I51Pin::~I51Pin() {}
     //m_isOut     = false;
 }*/
 
-void I51Pin::setOutState( bool state )
-{
+void I51Pin::setOutState( bool state ) {
     state = state && m_portState;
     IoPin::setOutState( state );
 }
 
-void I51Pin::scheduleState( bool state, uint64_t time )
-{
+void I51Pin::scheduleState( bool state, uint64_t time ) {
     state = state && m_portState;
     IoPin::scheduleState( state, time );
 }
 
-void I51Pin::ConfExtInt( uint8_t bits )
-{
+void I51Pin::ConfExtInt( uint8_t bits ) {
     bool fallEdge = getRegBitsBool( bits, m_extIntBits );
     m_extIntTrigger = fallEdge ? McuPin::pinFalling : McuPin::pinLow;
     m_extInt->setAutoClear( fallEdge );

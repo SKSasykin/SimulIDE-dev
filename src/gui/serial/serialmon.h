@@ -7,49 +7,48 @@
 
 #include <QDialog>
 
-#include "ui_serialmon.h"
 #include "outpaneltext.h"
+#include "ui_serialmon.h"
 #include "updatable.h"
 
 class TransModule;
 
-class SerialMonitor : public QDialog, private Ui::SerialMonitor, public Updatable
-{
+class SerialMonitor : public QDialog, private Ui::SerialMonitor, public Updatable {
     Q_OBJECT
 
-    public:
-        SerialMonitor( QWidget* parent, TransModule* module, bool send=false );
+public:
+    SerialMonitor( QWidget* parent, TransModule* module, bool send = false );
 
-        virtual void updateStep() override;
+    virtual void updateStep() override;
 
-        void printIn( int value );
-        void printOut( int value );
+    void printIn( int value );
+    void printOut( int value );
 
-        void activateSend();
+    void activateSend();
 
-    public slots:
-        void on_text_returnPressed();
-        void on_value_returnPressed();
-        void on_printBox_currentIndexChanged( int index );
-        void on_addCrButton_clicked() { m_addCR = addCrButton->isChecked(); }
-        void on_pauseButton_clicked();
-        void on_clearIn_clicked() { m_uartInPanel.clear(); }
-        void on_clearOut_clicked() { m_uartOutPanel.clear(); }
+public slots:
+    void on_text_returnPressed();
+    void on_value_returnPressed();
+    void on_printBox_currentIndexChanged( int index );
+    void on_addCrButton_clicked() { m_addCR = addCrButton->isChecked(); }
+    void on_pauseButton_clicked();
+    void on_clearIn_clicked() { m_uartInPanel.clear(); }
+    void on_clearOut_clicked() { m_uartOutPanel.clear(); }
 
-    protected:
-        void closeEvent( QCloseEvent* event ) override;
+protected:
+    void closeEvent( QCloseEvent* event ) override;
 
-    private:
-        QString valToString( int val );
+private:
+    QString valToString( int val );
 
-        OutPanelText m_uartInPanel;
-        OutPanelText m_uartOutPanel;
+    OutPanelText m_uartInPanel;
+    OutPanelText m_uartOutPanel;
 
-        TransModule* m_module;
+    TransModule* m_module;
 
-        int  m_printMode;
-        bool m_addCR;
-        bool m_paused;
+    int m_printMode;
+    bool m_addCR;
+    bool m_paused;
 
-        QByteArray m_outBuffer;
+    QByteArray m_outBuffer;
 };

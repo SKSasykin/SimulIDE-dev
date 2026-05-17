@@ -18,224 +18,231 @@ class Connector;
 class ConnectorLine;
 class Linker;
 
-class Component : public CompBase, public QGraphicsItem, public Updatable
-{
+class Component : public CompBase, public QGraphicsItem, public Updatable {
     Q_INTERFACES( QGraphicsItem )
 
-    public:
-        QRectF boundingRect() const override { return QRectF( m_area.x()-2, m_area.y()-2, m_area.width()+4, m_area.height()+4 ); }
+public:
+    QRectF boundingRect() const override {
+        return QRectF( m_area.x() - 2, m_area.y() - 2, m_area.width() + 4, m_area.height() + 4 );
+    }
 
-        Component( QString type, QString id );
-        ~Component();
+    Component( QString type, QString id );
+    ~Component();
 
-        virtual bool setPropStr( QString prop, QString val );
+    virtual bool setPropStr( QString prop, QString val );
 
-        virtual void setup() override;
+    virtual void setup() override;
 
-        enum { Type = UserType + 1 };
-        int type() const override { return Type; }
+    enum { Type = UserType + 1 };
+    int type() const override { return Type; }
 
-        QPointF position() { return pos(); }
-        void setPosition( QPointF pos ) { setPos( pos ); }
+    QPointF position() { return pos(); }
+    void setPosition( QPointF pos ) { setPos( pos ); }
 
-        double getAngle() { return rotation(); }
-        virtual void setAngle( double angle ) { setRotation( angle ); }
+    double getAngle() { return rotation(); }
+    virtual void setAngle( double angle ) { setRotation( angle ); }
 
-        QString idLabel();
-        virtual void setIdLabel( QString id );
+    QString idLabel();
+    virtual void setIdLabel( QString id );
 
-        bool showId() { return m_showId; }
-        void setShowId( bool show );
+    bool showId() { return m_showId; }
+    void setShowId( bool show );
 
-        QPointF getIdPos();
-        void setIdPos( QPointF p );
+    QPointF getIdPos();
+    void setIdPos( QPointF p );
 
-        int getIdRot();
-        void setIdRot( int r );
+    int getIdRot();
+    void setIdRot( int r );
 
-        void setLabelPos( float x, float y, int rot=0 );
-        void updtLabelPos();
+    void setLabelPos( float x, float y, int rot = 0 );
+    void updtLabelPos();
 
-        bool showVal() { return m_showVal; }
-        void setShowVal( bool show );
+    bool showVal() { return m_showVal; }
+    void setShowVal( bool show );
 
-        QPointF getValPos();
-        virtual void setValPos( QPointF p );
+    QPointF getValPos();
+    virtual void setValPos( QPointF p );
 
-        int  getValRot();
-        void setValRot( int r );
+    int getValRot();
+    void setValRot( int r );
 
-        void setValLabelPos( float x, float y, int rot );
-        void updtValLabelPos();
+    void setValLabelPos( float x, float y, int rot );
+    void updtValLabelPos();
 
-        void setValLabelText( QString t );
-        QString getValLabelText();
+    void setValLabelText( QString t );
+    QString getValLabelText();
 
-        QString showProp();
-        void setShowProp( QString prop );
+    QString showProp();
+    void setShowProp( QString prop );
 
-        bool isGraphical() { return m_graphical; }
+    bool isGraphical() { return m_graphical; }
 
-        QPointF boardPos() { return m_boardPos; }
-        void    setBoardPos( QPointF pos ) { m_boardPos = pos; }
+    QPointF boardPos() { return m_boardPos; }
+    void setBoardPos( QPointF pos ) { m_boardPos = pos; }
 
-        QPointF circPos() { return m_circPos; }
-        void    setCircPos( QPointF pos ) { m_circPos = pos; }
+    QPointF circPos() { return m_circPos; }
+    void setCircPos( QPointF pos ) { m_circPos = pos; }
 
-        double boardRot() { return m_boardRot; }
-        void   setBoardRot( double rot ) { m_boardRot = rot; }
+    double boardRot() { return m_boardRot; }
+    void setBoardRot( double rot ) { m_boardRot = rot; }
 
-        double circRot() { return m_circRot; }
-        void   setCircRot( double rot ) { m_circRot = rot; }
+    double circRot() { return m_circRot; }
+    void setCircRot( double rot ) { m_circRot = rot; }
 
-        int  boardVflip() { return m_boardVflip; }
-        void setBoardVflip( int vf ) { m_boardVflip = vf; }
+    int boardVflip() { return m_boardVflip; }
+    void setBoardVflip( int vf ) { m_boardVflip = vf; }
 
-        int  boardHflip() { return m_boardHflip; }
-        void setBoardHflip( int hf ) { m_boardHflip = hf; }
+    int boardHflip() { return m_boardHflip; }
+    void setBoardHflip( int hf ) { m_boardHflip = hf; }
 
-        int  circVflip() { return m_circVflip; }
-        void setCircVflip( int vf ) { m_circVflip = vf; }
+    int circVflip() { return m_circVflip; }
+    void setCircVflip( int vf ) { m_circVflip = vf; }
 
-        int  circHflip() { return m_circHflip; }
-        void setCircHflip( int hf ) { m_circHflip = hf; }
+    int circHflip() { return m_circHflip; }
+    void setCircHflip( int hf ) { m_circHflip = hf; }
 
-        int  hflip() { return m_Hflip; }
-        virtual void setHflip( int hf );
+    int hflip() { return m_Hflip; }
+    virtual void setHflip( int hf );
 
-        int  vflip() { return m_Vflip; }
-        void setVflip( int vf );
+    int vflip() { return m_Vflip; }
+    void setVflip( int vf );
 
-        bool isMainComp() { return m_isMainComp; }
-        void setMainComp( bool m ) { m_isMainComp = m; }
+    bool isMainComp() { return m_isMainComp; }
+    void setMainComp( bool m ) { m_isMainComp = m; }
 
-        QString invertedPins(); // { return m_invertedPins; }
-        void setInvertPins( QString pins );
+    QString invertedPins(); // { return m_invertedPins; }
+    void setInvertPins( QString pins );
 
-        void setAnsiSymbol( bool an ) { m_ansiSymbol = an; }
+    void setAnsiSymbol( bool an ) { m_ansiSymbol = an; }
 
-        virtual std::vector<Pin*> getPins() { return m_pin; }
-        virtual Pin* getPin( QString pinName ){ return nullptr; }
+    virtual std::vector<Pin*> getPins() { return m_pin; }
+    virtual Pin* getPin( QString pinName ) { return nullptr; }
 
-        //QString print();
+    //QString print();
 
-        virtual bool isHidden() override { return m_hidden; }
-        virtual void setHidden( bool hid, bool hidArea=false, bool hidLabel=false );
+    virtual bool isHidden() override { return m_hidden; }
+    virtual void setHidden( bool hid, bool hidArea = false, bool hidLabel = false );
 
-        virtual QString background() { return m_background; }
-        virtual void setBackground( QString bck );
+    virtual QString background() { return m_background; }
+    virtual void setBackground( QString bck );
 
-        virtual void registerEnode( eNode*, int n=-1 ) {;}
+    virtual void registerEnode( eNode*, int n = -1 ) { ; }
 
-        virtual void pinMessage( int ){;}
+    virtual void pinMessage( int ) { ; }
 
-        virtual void move( QPointF delta ) { setPos( pos() + delta ); moveSignal(); }//emit moved(); }
-        void moveTo( QPointF pos ){ setPos( pos ); moveSignal(); }//emit moved(); }
+    virtual void move( QPointF delta ) {
+        setPos( pos() + delta );
+        moveSignal();
+    } //emit moved(); }
+    void moveTo( QPointF pos ) {
+        setPos( pos );
+        moveSignal();
+    } //emit moved(); }
 
-        virtual void moveSignal();
+    virtual void moveSignal();
 
-        virtual void rotateAngle( double a );
+    virtual void rotateAngle( double a );
 
-        virtual void remove();
+    virtual void remove();
 
-        virtual void setflip();
+    virtual void setflip();
 
-        void deletePin( Pin* pin );
-        void addSignalPin( Pin* pin );
-        void remSignalPin( Pin* pin );
+    void deletePin( Pin* pin );
+    void addSignalPin( Pin* pin );
+    void remSignalPin( Pin* pin );
 
-        virtual bool freeMove( bool ctrlMod );
+    virtual bool freeMove( bool ctrlMod );
 
-        virtual void paint( QPainter* painter, const QStyleOptionGraphicsItem*, QWidget* ) override;
+    virtual void paint( QPainter* painter, const QStyleOptionGraphicsItem*, QWidget* ) override;
 
-        virtual QVariant itemChange( GraphicsItemChange change, const QVariant &value ) override;
-        // Link components
-        virtual void setLinkedValue( double v, int i=0 ){;}
-        virtual void setLinkedString( QString str, int i=0 ){;}
-        virtual bool setLinkedTo( Linker* li );
-        bool isLinked() { return m_linkedTo != nullptr; }
+    virtual QVariant itemChange( GraphicsItemChange change, const QVariant& value ) override;
+    // Link components
+    virtual void setLinkedValue( double v, int i = 0 ) { ; }
+    virtual void setLinkedString( QString str, int i = 0 ) { ; }
+    virtual bool setLinkedTo( Linker* li );
+    bool isLinked() { return m_linkedTo != nullptr; }
 
-        bool m_isLinker;
-        int m_linkNumber;
+    bool m_isLinker;
+    int m_linkNumber;
 
- static bool m_boardMode;
+    static bool m_boardMode;
 
-        virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu );
-        virtual void rotateCW();
-        virtual void rotateCCW();
-        void slotH_flip();
-        void slotV_flip();
+    virtual void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu );
+    virtual void rotateCW();
+    virtual void rotateCCW();
+    void slotH_flip();
+    void slotV_flip();
 
-    protected:
-        void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
-        void mouseMoveEvent( QGraphicsSceneMouseEvent* event ) override;
-        void mouseReleaseEvent( QGraphicsSceneMouseEvent* event ) override;
-        void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
-        void mouseDoubleClickEvent( QGraphicsSceneMouseEvent* event ) override;
+protected:
+    void mousePressEvent( QGraphicsSceneMouseEvent* event ) override;
+    void mouseMoveEvent( QGraphicsSceneMouseEvent* event ) override;
+    void mouseReleaseEvent( QGraphicsSceneMouseEvent* event ) override;
+    void contextMenuEvent( QGraphicsSceneContextMenuEvent* event ) override;
+    void mouseDoubleClickEvent( QGraphicsSceneMouseEvent* event ) override;
 
-        virtual void slotProperties();
-        void rotateHalf();
-        void slotRemove();
-        void slotGroup();
-        void slotCopy();
-        void slotCut();
+    virtual void slotProperties();
+    void rotateHalf();
+    void slotRemove();
+    void slotGroup();
+    void slotCopy();
+    void slotCut();
 
-        void paintSelected( QPainter* );
+    void paintSelected( QPainter* );
 
-        virtual void findHelp(){;}
+    virtual void findHelp() { ; }
 
-        QString findIdLabel();
+    QString findIdLabel();
 
-        bool m_isMainComp;
-        bool m_graphical;
-        bool m_showId;
-        bool m_showVal;
-        bool m_moving;
-        bool m_warning;
-        bool m_crashed;
-        bool m_hidden;
-        bool m_moveFree;
-        bool m_ansiSymbol;
+    bool m_isMainComp;
+    bool m_graphical;
+    bool m_showId;
+    bool m_showVal;
+    bool m_moving;
+    bool m_warning;
+    bool m_crashed;
+    bool m_hidden;
+    bool m_moveFree;
+    bool m_ansiSymbol;
 
-        QPointF m_boardPos;
-        QPointF m_circPos;
-        double  m_boardRot;
-        double  m_circRot;
-        int     m_boardHflip;
-        int     m_boardVflip;
-        int     m_circHflip;
-        int     m_circVflip;
+    QPointF m_boardPos;
+    QPointF m_circPos;
+    double m_boardRot;
+    double m_circRot;
+    int m_boardHflip;
+    int m_boardVflip;
+    int m_circHflip;
+    int m_circVflip;
 
-        QString m_showProperty; // Property shown in val Label
+    QString m_showProperty; // Property shown in val Label
 
-        double  m_opCount;
-        
-        int m_Hflip;
-        int m_Vflip;
+    double m_opCount;
 
- static int m_error;
+    int m_Hflip;
+    int m_Vflip;
 
-        Linker* m_linkedTo;
+    static int m_error;
 
-        QString  m_background;  // BackGround Image path
-        QPixmap* m_backPixmap;  // Background Pixmap
+    Linker* m_linkedTo;
 
-        QColor  m_color;
+    QString m_background; // BackGround Image path
+    QPixmap* m_backPixmap; // Background Pixmap
 
-        QRectF  m_area;         // bounding rect
-        QPointF m_eventpoint;
+    QColor m_color;
 
-        Label* m_idLabel;
-        Label* m_valLabel;
+    QRectF m_area; // bounding rect
+    QPointF m_eventpoint;
 
-        QList<Connector*> m_conMoveList;
-        QList<Component*> m_compMoveList;
-        QList<ConnectorLine*> m_lineMoveList;
+    Label* m_idLabel;
+    Label* m_valLabel;
 
-        std::vector<Pin*> m_pin;
-        QList<Pin*> m_signalPin;
+    QList<Connector*> m_conMoveList;
+    QList<Component*> m_compMoveList;
+    QList<ConnectorLine*> m_lineMoveList;
 
-        QString m_invertedPins;
+    std::vector<Pin*> m_pin;
+    QList<Pin*> m_signalPin;
 
-        //QGraphicsItemGroup* m_group;
+    QString m_invertedPins;
+
+    //QGraphicsItemGroup* m_group;
 };

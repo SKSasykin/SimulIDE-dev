@@ -28,8 +28,6 @@
    andreas@angelcode.com
 */
 
-
-
 //
 // as_thread.h
 //
@@ -39,51 +37,48 @@
 #ifndef AS_THREAD_H
 #define AS_THREAD_H
 
-#include "as_config.h"
-#include "as_string.h"
 #include "as_array.h"
-#include "as_map.h"
+#include "as_config.h"
 #include "as_criticalsection.h"
+#include "as_map.h"
+#include "as_string.h"
 
 BEGIN_AS_NAMESPACE
 
 class asCThreadLocalData;
 
-class asCThreadManager : public asIThreadManager
-{
+class asCThreadManager : public asIThreadManager {
 public:
-	static asCThreadLocalData *GetLocalData();
-	static int CleanupLocalData();
+    static asCThreadLocalData* GetLocalData();
+    static int CleanupLocalData();
 
-	static int  Prepare(asIThreadManager *externalThreadMgr);
-	static void Unprepare();
+    static int Prepare( asIThreadManager* externalThreadMgr );
+    static void Unprepare();
 
 protected:
-	asCThreadManager();
-	~asCThreadManager();
+    asCThreadManager();
+    ~asCThreadManager();
 
-	// No need to use the atomic int here, as it will only be
-	// updated within the thread manager's critical section
-	int refCount;
-	asCThreadLocalData *tld;
-
+    // No need to use the atomic int here, as it will only be
+    // updated within the thread manager's critical section
+    int refCount;
+    asCThreadLocalData* tld;
 };
 
 //======================================================================
 
 class asIScriptContext;
 
-class asCThreadLocalData
-{
+class asCThreadLocalData {
 public:
-	asCArray<asIScriptContext *> activeContexts;
-	asCString string;
+    asCArray<asIScriptContext*> activeContexts;
+    asCString string;
 
 protected:
-	friend class asCThreadManager;
+    friend class asCThreadManager;
 
-	asCThreadLocalData();
-	~asCThreadLocalData();
+    asCThreadLocalData();
+    ~asCThreadLocalData();
 };
 
 END_AS_NAMESPACE

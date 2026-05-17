@@ -11,23 +11,25 @@
 class ScriptCpu;
 class asIScriptEngine;
 
-class ScriptPerif
-{
-    public:
-        ScriptPerif( QString name );
-        ~ScriptPerif();
+class ScriptPerif {
+public:
+    ScriptPerif( QString name );
+    ~ScriptPerif();
 
-        virtual QStringList registerScript( ScriptCpu* cpu ){ QStringList l; return l;}
-        virtual void startScript(){;}
+    virtual QStringList registerScript( ScriptCpu* cpu ) {
+        QStringList l;
+        return l;
+    }
+    virtual void startScript() { ; }
 
-        QString type() { return m_type; }
+    QString type() { return m_type; }
 
-    protected:
-        QString m_perifName;
+protected:
+    QString m_perifName;
 
-        ScriptCpu* m_scriptCpu;
+    ScriptCpu* m_scriptCpu;
 
-        QString m_type;
+    QString m_type;
 
-        QStringList m_methods;
+    QStringList m_methods;
 };

@@ -37,14 +37,15 @@
 
 #include <stdlib.h>
 
-#if !defined(__APPLE__) && !defined(__SNC__) && !defined(__ghs__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__)
+#if !defined( __APPLE__ ) && !defined( __SNC__ ) && !defined( __ghs__ ) && !defined( __FreeBSD__ )                     \
+    && !defined( __OpenBSD__ ) && !defined( __DragonFly__ )
 #include <malloc.h>
 #endif
 
+#include "as_bytecode.h"
 #include "as_config.h"
 #include "as_memory.h"
 #include "as_scriptnode.h"
-#include "as_bytecode.h"
 
 BEGIN_AS_NAMESPACE
 
@@ -54,135 +55,121 @@ BEGIN_AS_NAMESPACE
 // library may crash in case the application initializes the engine
 // as a global variable.
 
-
 // Other compilers will just have to rely on luck.
 asALLOCFUNC_t userAlloc = malloc;
-asFREEFUNC_t  userFree  = free;
+asFREEFUNC_t userFree = free;
 
-extern "C"
-{
+extern "C" {
 
 // interface
-int asSetGlobalMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc)
-{
-	// Clean-up thread local memory before changing the allocation routines to avoid 
-	// potential problem with trying to free memory using a different allocation
-	// routine than used when allocating it.
-	asThreadCleanup();
+int asSetGlobalMemoryFunctions( asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc ) {
+    // Clean-up thread local memory before changing the allocation routines to avoid
+    // potential problem with trying to free memory using a different allocation
+    // routine than used when allocating it.
+    asThreadCleanup();
 
-	userAlloc = allocFunc;
-	userFree  = freeFunc;
+    userAlloc = allocFunc;
+    userFree = freeFunc;
 
-	return 0;
+    return 0;
 }
 
 // interface
-int asResetGlobalMemoryFunctions()
-{
-	// Clean-up thread local memory before changing the allocation routines to avoid 
-	// potential problem with trying to free memory using a different allocation
-	// routine than used when allocating it.
-	asThreadCleanup();
+int asResetGlobalMemoryFunctions() {
+    // Clean-up thread local memory before changing the allocation routines to avoid
+    // potential problem with trying to free memory using a different allocation
+    // routine than used when allocating it.
+    asThreadCleanup();
 
-	userAlloc = malloc;
-	userFree  = free;
+    userAlloc = malloc;
+    userFree = free;
 
-	return 0;
+    return 0;
 }
 
 // interface
-void *asAllocMem(size_t size)
-{
-	return asNEWARRAY(asBYTE, size);
+void* asAllocMem( size_t size ) {
+    return asNEWARRAY( asBYTE, size );
 }
 
 // interface
-void asFreeMem(void *mem)
-{
-	asDELETEARRAY(mem);
+void asFreeMem( void* mem ) {
+    asDELETEARRAY( mem );
 }
 
 } // extern "C"
 
-asCMemoryMgr::asCMemoryMgr()
-{
+asCMemoryMgr::asCMemoryMgr() { }
+
+asCMemoryMgr::~asCMemoryMgr() {
+    FreeUnusedMemory();
 }
 
-asCMemoryMgr::~asCMemoryMgr()
-{
-	FreeUnusedMemory();
+void asCMemoryMgr::FreeUnusedMemory() {
+    int n;
+    for ( n = 0; n < (signed) scriptNodePool.GetLength(); n++ )
+        userFree( scriptNodePool[n] );
+    scriptNodePool.Allocate( 0, false );
+
+    // The engine already protects against multiple threads
+    // compiling scripts simultaneously so this pool doesn't have
+    // to be protected again.
+    for ( n = 0; n < (signed) byteInstructionPool.GetLength(); n++ )
+        userFree( byteInstructionPool[n] );
+    byteInstructionPool.Allocate( 0, false );
 }
 
-void asCMemoryMgr::FreeUnusedMemory()
-{
-	int n;
-	for( n = 0; n < (signed)scriptNodePool.GetLength(); n++ )
-		userFree(scriptNodePool[n]);
-	scriptNodePool.Allocate(0, false);
-
-	// The engine already protects against multiple threads 
-	// compiling scripts simultaneously so this pool doesn't have 
-	// to be protected again.
-	for( n = 0; n < (signed)byteInstructionPool.GetLength(); n++ )
-		userFree(byteInstructionPool[n]);
-	byteInstructionPool.Allocate(0, false);
-}
-
-void *asCMemoryMgr::AllocScriptNode()
-{
-	if( scriptNodePool.GetLength() )
-	{
-		void *tRet = scriptNodePool.PopLast();
-		return tRet;
+void* asCMemoryMgr::AllocScriptNode() {
+    if ( scriptNodePool.GetLength() ) {
+        void* tRet = scriptNodePool.PopLast();
+        return tRet;
     }
 
-#if defined(AS_DEBUG) 
-	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCScriptNode), __FILE__, __LINE__);
+#if defined( AS_DEBUG )
+    return ( (asALLOCFUNCDEBUG_t) ( userAlloc ) )( sizeof( asCScriptNode ), __FILE__, __LINE__ );
 #else
-	return userAlloc(sizeof(asCScriptNode));
+    return userAlloc( sizeof( asCScriptNode ) );
 #endif
 }
 
-void asCMemoryMgr::FreeScriptNode(void *ptr)
-{
-	// Pre allocate memory for the array to avoid slow growth
-    if( scriptNodePool.GetLength() == 0 ) scriptNodePool.Allocate(100, 0);
+void asCMemoryMgr::FreeScriptNode( void* ptr ) {
+    // Pre allocate memory for the array to avoid slow growth
+    if ( scriptNodePool.GetLength() == 0 )
+        scriptNodePool.Allocate( 100, 0 );
 
-	scriptNodePool.PushLast(ptr);
-	
+    scriptNodePool.PushLast( ptr );
+
 #ifdef AS_DEBUG
-	// clear the memory to facilitate identification of use after free
-	memset(ptr, 0xCDCDCDCD, sizeof(asCScriptNode));
+    // clear the memory to facilitate identification of use after free
+    memset( ptr, 0xCDCDCDCD, sizeof( asCScriptNode ) );
 #endif
 }
 
 #ifndef AS_NO_COMPILER
 
-void *asCMemoryMgr::AllocByteInstruction()
-{
-	// This doesn't need a critical section because, only one compilation is allowed at a time
-	
-	if( byteInstructionPool.GetLength() )
-		return byteInstructionPool.PopLast();
+void* asCMemoryMgr::AllocByteInstruction() {
+    // This doesn't need a critical section because, only one compilation is allowed at a time
 
-#if defined(AS_DEBUG) 
-	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCByteInstruction), __FILE__, __LINE__);
+    if ( byteInstructionPool.GetLength() )
+        return byteInstructionPool.PopLast();
+
+#if defined( AS_DEBUG )
+    return ( (asALLOCFUNCDEBUG_t) ( userAlloc ) )( sizeof( asCByteInstruction ), __FILE__, __LINE__ );
 #else
-	return userAlloc(sizeof(asCByteInstruction));
+    return userAlloc( sizeof( asCByteInstruction ) );
 #endif
 }
 
-void asCMemoryMgr::FreeByteInstruction(void *ptr)
-{
-	// Pre allocate memory for the array to avoid slow growth
-	if( byteInstructionPool.GetLength() == 0 )
-		byteInstructionPool.Allocate(100, 0);
+void asCMemoryMgr::FreeByteInstruction( void* ptr ) {
+    // Pre allocate memory for the array to avoid slow growth
+    if ( byteInstructionPool.GetLength() == 0 )
+        byteInstructionPool.Allocate( 100, 0 );
 
-	byteInstructionPool.PushLast(ptr);
-	
+    byteInstructionPool.PushLast( ptr );
+
 #ifdef AS_DEBUG
-	// clear the memory to facilitate identification of use after free
-	memset(ptr, 0xCDCDCDCD, sizeof(asCByteInstruction));
+    // clear the memory to facilitate identification of use after free
+    memset( ptr, 0xCDCDCDCD, sizeof( asCByteInstruction ) );
 #endif
 }
 

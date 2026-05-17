@@ -8,68 +8,67 @@
 #include "e_mcu.h"
 #include "mcupin.h"
 
-PicVref::PicVref( eMcu* mcu, QString name )
-       : McuVref( mcu, name )
-{
-}
-PicVref::~PicVref(){}
+PicVref::PicVref( eMcu* mcu, QString name ) : McuVref( mcu, name ) { }
+PicVref::~PicVref() { }
 
-void PicVref::setup()
-{
-    m_VREN = getRegBits("VREN", m_mcu );
-    m_VROE = getRegBits("VROE", m_mcu );
-    m_VRR  = getRegBits("VRR" , m_mcu );
-    m_VR   = getRegBits("VR0,VR1,VR2,VR3", m_mcu );
+void PicVref::setup() {
+    m_VREN = getRegBits( "VREN", m_mcu );
+    m_VROE = getRegBits( "VROE", m_mcu );
+    m_VRR = getRegBits( "VRR", m_mcu );
+    m_VR = getRegBits( "VR0,VR1,VR2,VR3", m_mcu );
 }
 
-void PicVref::initialize()
-{
-    m_vref = m_mcu->vdd()/4; //setMode( 0 );
+void PicVref::initialize() {
+    m_vref = m_mcu->vdd() / 4; //setMode( 0 );
 }
 
-void PicVref::configureA( uint8_t newVRCON )
-{
+void PicVref::configureA( uint8_t newVRCON ) {
     m_enabled = getRegBitsBool( newVRCON, m_VREN );
 
-    bool     vrr = getRegBitsBool( newVRCON, m_VRR );
+    bool vrr = getRegBitsBool( newVRCON, m_VRR );
     uint8_t mode = getRegBitsVal( newVRCON, m_VR );
-    if( mode != m_mode || vrr != m_vrr )
-    {
+    if ( mode != m_mode || vrr != m_vrr ) {
         m_mode = mode;
         m_vrr = vrr;
 
-        if( m_enabled ){
+        if ( m_enabled ) {
             double vdd = m_mcu->vdd();
-            if( vrr ) m_vref = vdd*mode/24; /// TODO: get Vdd or use VrefP
-            else      m_vref = vdd/4+vdd*mode/32;
-        }
-        else m_vref = 0;
+            if ( vrr )
+                m_vref = vdd * mode / 24; /// TODO: get Vdd or use VrefP
+            else
+                m_vref = vdd / 4 + vdd * mode / 32;
+        } else
+            m_vref = 0;
     }
     bool vroe = getRegBitsBool( newVRCON, m_VROE );
     m_vroe = vroe;
-    if( m_pinOut )     /// TODO: Add VrefP/VrefN option to ladder
+    if ( m_pinOut ) /// TODO: Add VrefP/VrefN option to ladder
     {
         // VDD-┬-8R-R-..16 Stages..-R-8R-┬-GND
         // VrP-┘                     -VRR┴-VrN
         double vddAdmit = 0;
         double gndAdmit = 0;
 
-        if( vroe && m_enabled )
-        {
+        if ( vroe && m_enabled ) {
             double vddResist = 0;
             double gndResist = 0;
             float R = 2e3;
-            vddResist = R*(8+16-m_mode);
-            if( vrr ) gndResist = vrr ? 1e-3 : 8;
+            vddResist = R * ( 8 + 16 - m_mode );
+            if ( vrr )
+                gndResist = vrr ? 1e-3 : 8;
             gndResist += m_mode;
             gndResist *= R;
-            if( vddResist ) vddAdmit = 1/vddResist;
-            if( gndResist ) gndAdmit = 1/gndResist;
+            if ( vddResist )
+                vddAdmit = 1 / vddResist;
+            if ( gndResist )
+                gndAdmit = 1 / gndResist;
         }
         m_pinOut->setExtraSource( vddAdmit, gndAdmit );
     }
-    if( !m_callBacks.isEmpty() )
-    { for( McuModule* mod : m_callBacks ) mod->callBackDoub( m_vref ); }
+    if ( !m_callBacks.isEmpty() ) {
+        for ( McuModule* mod : m_callBacks )
+            mod->callBackDoub( m_vref );
+    }
 }
 
 /*void PicVref::setMode( uint8_t mode )
@@ -80,54 +79,71 @@ void PicVref::configureA( uint8_t newVRCON )
 //-------------------------------------------------------------
 // Type 0: 16f1826 FVR  ---------------------------------------
 
-PicVrefE::PicVrefE( eMcu* mcu, QString name )
-        : McuVref( mcu, name )
-{
-}
-PicVrefE::~PicVrefE(){}
+PicVrefE::PicVrefE( eMcu* mcu, QString name ) : McuVref( mcu, name ) { }
+PicVrefE::~PicVrefE() { }
 
-void PicVrefE::setup()
-{
-    m_FVREN  = getRegBits("FVREN", m_mcu );
-    m_ADFVR  = getRegBits("ADFVR0,ADFVR1", m_mcu );   // ADC Vref
-    m_CDAFVR = getRegBits("CDAFVR0,CDAFVR1", m_mcu ); // DAC Vref
+void PicVrefE::setup() {
+    m_FVREN = getRegBits( "FVREN", m_mcu );
+    m_ADFVR = getRegBits( "ADFVR0,ADFVR1", m_mcu ); // ADC Vref
+    m_CDAFVR = getRegBits( "CDAFVR0,CDAFVR1", m_mcu ); // DAC Vref
 }
 
-void PicVrefE::configureA( uint8_t newFVRCON )
-{
+void PicVrefE::configureA( uint8_t newFVRCON ) {
     m_enabled = getRegBitsVal( newFVRCON, m_FVREN );
 
     double vdd = m_mcu->vdd();
     uint8_t adfvr = getRegBitsVal( newFVRCON, m_ADFVR );
-    switch( adfvr ) {
-        case 0: m_adcVref = 0.000; break;
-        case 1: m_adcVref = 1.024; break;
-        case 2: m_adcVref = 2.048; break;
-        case 3: m_adcVref = 4.096; break;
+    switch ( adfvr ) {
+    case 0:
+        m_adcVref = 0.000;
+        break;
+    case 1:
+        m_adcVref = 1.024;
+        break;
+    case 2:
+        m_adcVref = 2.048;
+        break;
+    case 3:
+        m_adcVref = 4.096;
+        break;
     }
-    if( m_adcVref > vdd ) m_adcVref = vdd;
+    if ( m_adcVref > vdd )
+        m_adcVref = vdd;
 
     uint8_t cdafvr = getRegBitsVal( newFVRCON, m_CDAFVR );
-    switch( cdafvr ) {
-        case 0: m_dacVref = 0.000; break;
-        case 1: m_dacVref = 1.024; break;
-        case 2: m_dacVref = 2.048; break;
-        case 3: m_dacVref = 4.096; break;
+    switch ( cdafvr ) {
+    case 0:
+        m_dacVref = 0.000;
+        break;
+    case 1:
+        m_dacVref = 1.024;
+        break;
+    case 2:
+        m_dacVref = 2.048;
+        break;
+    case 3:
+        m_dacVref = 4.096;
+        break;
     }
-    if( m_dacVref > vdd ) m_dacVref = vdd;
+    if ( m_dacVref > vdd )
+        m_dacVref = vdd;
 
-    if( !m_callBacks.isEmpty() )
-    { for( McuModule* mod : m_callBacks ) mod->callBack(); }
+    if ( !m_callBacks.isEmpty() ) {
+        for ( McuModule* mod : m_callBacks )
+            mod->callBack();
+    }
 }
 
-double PicVrefE::getAdcVref()
-{
-    if( m_enabled ) return m_adcVref;
-    else            return 0;
+double PicVrefE::getAdcVref() {
+    if ( m_enabled )
+        return m_adcVref;
+    else
+        return 0;
 }
 
-double PicVrefE::getDacVref()
-{
-    if( m_enabled ) return m_dacVref;
-    else            return 0;
+double PicVrefE::getDacVref() {
+    if ( m_enabled )
+        return m_dacVref;
+    else
+        return 0;
 }

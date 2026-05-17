@@ -7,20 +7,19 @@
 
 #include "cdebugger.h"
 
-class AvrGccDebugger : public cDebugger
-{
-    public:
-        AvrGccDebugger( CodeEditor* parent, OutPanelText* outPane );
-        ~AvrGccDebugger();
+class AvrGccDebugger : public cDebugger {
+public:
+    AvrGccDebugger( CodeEditor* parent, OutPanelText* outPane );
+    ~AvrGccDebugger();
 
-    protected:
-        virtual bool postProcess() override;
+protected:
+    virtual bool postProcess() override;
 
-        bool getVariables();
-        bool getFunctions();
-        bool mapFlashToSource();
+    bool getVariables();
+    bool getFunctions();
+    bool mapFlashToSource();
 
-        int m_addrBytes;
+    int m_addrBytes;
 
-        QString m_elfPath;
+    QString m_elfPath;
 };

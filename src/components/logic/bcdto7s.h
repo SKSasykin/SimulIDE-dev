@@ -9,27 +9,26 @@
 
 class LibraryItem;
 
-class BcdTo7S : public BcdBase
-{
-    public:
-        BcdTo7S( QString type, QString id );
-        ~BcdTo7S();
+class BcdTo7S : public BcdBase {
+public:
+    BcdTo7S( QString type, QString id );
+    ~BcdTo7S();
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        bool propNotFound( QString prop, QString val ) override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        void stamp() override;
-        void updateStep() override;
-        void voltChanged() override;
-        void runEvent() override { IoComponent::runOutputs(); }
+    void stamp() override;
+    void updateStep() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        bool pinReset() { return m_useReset; }
-        void setPinReset( bool r );
+    bool pinReset() { return m_useReset; }
+    void setPinReset( bool r );
 
-    private:
-        bool m_useReset;
+private:
+    bool m_useReset;
 
-        IoPin* m_resetPin;
+    IoPin* m_resetPin;
 };

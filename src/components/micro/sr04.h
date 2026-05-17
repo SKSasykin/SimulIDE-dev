@@ -5,48 +5,47 @@
 
 #pragma once
 
-#include "e-element.h"
 #include "component.h"
+#include "e-element.h"
 
 class LibraryItem;
 class IoPin;
 class CustomSlider;
 
-class SR04 : public Component, public eElement
-{
-    public:
-        SR04( QString type, QString id );
-        ~SR04();
-        
-        void stamp() override;
-        void initialize() override;
-        void updateStep() override;
-        void voltChanged() override;
-        void runEvent() override;
+class SR04 : public Component, public eElement {
+public:
+    SR04( QString type, QString id );
+    ~SR04();
 
-        bool slider() { return m_useDial; }
-        void setSlider( bool s );
+    void stamp() override;
+    void initialize() override;
+    void updateStep() override;
+    void voltChanged() override;
+    void runEvent() override;
 
-        void dialChanged( int );
+    bool slider() { return m_useDial; }
+    void setSlider( bool s );
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void dialChanged( int );
 
- static Component* construct( QString type, QString id );
- static LibraryItem* libraryItem();
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    private:
-        bool m_useDial;
+    static Component* construct( QString type, QString id );
+    static LibraryItem* libraryItem();
 
-        uint64_t m_lastStep;
-        bool     m_lastTrig;
+private:
+    bool m_useDial;
 
-        int m_echouS;
-        double m_distance;
-        
-        Pin* m_inpin;
-        Pin* m_trigpin;
-        
-        IoPin* m_echo;
+    uint64_t m_lastStep;
+    bool m_lastTrig;
 
-        CustomSlider* m_slider;
+    int m_echouS;
+    double m_distance;
+
+    Pin* m_inpin;
+    Pin* m_trigpin;
+
+    IoPin* m_echo;
+
+    CustomSlider* m_slider;
 };

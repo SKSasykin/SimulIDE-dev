@@ -9,66 +9,63 @@
 
 class eMcu;
 
-class AvrWdt : public McuWdt
-{
-    public:
-        AvrWdt( eMcu* mcu, QString name );
-        ~AvrWdt();
+class AvrWdt : public McuWdt {
+public:
+    AvrWdt( eMcu* mcu, QString name );
+    ~AvrWdt();
 
-  static AvrWdt* createWdt( eMcu* mcu, QString name, int type );
+    static AvrWdt* createWdt( eMcu* mcu, QString name, int type );
 
-        virtual void setup() override;
-        virtual void initialize() override;
-        virtual void runEvent() override;
+    virtual void setup() override;
+    virtual void initialize() override;
+    virtual void runEvent() override;
 
-        virtual void configureA( uint8_t newWDTCSR ) override;
+    virtual void configureA( uint8_t newWDTCSR ) override;
 
-        virtual void reset() override;
+    virtual void reset() override;
 
-        virtual void callBack() override;
+    virtual void callBack() override;
 
-    protected:
-        void wdtEnable();
-        virtual void updtPrescaler( uint8_t newWDTCSR ){;}
+protected:
+    void wdtEnable();
+    virtual void updtPrescaler( uint8_t newWDTCSR ) { ; }
 
-        bool m_allowChanges;
-        bool m_disabled;
+    bool m_allowChanges;
+    bool m_disabled;
 
-        //uint8_t*  m_WDTCSR;
+    //uint8_t*  m_WDTCSR;
 
-        regBits_t m_WDCE;
-        regBits_t m_WDE;
-        regBits_t m_WDP02;
+    regBits_t m_WDCE;
+    regBits_t m_WDE;
+    regBits_t m_WDP02;
 
-        regBits_t m_WDRF;
+    regBits_t m_WDRF;
 };
 
-class AvrWdt00 : public AvrWdt
-{
-    public:
-        AvrWdt00( eMcu* mcu, QString name );
-        ~AvrWdt00();
+class AvrWdt00 : public AvrWdt {
+public:
+    AvrWdt00( eMcu* mcu, QString name );
+    ~AvrWdt00();
 
-        virtual void setup() override;
+    virtual void setup() override;
 
-        virtual void configureA( uint8_t newWDTCSR ) override;
+    virtual void configureA( uint8_t newWDTCSR ) override;
 
-    private:
-        virtual void updtPrescaler( uint8_t newWDTCSR ) override;
+private:
+    virtual void updtPrescaler( uint8_t newWDTCSR ) override;
 
-        regBits_t m_WDIF;
-        regBits_t m_WDIE;
-        regBits_t m_WDP3;
+    regBits_t m_WDIF;
+    regBits_t m_WDIE;
+    regBits_t m_WDP3;
 };
 
-class AvrWdt01 : public AvrWdt
-{
-    public:
-        AvrWdt01( eMcu* mcu, QString name );
-        ~AvrWdt01();
+class AvrWdt01 : public AvrWdt {
+public:
+    AvrWdt01( eMcu* mcu, QString name );
+    ~AvrWdt01();
 
-        virtual void configureA( uint8_t newWDTCSR ) override;
+    virtual void configureA( uint8_t newWDTCSR ) override;
 
-    private:
-        virtual void updtPrescaler( uint8_t newWDTCSR ) override;
+private:
+    virtual void updtPrescaler( uint8_t newWDTCSR ) override;
 };

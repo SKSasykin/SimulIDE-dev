@@ -9,36 +9,35 @@
 
 class IoPin;
 
-class Gate : public LogicComponent
-{
-    public:
-        Gate( QString type, QString id, int inputs );
-        ~Gate();
+class Gate : public LogicComponent {
+public:
+    Gate( QString type, QString id, int inputs );
+    ~Gate();
 
-        QList<ComProperty*> outputProps();
+    QList<ComProperty*> outputProps();
 
-        bool propNotFound( QString prop, QString val ) override;
+    bool propNotFound( QString prop, QString val ) override;
 
-        void stamp() override;
-        void voltChanged() override;
-        void runEvent() override { IoComponent::runOutputs(); }
+    void stamp() override;
+    void voltChanged() override;
+    void runEvent() override { IoComponent::runOutputs(); }
 
-        bool initHigh() { return m_initState; }
-        void setInitHigh( bool s) { m_initState = s; }
+    bool initHigh() { return m_initState; }
+    void setInitHigh( bool s ) { m_initState = s; }
 
-        void setNumInputs( int pins );
+    void setNumInputs( int pins );
 
-        QPainterPath shape() const override;
+    QPainterPath shape() const override;
 
-        void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
+    void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
-    protected:
-        virtual bool calcOutput( int inputs );
-        virtual void updatePath(){;}
+protected:
+    virtual bool calcOutput( int inputs );
+    virtual void updatePath() { ; }
 
-        bool m_initState;
+    bool m_initState;
 
-        int m_minInputs;
+    int m_minInputs;
 
-        QPainterPath m_path;
+    QPainterPath m_path;
 };
