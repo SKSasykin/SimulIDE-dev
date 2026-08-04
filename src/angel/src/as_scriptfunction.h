@@ -37,9 +37,9 @@
 #ifndef AS_SCRIPTFUNCTION_H
 #define AS_SCRIPTFUNCTION_H
 
-#include "as_array.h"
-#include "as_atomic.h"
 #include "as_config.h"
+#include "as_atomic.h"
+#include "as_array.h"
 #include "as_datatype.h"
 #include "as_string.h"
 

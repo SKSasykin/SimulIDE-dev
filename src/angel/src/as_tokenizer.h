@@ -44,6 +44,8 @@
 
 BEGIN_AS_NAMESPACE
 
+class asCScriptEngine;
+
 class asCTokenizer {
 public:
     eTokenType GetToken( const char* source, size_t sourceLength, size_t* tokenLength, asETokenClass* tc = 0 ) const;

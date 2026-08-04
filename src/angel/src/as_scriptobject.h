@@ -38,11 +38,12 @@
 #define AS_SCRIPTOBJECT_H
 
 #include "as_config.h"
-//#include "as_atomic.h"
+#include "as_atomic.h"
 
 BEGIN_AS_NAMESPACE
 
 class asCObjectType;
+class asCScriptEngine;
 
 // TODO: Add const overload for GetAddressOfProperty
 

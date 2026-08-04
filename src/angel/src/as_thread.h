@@ -37,8 +37,8 @@
 #ifndef AS_THREAD_H
 #define AS_THREAD_H
 
-#include "as_array.h"
 #include "as_config.h"
+#include "as_array.h"
 #include "as_criticalsection.h"
 #include "as_map.h"
 #include "as_string.h"

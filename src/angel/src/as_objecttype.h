@@ -37,6 +37,7 @@
 #ifndef AS_OBJECTTYPE_H
 #define AS_OBJECTTYPE_H
 
+#include "as_config.h"
 #include "as_array.h"
 #include "as_property.h"
 #include "as_scriptfunction.h"

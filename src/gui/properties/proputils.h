@@ -6,6 +6,7 @@
 #pragma once
 
 #include <QPointF>
+#include <QString>
 #include <QStringView>
 
 QPointF getPointF( QString p );

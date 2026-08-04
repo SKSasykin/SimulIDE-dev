@@ -37,6 +37,7 @@
 #ifndef AS_SCRIPTCODE_H
 #define AS_SCRIPTCODE_H
 
+#include "as_config.h"
 #include "as_array.h"
 #include "as_string.h"
 

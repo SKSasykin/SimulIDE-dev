@@ -37,8 +37,8 @@
 #ifndef AS_BUILDER_H
 #define AS_BUILDER_H
 
-#include "as_array.h"
 #include "as_config.h"
+#include "as_array.h"
 #include "as_datatype.h"
 #include "as_module.h"
 #include "as_property.h"

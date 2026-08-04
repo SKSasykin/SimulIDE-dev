@@ -37,8 +37,8 @@
 #ifndef AS_CONFIGGROUP_H
 #define AS_CONFIGGROUP_H
 
-#include "as_array.h"
 #include "as_config.h"
+#include "as_array.h"
 #include "as_objecttype.h"
 #include "as_string.h"
 

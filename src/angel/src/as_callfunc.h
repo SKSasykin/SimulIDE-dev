@@ -37,6 +37,7 @@
 #ifndef AS_CALLFUNC_H
 #define AS_CALLFUNC_H
 
+#include "as_config.h"
 #include "as_array.h"
 
 BEGIN_AS_NAMESPACE

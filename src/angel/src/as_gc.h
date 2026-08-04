@@ -33,8 +33,8 @@
 #ifndef AS_GC_H
 #define AS_GC_H
 
-#include "as_array.h"
 #include "as_config.h"
+#include "as_array.h"
 #include "as_map.h"
 #include "as_thread.h"
 
