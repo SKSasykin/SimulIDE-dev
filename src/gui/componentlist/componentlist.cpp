@@ -72,6 +72,10 @@ void ComponentList::createList() {
     if ( compSetDir.exists() )
         LoadCompSetAt( compSetDir );
 
+    compSetDir.setPath( QCoreApplication::applicationDirPath() + "/data" ); // File next to executable
+    if ( compSetDir.exists() )
+        LoadCompSetAt( compSetDir );
+
     compSetDir.setPath( "./data" ); // FIXME: provisional, used by QemuDevice
     LoadCompSetAt( compSetDir );
 

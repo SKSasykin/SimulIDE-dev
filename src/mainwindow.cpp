@@ -349,11 +349,15 @@ QString MainWindow::getHelp( QString name, bool save ) {
     if ( dfPath.isEmpty() )
         dfPath = getFilePath( name + locale, m_configDir.absoluteFilePath( "help" ) );
     if ( dfPath.isEmpty() )
+        dfPath = getFilePath( name + locale, QCoreApplication::applicationDirPath() + "/data/help" );
+    if ( dfPath.isEmpty() )
         dfPath = getFilePath( name + locale, ":/help" );
     if ( dfPath.isEmpty() )
         dfPath = getFilePath( name, m_userDir + "help" );
     if ( dfPath.isEmpty() )
         dfPath = getFilePath( name, m_configDir.absoluteFilePath( "help" ) );
+    if ( dfPath.isEmpty() )
+        dfPath = getFilePath( name, QCoreApplication::applicationDirPath() + "/data/help" );
     if ( dfPath.isEmpty() )
         dfPath = getFilePath( name, ":/help" );
     if ( dfPath.isEmpty() )
@@ -415,6 +419,9 @@ QString MainWindow::getDataFilePath( QString file ) {
 
     if ( path.isEmpty() || !QFileInfo::exists( path ) )
         path = getConfigPath( "data/" + file ); // File in Config data folder
+
+    if ( path.isEmpty() || !QFileInfo::exists( path ) )
+        path = QCoreApplication::applicationDirPath() + "/data/" + file; // File next to executable
 
     if ( path.isEmpty() || !QFileInfo::exists( path ) )
         path = ":/" + file; // File in SimulIDE resources

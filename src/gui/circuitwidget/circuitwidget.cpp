@@ -85,7 +85,9 @@ CircuitWidget::CircuitWidget( QWidget* parent )
     m_lastCircDir = MainWindow::self()->settings()->value( "lastCircDir" ).toByteArray();
     if ( m_lastCircDir.isEmpty() ) {
         QString appPath = QCoreApplication::applicationDirPath();
-        m_lastCircDir = appPath + "./data/examples";
+        m_lastCircDir = appPath + "/data/examples";
+        if ( !QDir( m_lastCircDir ).exists() )
+            m_lastCircDir = QDir::homePath();
     }
     m_infoWidget->setRate();
 }

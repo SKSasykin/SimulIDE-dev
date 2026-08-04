@@ -269,10 +269,10 @@ void EditorWindow::loadCompilers() {
     compilsPath = MainWindow::self()->getUserFilePath( "codeeditor/compilers/assemblers" );
     loadCompilerSet( compilsPath, &m_assemblers );
 
-    // Embeed compiler data
-    compilsPath = MainWindow::self()->getConfigPath( "data/codeeditor/compilers/compilers" );
+    // Embedded compiler data (config dir / app folder)
+    compilsPath = MainWindow::self()->getDataFilePath( "codeeditor/compilers/compilers" );
     loadCompilerSet( compilsPath, &m_compilers );
-    compilsPath = MainWindow::self()->getConfigPath( "data/codeeditor/compilers/assemblers" );
+    compilsPath = MainWindow::self()->getDataFilePath( "codeeditor/compilers/assemblers" );
     loadCompilerSet( compilsPath, &m_assemblers );
 }
 
