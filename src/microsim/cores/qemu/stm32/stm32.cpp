@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QPainter>
 
+#include "mainwindow.h"
 #include "stm32.h"
 //#include "ustm32pin.h"
 #include "stm32port.h"
@@ -121,7 +122,8 @@ Stm32::Stm32( QString type, QString id, QString device ) : QemuDevice( type, id 
 
     m_model = fam << 16 | pkg << 8 | var;
     qDebug() << "Stm32::Stm32 model" << device << m_model;
-    m_executable = "./data/bin/qemu-system-arm";
+    QString exe = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/qemu-system-arm" ) : "";
+    m_executable = exe.isEmpty() ? "./data/bin/qemu-system-arm" : exe;
 
     m_firmware = "";
 
@@ -214,7 +216,7 @@ bool Stm32::createArgs() {
     //m_arguments <<"clock=vm";
 
     m_arguments << "-icount";
-    m_arguments << "shift=0,align=off,sleep=off";
+    m_arguments << "shift=0,align=off,sleep=on";
 
     return true;
 }
@@ -274,7 +276,8 @@ void Stm32::createPorts() {
         }
     }
 
-    setPackageFile( "./data/STM32/" + m_packageFile );
+    QString package = MainWindow::self() ? MainWindow::self()->getDataFilePath( "STM32/" + m_packageFile ) : "";
+    setPackageFile( package.isEmpty() ? "./data/STM32/" + m_packageFile : package );
     Chip::setName( m_device );
 }
 

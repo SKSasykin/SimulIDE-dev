@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#ifdef __linux__
+#if defined( __linux__ ) || defined( __APPLE__ )
 #include <sys/mman.h>
 #include <sys/shm.h>
 #elif defined( _WIN32 )
@@ -75,12 +75,15 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
     const int shMemSize = sizeof( qemuArena_t );
 
     // create the shared memory object
-#ifdef __linux__
-    const char* charMemKey = m_shMemKey.toLocal8Bit().data();
+#if defined( __linux__ ) || defined( __APPLE__ )
+    QByteArray memKey = m_shMemKey.toLocal8Bit();
+    const char* charMemKey = memKey.constData();
     m_shMemId = shm_open( charMemKey, O_CREAT | O_RDWR, 0666 );
     if ( m_shMemId != -1 ) {
         ftruncate( m_shMemId, shMemSize );
-        arena = mmap( 0, shMemSize, PROT_WRITE, MAP_SHARED, m_shMemId, 0 );
+        arena = mmap( 0, shMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, m_shMemId, 0 );
+    } else {
+        qDebug() << "QemuDevice::QemuDevice shm_open failed errno:" << errno << "key:" << m_shMemKey;
     }
 #elif defined( _WIN32 )
     const wchar_t* charMemKey = m_shMemKey.toStdWString().c_str();
@@ -121,7 +124,7 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
 }
 QemuDevice::~QemuDevice() {
     initialize();
-#ifdef __linux__
+#if defined( __linux__ ) || defined( __APPLE__ )
     if ( m_shMemId != -1 )
         shm_unlink( m_shMemKey.toLocal8Bit().data() );
 #elif defined( _WIN32 )
@@ -283,10 +286,8 @@ void QemuDevice::runEvent() {
         }
         nextTime = m_arena->simuTime;
 
-        if ( nextTime < now ) {
-            qDebug() << "    QemuDevice::runEvent ERROR" << nextTime << now;
-            return;
-        }
+        if ( nextTime < now )
+            nextTime = now;
 
         if ( m_arena->simuAction ) {
             if ( m_arena->simuAction == SIM_FREQ )
@@ -309,7 +310,6 @@ void QemuDevice::runEvent() {
 
 void QemuDevice::doAction() {
     uint32_t address = m_arena->regAddr;
-    //qDebug() << "   QemuDevice::doAction"<< QString::number( address, 16 ); //Simulator::self()->circTime();
 
     for ( QemuModule* module : m_modules ) {
         if ( address < module->m_memStart || address > module->m_memEnd )

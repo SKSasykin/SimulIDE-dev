@@ -19,6 +19,7 @@
 #include "esp32twi.h"
 #include "esp32usart.h"
 #include "itemlibrary.h"
+#include "mainwindow.h"
 #include "utils.h"
 
 #define tr( str ) simulideTr( "Esp32", str )
@@ -31,7 +32,8 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     m_area = QRect( 0, 0, 15 * 8, 15 * 8 );
     m_color = QColor( 50, 50, 70 );
 
-    m_executable = "./data/bin/qemu-system-xtensa";
+    QString exe = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/qemu-system-xtensa" ) : "";
+    m_executable = exe.isEmpty() ? "./data/bin/qemu-system-xtensa" : exe;
     m_firmware = "";
 
     m_ioMem.resize( IOMEM_SIZE, 0 );
@@ -41,7 +43,13 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     m_iomux = new Esp32IoMux( this, id + "-IOMUX", 0, &m_apbFreq, 0x00049000, 0x00049FFF );
     m_iomux->setGpio( m_gpio );
 
-    setPackageFile( "./data/esp32/esp32.package" );
+    QString package = "./data/esp32/esp32.package";
+    if ( MainWindow::self() ) {
+        QString path = MainWindow::self()->getDataFilePath( "esp32/esp32.package" );
+        if ( !path.isEmpty() )
+            package = path;
+    }
+    setPackageFile( package );
     Chip::setName( m_device );
 
     Esp32Pin* dummyP = m_gpio->m_dummyPin;
@@ -81,9 +89,22 @@ Esp32::~Esp32() { }
 
 bool Esp32::createArgs() {
     QFileInfo fi = QFileInfo( m_firmPath );
+    qint64 size = fi.size();
 
-    if ( fi.size() != 4194304 ) {
-        qDebug() << "Error firmware file size:" << fi.size() << "must be 4194304";
+    if ( size == 0 ) {
+        QString fallback = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp32/blink.ino.merged.bin" ) : "";
+        if ( !fallback.isEmpty() && QFileInfo( fallback ).size() == 4194304 ) {
+            qDebug() << "Firmware file not found or empty, using bundled blink firmware:" << m_firmPath;
+            m_firmPath = fallback;
+            fi = QFileInfo( m_firmPath );
+            size = fi.size();
+        } else {
+            qDebug() << "Error: firmware file not found or empty:" << m_firmPath;
+            return false;
+        }
+    }
+    if ( size > 4194304 ) {
+        qDebug() << "Error firmware file size:" << size << "must be 4194304";
         qDebug() << m_firmPath;
         return false;
     }
@@ -92,8 +113,34 @@ bool Esp32::createArgs() {
     QString firmware = m_firmPath.left( index );
     QString efuses = firmware + ".efuse";
 
-    if ( !QFileInfo::exists( efuses ) )
-        efuses = "./data/bin/esp32/esp32.efuse";
+    if ( size < 4194304 ) {
+        QString base = QFileInfo( m_firmPath ).baseName();
+        QString padPath = QDir::tempPath() + "/simulide-esp32-" + base + "-flash.bin";
+        QFile pad( padPath );
+        if ( pad.exists() )
+            pad.remove();
+        if ( !pad.open( QIODevice::WriteOnly ) ) {
+            qDebug() << "Error: cannot create padded firmware file:" << padPath;
+            return false;
+        }
+        QFile fw( m_firmPath );
+        if ( !fw.open( QIODevice::ReadOnly ) ) {
+            qDebug() << "Error: cannot open firmware file:" << m_firmPath;
+            pad.close();
+            return false;
+        }
+        pad.write( fw.readAll() );
+        pad.write( QByteArray( int( 4194304 - size ), char( 0xFF ) ) );
+        fw.close();
+        pad.close();
+        qDebug() << "Padded firmware" << m_firmPath << "to 4194304 bytes ->" << padPath;
+        firmware = padPath.left( padPath.lastIndexOf( "." ) );
+    }
+
+    if ( !QFileInfo::exists( efuses ) ) {
+        QString path = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp32/esp32.efuse" ) : "";
+        efuses = path.isEmpty() ? "./data/bin/esp32/esp32.efuse" : path;
+    }
 
     m_arguments.clear();
 
@@ -107,8 +154,9 @@ bool Esp32::createArgs() {
     m_arguments << "-M";
     m_arguments << "esp32-simul";
 
+    QString romBin = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp32/rom/bin" ) : "";
     m_arguments << "-L"; /// TODO: embed files in Simulide
-    m_arguments << "./data/bin/esp32/rom/bin";
+    m_arguments << ( romBin.isEmpty() ? "./data/bin/esp32/rom/bin" : romBin );
 
     m_arguments << "-drive";
     m_arguments << "file=" + firmware + ".bin,if=mtd,format=raw";
@@ -119,14 +167,11 @@ bool Esp32::createArgs() {
     m_arguments << "-global";
     m_arguments << "driver=nvram.esp32.efuse,property=drive,value=efuse";
 
-    m_arguments << "-nic";
-    m_arguments << "user,model=esp32_wifi,id=u1,net=192.168.4.0/24";
-
     m_arguments << "-global";
     m_arguments << "driver=timer.esp32.timg,property=wdt_disable,value=true";
 
     m_arguments << "-icount";
-    m_arguments << "shift=4,align=off,sleep=off";
+    m_arguments << "shift=4,align=off,sleep=on";
 
     //m_arguments << "-kernel";  // Does not work
     //m_arguments <<  firmware+".elf" ;
