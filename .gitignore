@@ -1,1 +1,26 @@
 resources/qm/*.*
+
+.DS_Store
+.engram/
+
+# Test artifacts (keep only the directory, see .gitkeep)
+tests/*
+!tests/.gitkeep
+
+# Temporary work dir (moved from macOS per-user temp)
+tmp/
+
+# qemu emulator binaries (built by scripts/build_qemu.sh, see third_party/)
+resources/data/bin/qemu-system-xtensa
+resources/data/bin/qemu-system-arm
+
+# Build artifacts (out-of-source build in build_XX/)
+build_XX/Makefile
+build_XX/SimulIDE_Build.pro.user
+build_XX/.qmake.stash
+build_XX/build/
+build_XX/executables/
+build_XX/qrc_application.cpp
+build_XX/ui_*.h
+# qemu module build products (see scripts/build_qemu.sh)
+build_XX/qemu-simulide/
