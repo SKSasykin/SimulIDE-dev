@@ -79,7 +79,10 @@ if [ ! -f "$QEMU_DIR/configure" ]; then
     git -C "$REPO_ROOT" submodule update --init --recursive third_party/qemu-simulide
 fi
 
-if [ ! -d "$QEMU_DIR/.git" ]; then
+# After `git submodule update --init`, $QEMU_DIR/.git is a *gitfile* (regular
+# file) pointing into the parent repo's .git/modules, not a directory.
+# Check for existence, not directory-ness.
+if [ ! -e "$QEMU_DIR/.git" ]; then
     err "submodule not present at $QEMU_DIR"
     err "run: git submodule update --init --recursive"
     exit 1
@@ -133,29 +136,44 @@ if ! ninja -C "$BUILD_DIR" "${TARGETS[@]}"; then
 fi
 
 # --- 4. install -------------------------------------------------------------
-mkdir -p "$BIN_DIR"
-for t in "${TARGETS[@]}"; do
-    src="$BUILD_DIR/$t"
-    if [ -x "$src" ]; then
-        info "installing $t -> $BIN_DIR"
-        install -m 755 "$src" "$BIN_DIR/$t"
-    else
-        err "build finished but $src not found!"
-        exit 1
+# The app bundle data dir is populated by the main build by copying
+# resources/data into the .app. On a first parallel `make` that copy can run
+# while qemu is still compiling, and incremental makes never refresh it
+# (directory mtimes only change for direct children). So in addition to the
+# canonical resources/data/bin location, mirror the emulators + ROMs into the
+# built .app bundle when it already exists.
+BUNDLE_BIN_DIR=""
+for d in "$REPO_ROOT"/build_XX/executables/SimulIDE_*/*.app/Contents/MacOS/data/bin; do
+    if [ -d "$d" ]; then
+        BUNDLE_BIN_DIR="$d"
+        break
     fi
 done
 
-# The esp32 core loads its ROM dumps from resources/data/bin/esp32/rom/bin
-# (passed as the qemu -L directory, see esp32.cpp). They are regenerated from
-# the fork's pc-bios on every build so they never need manual copying.
-mkdir -p "$ROM_DIR"
-for rom in "${ROM_FILES[@]}"; do
-    if [ -f "$QEMU_DIR/pc-bios/$rom" ]; then
-        info "installing pc-bios/$rom -> $ROM_DIR"
-        install -m 644 "$QEMU_DIR/pc-bios/$rom" "$ROM_DIR/$rom"
-    else
-        warn "pc-bios/$rom not found in submodule, skipping"
-    fi
-done
+install_emulators() {
+    local bin_dir="$1"
+    local rom_dir="$bin_dir/esp32/rom/bin"
+    mkdir -p "$bin_dir" "$rom_dir"
+    for t in "${TARGETS[@]}"; do
+        install -m 755 "$BUILD_DIR/$t" "$bin_dir/$t"
+    done
+    # The esp32 core loads its ROM dumps from esp32/rom/bin (passed as the
+    # qemu -L directory, see esp32.cpp). They are regenerated from the fork's
+    # pc-bios on every build so they never need manual copying.
+    for rom in "${ROM_FILES[@]}"; do
+        if [ -f "$QEMU_DIR/pc-bios/$rom" ]; then
+            install -m 644 "$QEMU_DIR/pc-bios/$rom" "$rom_dir/$rom"
+        else
+            warn "pc-bios/$rom not found in submodule, skipping"
+        fi
+    done
+}
+
+info "installing emulators + ROM dumps -> $BIN_DIR"
+install_emulators "$BIN_DIR"
+if [ -n "$BUNDLE_BIN_DIR" ]; then
+    info "mirroring emulators + ROM dumps -> $BUNDLE_BIN_DIR"
+    install_emulators "$BUNDLE_BIN_DIR"
+fi
 
 info "done. Emulators installed to $BIN_DIR"
