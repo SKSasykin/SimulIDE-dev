@@ -1,0 +1,3 @@
+[submodule "third_party/qemu-simulide"]
+	path = third_party/qemu-simulide
+	url = git@github.com:SKSasykin/SimulIDE-qemu.git
