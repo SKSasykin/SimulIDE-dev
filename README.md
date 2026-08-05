@@ -90,6 +90,10 @@ fork) add the SimulIDE shared-memory bridge, the AHB-to-UART-FIFO mapping,
 the SDIO slave controller (SLC) and misc build fixes; no external patch file
 is needed.
 
+The ESP32 ROM dumps (`data/bin/esp32/rom/bin/*.bin`) are copied automatically
+from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
+build, so they do not need to be added or committed manually.
+
 For ESP32 you need a 4 MB flash image. The recommended format is the
 `merged.bin` produced by Arduino IDE / arduino-cli (bootloader at 0x1000,
 partition table at 0x8000, application at 0x10000). SimulIDE pads smaller

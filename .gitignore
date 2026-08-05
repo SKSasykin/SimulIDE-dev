@@ -14,6 +14,9 @@ tmp/
 resources/data/bin/qemu-system-xtensa
 resources/data/bin/qemu-system-arm
 
+# esp32 ROM dumps (regenerated from the fork's pc-bios by scripts/build_qemu.sh)
+resources/data/bin/esp32/rom/bin/
+
 # Build artifacts (out-of-source build in build_XX/)
 build_XX/Makefile
 build_XX/SimulIDE_Build.pro.user
