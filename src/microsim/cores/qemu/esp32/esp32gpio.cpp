@@ -57,10 +57,18 @@ void Esp32Gpio::writeRegister() {
     //qDebug() << "Esp32Gpio::writeRegister"<< m_name << m_eventAddress << m_eventValue;
     uint64_t offset = m_eventAddress - m_memStart;
 
-    if ( offset == 0x04 ) {
+    if ( offset == 0x04 ) { // GPIO_OUT_REG
         setGpioState( m_eventValue );
-    } else if ( offset == 0x20 ) {
+    } else if ( offset == 0x08 ) { // GPIO_OUT_W1TS_REG (set bits)
+        setGpioState( m_gpioState | m_eventValue );
+    } else if ( offset == 0x0C ) { // GPIO_OUT_W1TC_REG (clear bits)
+        setGpioState( m_gpioState & ~m_eventValue );
+    } else if ( offset == 0x20 ) { // GPIO_ENABLE_REG
         setGpioDir( m_eventValue );
+    } else if ( offset == 0x24 ) { // GPIO_ENABLE_W1TS_REG (set bits)
+        setGpioDir( m_gpioEnable | m_eventValue );
+    } else if ( offset == 0x28 ) { // GPIO_ENABLE_W1TC_REG (clear bits)
+        setGpioDir( m_gpioEnable & ~m_eventValue );
     } else if ( offset >= 0x88 ) {
         if ( offset < 0x130 ) { // GPIO_PINXX_REG
             uint64_t pinNumber = ( offset - 0x88 ) / 4;
@@ -182,7 +190,7 @@ void Esp32Gpio::setGpioDir( uint32_t newEnable ) {
 
         uint32_t mask = 1 << i;
         if ( changed & mask ) {
-            if ( newEnable )
+            if ( newEnable & mask )
                 pin->setPinMode( output );
             else
                 pin->setPinMode( input );

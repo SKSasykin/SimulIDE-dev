@@ -170,6 +170,11 @@ bool Esp32::createArgs() {
     m_arguments << "-global";
     m_arguments << "driver=timer.esp32.timg,property=wdt_disable,value=true";
 
+    // -icount re-added: without it the guest free-runs ~1x wall and races ahead of the
+    // app's event loop (deferred-pending runEvent + unsynchronized shared arena → the app
+    // can drop bridged events and stop draining → qemu spins at ~100% and the MCU never
+    // boots). With -icount the guest is self-paced and boot works (~10 s wall, limited by
+    // icount TCG throughput).
     m_arguments << "-icount";
     m_arguments << "shift=4,align=off,sleep=on";
 

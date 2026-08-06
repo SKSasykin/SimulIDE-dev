@@ -56,6 +56,7 @@ Simulator::Simulator( QObject* parent ) : QObject( parent ) {
 }
 Simulator::~Simulator() {
     m_CircuitFuture.waitForFinished();
+    if ( m_pSelf == this ) m_pSelf = nullptr; // Only clear if this is the current Simulator (CircuitView::clear() can deleteLater the old one while a new Circuit/Simulator is active)
     delete m_matrix;
 }
 

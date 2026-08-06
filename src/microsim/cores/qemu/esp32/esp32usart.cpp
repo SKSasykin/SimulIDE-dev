@@ -48,15 +48,9 @@ void Esp32Usart::writeRegister() {
 
     switch ( offset ) {
     case 0x00: { // UART_FIFO:
-        if ( m_txFifo.size() >= 128 ) {
-            qDebug() << "Esp32Usart::writeRegister Tx Fifo overflow";
-            return;
-        }
-        //if( m_baudRate < 9600 )  /// FIXME: data sent at boot
-        //{
-        //    QemuUsart::frameSent( data );
-        //    return;
-        //}
+        // No drop: a real ESP32 TX FIFO is 128 bytes, but dropping bytes here garbles
+        // output when the guest bursts (e.g. at boot with a coarse SIM_EVENT tick).
+        // Backpressure still works via the UART_STATUS (0x1C) TXFIFO_CNT read.
         m_txFifo.enqueue( data );
         if ( m_txFifo.size() == 1 )
             UsartModule::sendByte( m_txFifo.head() );
@@ -69,20 +63,19 @@ void Esp32Usart::writeRegister() {
         ///if (value & R_UART_INT_CLR_RXFIFO_TOUT_MASK) s->rxfifo_tout = false;
 
     case 0x14: { // UART_CLKDIV:
-        //uint32_t clkFra = (data & 0x00F00000) >> 20;
-        //uint32_t clkInt = (data & 0x000FFFFF) << 4 ;
-        //m_divider = clkInt + clkFra;
-        //int baudRate = 115200;
-        //if( m_divider ){
-        //    uint64_t freq = m_apbClock ? *m_frequency : 1000000; // m_frequency = APB Clock
-        //    baudRate = (freq << 4) / m_divider;
-        //}
-        int br = 1e9 / data;
-        if ( m_baudRate != br ) {
-            m_baudRate = br;
-            setPeriod( data * 1000 );
+        uint32_t clkFra = (data & 0x00F00000) >> 20;
+        uint32_t clkInt = (data & 0x000FFFFF) << 4;
+        m_divider = clkInt + clkFra;
+        int br = 115200;
+        if ( m_divider ) {
+            uint64_t freq = m_apbClock ? 80000000 : 1000000; // ESP32 UART default clock = APB 80 MHz
+            br = (freq << 4) / m_divider;
         }
-        //qDebug() << "Esp32Usart::writeRegister baudRate" << m_baudRate;// << data*1000; //<<m_apbClock<<*m_frequency;
+        if ( m_baudRate != br )
+            m_baudRate = br;
+        if ( br > 0 )
+            setPeriod( 1e12 / br );
+        //qDebug() << "Esp32Usart::writeRegister baudRate" << m_baudRate<< "period" << 1e12/br;
         //freqChanged();
     } break;
     //case 0x18:                                        // UART_AUTOBAUD:
@@ -119,12 +112,12 @@ void Esp32Usart::readRegister() {
         //case 0x10:                    break; // UART_INT_CLR:
         ////case 0x14:                    break; // UART_CLKDIV:
         ////case 0x18:                    break; // UART_AUTOBAUD:
-        //case 0x1C:                           // UART_STATUS: RO
-        //{
-        //    value  = m_rxFifo.size();
-        //    value |= m_txFifo.size() << 16;
-        //    //qDebug() << "Esp32Usart::readRegister" << m_txFifo.size();
-        //} break;
+        case 0x1C:                           // UART_STATUS: RO
+        {
+            value  = m_rxFifo.size() & 0xFF;
+            value |= ( m_txFifo.size() << 16 ) & 0xFF0000;
+            //qDebug() << "Esp32Usart::readRegister UART_STATUS txfifo" << m_txFifo.size();
+        } break;
         ////case 0x20:                    break; // UART_CONF0:
         ////case 0x24:                    break; // UART_CONF1:
         //case 0x28:                           // UART_LOWPULSE
