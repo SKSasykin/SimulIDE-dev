@@ -34,6 +34,19 @@ Build dependencies:
    Debian/Ubuntu: `libgcrypt20-dev`, Fedora: `libgcrypt-devel`)
  - Standard QEMU host build deps: glib-2.0 and pixman dev packages
 
+On macOS (Homebrew) everything above is installed with:
+
+```
+$ xcode-select --install
+$ brew install qt@5 libgcrypt glib pixman ninja pkgconf python3
+```
+
+Note: `qt@5` is keg-only, so add its bin dir to your `PATH` first:
+
+```
+$ export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
+```
+
 Once installed, initialize the QEMU submodule from the repository root:
 
 ```

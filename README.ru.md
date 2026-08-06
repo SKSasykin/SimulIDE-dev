@@ -34,6 +34,19 @@ SimulIDE также включает редактор кода и отладчи
    Debian/Ubuntu: `libgcrypt20-dev`, Fedora: `libgcrypt-devel`)
  - Стандартные зависимости сборки QEMU: пакеты разработки glib-2.0 и pixman
 
+На macOS (Homebrew) всё вышеперечисленное устанавливается так:
+
+```
+$ xcode-select --install
+$ brew install qt@5 libgcrypt glib pixman ninja pkgconf python3
+```
+
+Примечание: `qt@5` — keg-only, поэтому сначала добавьте его bin в `PATH`:
+
+```
+$ export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
+```
+
 После установки инициализируйте QEMU-подмодуль из корня репозитория:
 
 ```
