@@ -11,10 +11,12 @@
 
 class Esp32Gpio : public QemuModule, public eElement {
     friend class Esp32;
+    friend class Esp32s3;
+    friend class Esp32c3;
 
 public:
     Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
-               uint64_t memEnd = 0 );
+               uint64_t memEnd = 0, int nPins = 40, int in1Base = 33 );
     ~Esp32Gpio();
 
     void reset() override;
@@ -43,8 +45,11 @@ protected:
     void clearStatus( int i );
 
     std::vector<Esp32Pin*> m_pins;
-    Esp32Pin* m_espPad[40];
+    std::vector<Esp32Pin*> m_espPad;
     Esp32Pin* m_dummyPin;
+
+    int m_nPins;
+    int m_in1Base;
 
     uint16_t m_pinState;
 

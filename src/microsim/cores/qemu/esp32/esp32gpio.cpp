@@ -7,17 +7,18 @@
 
 #include "esp32gpio.h"
 
-Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
+Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
+                      int nPins, int in1Base )
     : QemuModule( mcu, name, n, clk, memStart, memEnd ), eElement( name ) {
-    // 0x3FF44000
+    m_nPins = nPins;
+    m_in1Base = in1Base;
 
     m_dummyPin = new Esp32Pin( 0, "dummy", mcu, nullptr );
     m_dummyPin->setVisible( false );
 
-    m_pins.resize( 40, m_dummyPin ); // 20,24,28,29,30,31=NULL
+    m_pins.resize( nPins, m_dummyPin ); // 20,24,28,29,30,31=NULL
 
-    for ( int i = 0; i < 40; ++i )
-        m_espPad[i] = nullptr;
+    m_espPad.assign( nPins, nullptr );
 }
 Esp32Gpio::~Esp32Gpio() { }
 
@@ -30,6 +31,8 @@ void Esp32Gpio::reset() {
 }
 
 void Esp32Gpio::writeIoMuxReg( uint8_t pin, uint16_t value ) {
+    if ( pin >= (uint8_t)m_espPad.size() )
+        return;
     Esp32Pin* espPin = m_espPad[pin];
     if ( espPin )
         espPin->writeIoMuxReg( value );
@@ -72,7 +75,7 @@ void Esp32Gpio::writeRegister() {
     } else if ( offset >= 0x88 ) {
         if ( offset < 0x130 ) { // GPIO_PINXX_REG
             uint64_t pinNumber = ( offset - 0x88 ) / 4;
-            if ( pinNumber < 40 ) {
+            if ( pinNumber < (uint64_t)m_espPad.size() ) {
                 Esp32Pin* pin = m_espPad[pinNumber];
                 if ( pin )
                     pin->writePinReg( m_eventValue );
@@ -91,7 +94,7 @@ void Esp32Gpio::writeRegister() {
 
 void Esp32Gpio::matrixInChanged( int func ) {
     int pin = m_eventValue & 0x3F;
-    if ( pin >= 40 )
+    if ( pin >= m_nPins )
         return;
 
     Esp32Pin* espPin = m_espPad[pin];
@@ -147,10 +150,10 @@ uint32_t Esp32Gpio::readPort( int in ) {
                 data |= ( 1 << i );
         }
     } else {
-        for ( uint8_t i = 33; i < 40; ++i ) {
+        for ( int i = m_in1Base; i < m_nPins; ++i ) {
             IoPin* pin = m_espPad[i];
             if ( pin && pin->getInpState() )
-                data |= ( 1 << ( i - 33 ) );
+                data |= ( 1 << ( i - m_in1Base ) );
         }
     }
     return data;
@@ -243,6 +246,16 @@ void Esp32Gpio::createIoMux() {
     funcPin GPIO = {
         nullptr, nullptr,
         "GPIO" }; /// FIXME: pointer to this, same than any peripheral, Gpio shouldn't control pin if it is assigned to other
+
+    if ( m_nPins != 40 ) {
+        // ESP32-S3 / ESP32-C3: no default peripheral functions, all pads plain GPIO
+        for ( int i = 0; i < m_nPins; ++i ) {
+            Esp32Pin* pad = m_espPad[i];
+            if ( pad )
+                pad->setIoMuxFuncs( { GPIO, DUMMY, GPIO, DUMMY, DUMMY, DUMMY } );
+        }
+        return;
+    }
 
     // 0:  GPIO0    CLK_OUT1 GPIO0  ----      ----      EMAC_TX_CLK
     m_espPad[0]->setIoMuxFuncs( { GPIO, DUMMY, GPIO, DUMMY, DUMMY, DUMMY } );

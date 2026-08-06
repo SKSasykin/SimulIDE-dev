@@ -30,6 +30,8 @@
 #include "qemuusart.h"
 
 #include "esp32.h"
+#include "esp32s3.h"
+#include "esp32c3.h"
 #include "stm32.h"
 
 #include "circuit.h"
@@ -55,6 +57,10 @@ Component* QemuDevice::construct( QString type, QString id ) {
 
     if ( device.startsWith( "STM32" ) )
         qdev = new Stm32( type, id, device );
+    else if ( device.startsWith( "Esp32s3" ) )
+        qdev = new Esp32s3( type, id, device );
+    else if ( device.startsWith( "Esp32c3" ) )
+        qdev = new Esp32c3( type, id, device );
     else if ( device.startsWith( "Esp32" ) )
         qdev = new Esp32( type, id, device );
     return qdev;
