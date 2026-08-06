@@ -7,9 +7,10 @@
 # changes (shared-memory bridge, SLC, build fixes) live directly in the fork.
 # This script:
 #   1. ensures the submodule is present and pinned to the expected commit
-#   2. configures and builds qemu-system-xtensa + qemu-system-arm
+#   2. configures and builds qemu-system-xtensa + qemu-system-arm + qemu-system-riscv32
 #   3. copies the binaries and the esp32 ROM dumps (from the fork's pc-bios)
-#      into resources/data/bin/
+#      into resources/data/bin/, codesigning the emulators on macOS with the
+#      allow-jit entitlement (required by qemu's TCG on Apple Silicon)
 #
 # It is idempotent: when the binaries are up to date it does nothing and
 # returns 0, so it is safe to run on every make of the main project.
@@ -25,17 +26,39 @@ QEMU_DIR="$REPO_ROOT/third_party/qemu-simulide"
 # (module dir qemu-simulide), so the submodule stays pristine.
 BUILD_DIR="$REPO_ROOT/build_XX/qemu-simulide"
 BIN_DIR="$REPO_ROOT/resources/data/bin"
-PIN="fae418ed9cca65f63a3b4d527de819b3462fccb2"
-TARGETS=("qemu-system-arm" "qemu-system-xtensa")
+PIN="8a3b5e7e5b2a007c047a06912b77568f2b476533"
+TARGETS=("qemu-system-arm" "qemu-system-xtensa" "qemu-system-riscv32")
 # esp32 ROM dumps loaded by the esp32 core (passed as the qemu -L directory).
 # They are regenerated from the fork's pc-bios on every build, so they are not
 # committed to the repository.
 ROM_DIR="$BIN_DIR/esp32/rom/bin"
-ROM_FILES=("esp32-v3-rom.bin" "esp32-v3-rom-app.bin" "esp32c3-rom.bin")
+ROM_FILES=("esp32-v3-rom.bin" "esp32-v3-rom-app.bin" "esp32c3-rom.bin" "esp32s3_rev0_rom.bin")
+# macOS: qemu's TCG JIT (MAP_JIT) hangs in the kernel unless the binary carries
+# the com.apple.security.cs.allow-jit entitlement. See esp32-simulide-bridge
+# work: without it the emulators hang at startup (even `--version`) when run
+# standalone from a terminal, which also breaks the qemu test harness.
+JIT_ENT="$REPO_ROOT/scripts/qemu-jit.entitlements"
 
 info() { printf '\033[1;34m[qemu]\033[0m %s\n' "$*"; }
 err()  { printf '\033[1;31m[qemu] ERROR:\033[0m %s\n' "$*" >&2; }
 warn() { printf '\033[1;33m[qemu] WARNING:\033[0m %s\n' "$*" >&2; }
+
+is_macos() { [ "$(uname -s)" = "Darwin" ]; }
+is_jit_signed() {
+    if ! is_macos; then return 0; fi
+    codesign -d --entitlements - "$1" 2>/dev/null | grep -q "com.apple.security.cs.allow-jit"
+}
+sign_jit() {
+    if ! is_macos; then return; fi
+    local f="$1"
+    if ! is_jit_signed "$f"; then
+        info "codesigning $f (allow-jit)"
+        # qemu's install step adds an icon as a resource fork, which codesign
+        # rejects as "detritus". Strip all xattrs before signing.
+        xattr -cr "$f" 2>/dev/null || true
+        codesign --force --sign - --entitlements "$JIT_ENT" "$f" || warn "codesign failed for $f"
+    fi
+}
 
 # Homebrew (macOS) installs pkg-config modules outside the default search path.
 # libgcrypt is REQUIRED by the esp32 machine (hw/misc/esp32_rsa.c), so its
@@ -68,6 +91,8 @@ fi
 
 # Fast path: binaries + esp32 ROM dumps already in place (with crypto).
 if [ -x "$BIN_DIR/qemu-system-xtensa" ] && [ -x "$BIN_DIR/qemu-system-arm" ] \
+    && [ -x "$BIN_DIR/qemu-system-riscv32" ] \
+    && is_jit_signed "$BIN_DIR/qemu-system-xtensa" \
     && [ -f "$ROM_DIR/${ROM_FILES[0]}" ] && [ "$STALE_CONFIG" = false ]; then
     info "qemu binaries up to date, nothing to do."
     exit 0
@@ -117,7 +142,7 @@ if [ ! -f "$BUILD_DIR/build.ninja" ]; then
     if ! ( cd "$BUILD_DIR" && \
         "$QEMU_DIR/configure" \
         --python="$BOOT/bin/python3" \
-        --target-list=arm-softmmu,xtensa-softmmu \
+        --target-list=arm-softmmu,xtensa-softmmu,riscv32-softmmu \
         -Dslirp=disabled -Dvnc=disabled -Dsdl=disabled \
         -Dgtk=disabled -Dcurses=disabled -Dvde=disabled -Dnetmap=disabled \
         -Dgcrypt=enabled ); then
@@ -156,6 +181,7 @@ install_emulators() {
     mkdir -p "$bin_dir" "$rom_dir"
     for t in "${TARGETS[@]}"; do
         install -m 755 "$BUILD_DIR/$t" "$bin_dir/$t"
+        sign_jit "$bin_dir/$t"
     done
     # The esp32 core loads its ROM dumps from esp32/rom/bin (passed as the
     # qemu -L directory, see esp32.cpp). They are regenerated from the fork's

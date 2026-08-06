@@ -13,6 +13,7 @@ tmp/
 # qemu emulator binaries (built by scripts/build_qemu.sh, see third_party/)
 resources/data/bin/qemu-system-xtensa
 resources/data/bin/qemu-system-arm
+resources/data/bin/qemu-system-riscv32
 
 # esp32 ROM dumps (regenerated from the fork's pc-bios by scripts/build_qemu.sh)
 resources/data/bin/esp32/rom/bin/
