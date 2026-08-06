@@ -61,9 +61,13 @@ $ make
 ```
 
 The `make` step automatically builds the QEMU emulator binaries
-(`qemu-system-xtensa` for ESP32, `qemu-system-arm` for STM32) from the
+(`qemu-system-xtensa` for ESP32 / ESP32-S3, `qemu-system-riscv32` for
+ESP32-C3, `qemu-system-arm` for STM32) from the
 `third_party/qemu-simulide` submodule into `resources/data/bin/`, before the
-SimulIDE binary is linked. QEMU is a runtime-only dependency, so a build
+SimulIDE binary is linked. On macOS the emulators are codesigned with the
+`com.apple.security.cs.allow-jit` entitlement
+(`scripts/qemu-jit.entitlements`); without it QEMU's TCG would hang at
+startup on Apple Silicon. QEMU is a runtime-only dependency, so a build
 failure of the emulator does not stop the main build (run
 `./scripts/build_qemu.sh` manually to see the error). When the binaries are
 already present and up to date the step is skipped.
@@ -95,13 +99,15 @@ No need for installation, place SimulIDE folder wherever you want and run the ex
 
 ## ESP32 / STM32 emulation (QEMU):
 
-ESP32 (Xtensa) and STM32 (ARM) microcontrollers are emulated by a fork of
-QEMU. The fork lives in the git submodule
-`third_party/qemu-simulide` (https://github.com/SKSasykin/SimulIDE-qemu),
-pinned to commit `fae418e`. Our modifications (committed directly in the
-fork) add the SimulIDE shared-memory bridge, the AHB-to-UART-FIFO mapping,
-the SDIO slave controller (SLC) and misc build fixes; no external patch file
-is needed.
+ESP32, ESP32-S3 (Xtensa) and ESP32-C3 (RISC-V), plus STM32 (ARM)
+microcontrollers are emulated by a fork of QEMU. The fork lives in the git
+submodule `third_party/qemu-simulide`
+(https://github.com/SKSasykin/SimulIDE-qemu), pinned to commit `8a3b5e7`. Our
+modifications (committed directly in the fork) add the SimulIDE shared-memory
+bridge, the AHB-to-UART-FIFO mapping, the SDIO slave controller (SLC),
+per-chip bridge variants for ESP32-S3 (`esp32s3-simulide-bridge`) and
+ESP32-C3 (`esp32c3-simulide-bridge`) and misc build fixes; no external patch
+file is needed.
 
 The ESP32 ROM dumps (`data/bin/esp32/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
@@ -112,8 +118,9 @@ For ESP32 you need a 4 MB flash image. The recommended format is the
 partition table at 0x8000, application at 0x10000). SimulIDE pads smaller
 valid binaries to 4 MB automatically and shows a clear error if the file is
 missing, empty or larger than 4 MB. If the configured firmware file cannot
-be found, the bundled example firmware
-(`data/bin/esp32/blink.ino.merged.bin`) is used instead, so an empty ESP32
-board still boots and blinks.
+be found, a bundled example firmware is used instead, so an empty board still
+boots and blinks: `data/bin/esp32/blink.ino.merged.bin` for ESP32,
+`data/bin/esp32s3/blink.ino.merged.bin` for ESP32-S3 and
+`data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3.
 
 
