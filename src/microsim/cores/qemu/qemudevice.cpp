@@ -309,8 +309,7 @@ void QemuDevice::runEvent() {
                 runModuleEvent();
             else
                 break;
-        } else
-            qDebug() << "QemuDevice::runEvent No action";
+        }
     }
     //qDebug() << "QemuDevice::runEvent Next"<< nextTime;
 
