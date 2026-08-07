@@ -44,6 +44,8 @@ protected:
     void matrixOutChanged( int pin );
     void setGpioState( uint32_t newState );
     void setGpioDir( uint32_t newEnable );
+    void setGpioState1( uint32_t newState );
+    void setGpioDir1( uint32_t newEnable );
     void clearStatus( int i );
 
     std::vector<Esp32Pin*> m_pins;
@@ -58,6 +60,8 @@ protected:
     uint32_t m_gpioState;
     uint32_t m_gpioEnable;
     uint32_t m_strapMode;
+    uint32_t m_gpioState1;
+    uint32_t m_gpioEnable1;
     uint32_t m_gpioStatus[2];
 
     //uint32_t gpio_in[2];

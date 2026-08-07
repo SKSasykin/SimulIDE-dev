@@ -38,6 +38,8 @@ void Esp32Gpio::reset() {
     m_gpioState = 0;
     m_gpioEnable = 0;
     m_strapMode = 0;
+    m_gpioState1 = 0;
+    m_gpioEnable1 = 0;
     m_gpioStatus[0] = 0;
     m_gpioStatus[1] = 0;
 }
@@ -63,13 +65,18 @@ void Esp32Gpio::readRegister() {
     case 0x40:
         val = readPort( 1 );
         break; // GPIO_IN1_REG
+    case 0x10:
+        val = m_gpioState1;
+        break; // GPIO_OUT1_REG
+    case 0x2C:
+        val = m_gpioEnable1;
+        break; // GPIO_ENABLE1_REG
     }
     m_arena->regData = val;
     m_arena->qemuAction = SIM_READ;
 }
 
 void Esp32Gpio::writeRegister() {
-    //qDebug() << "Esp32Gpio::writeRegister"<< m_name << m_eventAddress << m_eventValue;
     uint64_t offset = m_eventAddress - m_memStart;
 
     if ( offset == 0x04 ) { // GPIO_OUT_REG
@@ -78,12 +85,24 @@ void Esp32Gpio::writeRegister() {
         setGpioState( m_gpioState | m_eventValue );
     } else if ( offset == 0x0C ) { // GPIO_OUT_W1TC_REG (clear bits)
         setGpioState( m_gpioState & ~m_eventValue );
+    } else if ( offset == 0x10 ) { // GPIO_OUT1_REG (pins 32-45)
+        setGpioState1( m_eventValue );
+    } else if ( offset == 0x14 ) { // GPIO_OUT1_W1TS_REG (set bits)
+        setGpioState1( m_gpioState1 | m_eventValue );
+    } else if ( offset == 0x18 ) { // GPIO_OUT1_W1TC_REG (clear bits)
+        setGpioState1( m_gpioState1 & ~m_eventValue );
     } else if ( offset == 0x20 ) { // GPIO_ENABLE_REG
         setGpioDir( m_eventValue );
     } else if ( offset == 0x24 ) { // GPIO_ENABLE_W1TS_REG (set bits)
         setGpioDir( m_gpioEnable | m_eventValue );
     } else if ( offset == 0x28 ) { // GPIO_ENABLE_W1TC_REG (clear bits)
         setGpioDir( m_gpioEnable & ~m_eventValue );
+    } else if ( offset == 0x2C ) { // GPIO_ENABLE1_REG (pins 32-45)
+        setGpioDir1( m_eventValue );
+    } else if ( offset == 0x30 ) { // GPIO_ENABLE1_W1TS_REG (set bits)
+        setGpioDir1( m_gpioEnable1 | m_eventValue );
+    } else if ( offset == 0x34 ) { // GPIO_ENABLE1_W1TC_REG (clear bits)
+        setGpioDir1( m_gpioEnable1 & ~m_eventValue );
     } else if ( offset >= 0x88 ) {
         if ( offset < 0x130 ) { // GPIO_PINXX_REG
             uint64_t pinNumber = ( offset - 0x88 ) / 4;
@@ -96,7 +115,7 @@ void Esp32Gpio::writeRegister() {
             int func = ( offset - 0x130 ) / 4;
             //m_gpioInFunc[func] = m_eventValue;
             matrixInChanged( func );
-        } else if ( offset < 0x5D0 ) { // GPIO_FUNCX_OUT_SEL_CFG_REG
+        } else if ( offset < 0x530 + (uint64_t)m_nPins*4 ) { // GPIO_FUNCX_OUT_SEL_CFG_REG
             int pin = ( offset - 0x530 ) / 4;
             //m_gpioOutFunc[pin] = m_eventValue;
             matrixOutChanged( pin );
@@ -127,7 +146,7 @@ void Esp32Gpio::matrixInChanged( int func ) {
 }
 
 void Esp32Gpio::matrixOutChanged( int pin ) {
-    if ( pin > 31 )
+    if ( pin >= m_nPins )
         return;
     int func = m_eventValue & 0xFF;
 
@@ -214,6 +233,47 @@ void Esp32Gpio::setGpioDir( uint32_t newEnable ) {
         }
     }
     m_gpioEnable = newEnable;
+}
+
+void Esp32Gpio::setGpioState1( uint32_t newState ) { // GPIO_OUT1_REG (pins 32-45)
+    if ( m_gpioState1 == newState )
+        return;
+
+    uint32_t changed = m_gpioState1 ^ newState;
+
+    for ( uint i = 32; i < (uint)m_nPins; ++i ) {
+        Esp32Pin* pin = m_espPad[i];
+        if ( !pin )
+            continue;
+
+        uint32_t mask = 1 << ( i - 32 );
+        if ( changed & mask )
+            pin->setOutState( newState & mask );
+    }
+
+    m_gpioState1 = newState;
+}
+
+void Esp32Gpio::setGpioDir1( uint32_t newEnable ) { // GPIO_ENABLE1_REG (pins 32-45)
+    if ( m_gpioEnable1 == newEnable )
+        return;
+
+    uint32_t changed = m_gpioEnable1 ^ newEnable;
+
+    for ( uint i = 32; i < (uint)m_nPins; ++i ) {
+        Esp32Pin* pin = m_espPad[i];
+        if ( !pin )
+            continue;
+
+        uint32_t mask = 1 << ( i - 32 );
+        if ( changed & mask ) {
+            if ( newEnable & mask )
+                pin->setPinMode( output );
+            else
+                pin->setPinMode( input );
+        }
+    }
+    m_gpioEnable1 = newEnable;
 }
 
 void Esp32Gpio::clearStatus( int i ) {
