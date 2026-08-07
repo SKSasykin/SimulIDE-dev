@@ -6,6 +6,7 @@
     <item name="Esp32"  icon=":/ic3.png" info="" />
     <item name="Esp32s3"  icon=":/ic3.png" info="" />
     <item name="Esp32c3"  icon=":/ic3.png" info="" />
+    <item name="Esp8266"  icon=":/ic3.png" info="" />
   </itemset>
 
   <itemset category="Micro/Espressif" type="Subcircuit" folder="esp32" >
