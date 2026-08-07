@@ -22,6 +22,18 @@ Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint6
 }
 Esp32Gpio::~Esp32Gpio() { }
 
+int Esp32Gpio::gpioFromId( const QString& id ) {
+    int n = -1;
+    int i = id.size() - 1;
+    while( i >= 0 && id.at(i).isDigit() ) --i;
+    if( i < id.size() - 1 ) {
+        bool ok = false;
+        n = id.mid( i + 1 ).toInt( &ok );
+        if( !ok ) n = -1;
+    }
+    return n;
+}
+
 void Esp32Gpio::reset() {
     m_gpioState = 0;
     m_gpioEnable = 0;

@@ -207,8 +207,13 @@ Pin* Esp32::addPin( QString id, QString type, QString label, int n, int x, int y
         m_rstPin->setInputHighV( 0.65 );
         m_rstPin->setInputLowV( 0.65 );
     } else {
-        n = id.right( 2 ).toInt();
-        pin = m_gpio->createPin( n, id, this );
+        int gpio = Esp32Gpio::gpioFromId( id );
+        if ( gpio >= 0 && gpio < m_gpio->m_nPins )
+            pin = m_gpio->createPin( gpio, id, this );
+        else {
+            pin = new IoPin( angle, QPoint( x, y ), m_id + "-" + id, n - 1, this, input );
+            pin->setUnused( true );
+        }
     }
     //qDebug() << n << id << label << type;
     //QColor color = Qt::black;

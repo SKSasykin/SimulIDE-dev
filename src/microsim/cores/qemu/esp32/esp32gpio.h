@@ -25,6 +25,8 @@ public:
 
     void writeIoMuxReg( uint8_t pin, uint16_t value );
 
+    static int gpioFromId( const QString& id );
+
     //Esp32Pin* getPin( int i ) { return m_pins.at(i); }
     //uint size(){ return m_pins.size(); }
 
