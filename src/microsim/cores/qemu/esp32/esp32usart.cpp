@@ -48,12 +48,8 @@ void Esp32Usart::writeRegister() {
 
     switch ( offset ) {
     case 0x00: { // UART_FIFO:
-        // No drop: a real ESP32 TX FIFO is 128 bytes, but dropping bytes here garbles
-        // output when the guest bursts (e.g. at boot with a coarse SIM_EVENT tick).
-        // Backpressure still works via the UART_STATUS (0x1C) TXFIFO_CNT read.
         m_txFifo.enqueue( data );
-        if ( m_txFifo.size() == 1 )
-            UsartModule::sendByte( m_txFifo.head() );
+        UsartModule::sendByte( m_txFifo.dequeue() );
     } break;
         //case 0x04: break;                                // UART_INT_RAW: RO
         //case 0x08: break;                                // UART_INT_ST:  RO
@@ -208,7 +204,7 @@ void Esp32Usart::writeCR0() {
 void Esp32Usart::frameSent( uint8_t data ) {
     QemuUsart::frameSent( data );
 
-    m_txFifo.dequeue();
+    if ( m_txFifo.size() ) m_txFifo.dequeue();
     if ( m_txFifo.size() )
         UsartModule::sendByte( m_txFifo.head() );
 
