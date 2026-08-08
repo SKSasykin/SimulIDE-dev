@@ -102,12 +102,14 @@ bool Node::checkRemove() // Only remove if there are less than 3 connectors
         }
     }
     if ( conectors < 3 ) {
-        if ( conectors == 2 )
-            joinConns( con[0], con[1] ); // 2 Conn
-        else
-            m_pin[con[0]]->removeConnector();
+        if ( !Circuit::self()->deleting() ) { // Don't rewire while clearing circuit, everything is going to be deleted
+            if ( conectors == 2 )
+                joinConns( con[0], con[1] ); // 2 Conn
+            else
+                m_pin[con[0]]->removeConnector();
 
-        Circuit::self()->removeNode( this );
+            Circuit::self()->removeNode( this );
+        }
         return true;
     } else
         return false;
@@ -159,10 +161,12 @@ void Node::joinConns( int c0, int c1 ) {
     con0->setStartPin( nullptr );
     con0->setEndPin( nullptr );
     Circuit::self()->removeConnector( con0 );
+    pin0->setConnector( nullptr ); // Clear stale node pin references
 
     con1->setStartPin( nullptr );
     con1->setEndPin( nullptr );
     Circuit::self()->removeConnector( con1 );
+    pin1->setConnector( nullptr );
 }
 
 void Node::setHidden( bool hid, bool, bool ) {

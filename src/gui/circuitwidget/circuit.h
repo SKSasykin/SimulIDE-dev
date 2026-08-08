@@ -119,6 +119,7 @@ public:
     void setSubcircuit( SubCircuit* sc ) { m_subCircuit = sc; }
 
     bool pasting() { return m_pasting; }
+    bool deleting() { return m_deleting; }
     bool isBusy() { return m_busy || m_pasting | m_deleting; }
 
     void addPin( Pin* pin, QString pinId ) {
