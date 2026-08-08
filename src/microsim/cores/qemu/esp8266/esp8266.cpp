@@ -115,9 +115,20 @@ bool Esp8266::createArgs()
     qint64 size = fi.size();
     if( size < 1 )
     {
-        QMessageBox::warning( nullptr, tr("Esp8266"),
-                             tr("File %1 not found or empty").arg(m_firmPath) );
-        return false;
+        QString fallback = MainWindow::self() ? MainWindow::self()->getDataFilePath("bin/esp8266/blink.bin") : "";
+        if( !fallback.isEmpty() && QFileInfo( fallback ).size() > 0 )
+        {
+            qDebug() << "Firmware file not found or empty, using bundled blink firmware:" << m_firmPath;
+            m_firmPath = fallback;
+            fi = QFileInfo( m_firmPath );
+            size = fi.size();
+        }
+        else
+        {
+            QMessageBox::warning( nullptr, tr("Esp8266"),
+                                 tr("File %1 not found or empty").arg(m_firmPath) );
+            return false;
+        }
     }
     m_arguments.clear();
     m_arguments << m_shMemKey
