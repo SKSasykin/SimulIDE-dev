@@ -126,9 +126,9 @@ bool Esp32c3::createArgs() {
     m_arguments << "-M";
     m_arguments << "esp32c3";
 
-    QString romBin = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp32/rom/bin" ) : "";
+    QString romBin = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp/rom/bin" ) : "";
     m_arguments << "-L"; /// TODO: embed files in Simulide
-    m_arguments << ( romBin.isEmpty() ? "./data/bin/esp32/rom/bin" : romBin );
+    m_arguments << ( romBin.isEmpty() ? "./data/bin/esp/rom/bin" : romBin );
 
     m_arguments << "-drive";
     m_arguments << "file=" + firmware + ".bin,if=mtd,format=raw";

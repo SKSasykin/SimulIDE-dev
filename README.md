@@ -109,7 +109,7 @@ per-chip bridge variants for ESP32-S3 (`esp32s3-simulide-bridge`) and
 ESP32-C3 (`esp32c3-simulide-bridge`) and misc build fixes; no external patch
 file is needed.
 
-The ESP32 ROM dumps (`data/bin/esp32/rom/bin/*.bin`) are copied automatically
+The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
 build, so they do not need to be added or committed manually.
 

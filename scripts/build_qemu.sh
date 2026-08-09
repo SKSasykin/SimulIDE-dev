@@ -31,7 +31,7 @@ TARGETS=("qemu-system-arm" "qemu-system-xtensa" "qemu-system-riscv32")
 # esp32 ROM dumps loaded by the esp32 core (passed as the qemu -L directory).
 # They are regenerated from the fork's pc-bios on every build, so they are not
 # committed to the repository.
-ROM_DIR="$BIN_DIR/esp32/rom/bin"
+ROM_DIR="$BIN_DIR/esp/rom/bin"
 ROM_FILES=("esp32-v3-rom.bin" "esp32-v3-rom-app.bin" "esp32c3-rom.bin" "esp32s3_rev0_rom.bin")
 # macOS: qemu's TCG JIT (MAP_JIT) hangs in the kernel unless the binary carries
 # the com.apple.security.cs.allow-jit entitlement. See esp32-simulide-bridge
@@ -177,13 +177,13 @@ done
 
 install_emulators() {
     local bin_dir="$1"
-    local rom_dir="$bin_dir/esp32/rom/bin"
+    local rom_dir="$bin_dir/esp/rom/bin"
     mkdir -p "$bin_dir" "$rom_dir"
     for t in "${TARGETS[@]}"; do
         install -m 755 "$BUILD_DIR/$t" "$bin_dir/$t"
         sign_jit "$bin_dir/$t"
     done
-    # The esp32 core loads its ROM dumps from esp32/rom/bin (passed as the
+    # The esp32 core loads its ROM dumps from esp/rom/bin (passed as the
     # qemu -L directory, see esp32.cpp). They are regenerated from the fork's
     # pc-bios on every build so they never need manual copying.
     for rom in "${ROM_FILES[@]}"; do
