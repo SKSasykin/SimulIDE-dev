@@ -3,8 +3,11 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
+#include <QCoreApplication>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QSettings>
 #include <QSplitter>
@@ -26,7 +29,7 @@ CircuitWidget* CircuitWidget::m_pSelf = 0l;
 
 CircuitWidget::CircuitWidget( QWidget* parent )
     : QWidget( parent ), m_verticalLayout( this ), m_circView( this ), m_outPane( this ), m_circToolBar( this ),
-      m_fileMenu( this ), m_infoMenu( this ) {
+      m_fileMenu( this ), m_examplesMenu( this ), m_infoMenu( this ) {
     setObjectName( "CircuitWidget" );
     m_pSelf = this;
 
@@ -194,6 +197,16 @@ void CircuitWidget::createToolBars() {
     fileButton->setPopupMode( QToolButton::InstantPopup );
     m_circToolBar.addWidget( fileButton );
 
+    m_examplesMenu.setTitle( tr( "Examples" ) );
+    updateExampleActions();
+
+    QToolButton* examplesButton = new QToolButton( this );
+    examplesButton->setToolTip( tr( "Examples" ) );
+    examplesButton->setMenu( &m_examplesMenu );
+    examplesButton->setIcon( QIcon( ":/board.png" ) );
+    examplesButton->setPopupMode( QToolButton::InstantPopup );
+    m_circToolBar.addWidget( examplesButton );
+
     m_circToolBar.addAction( newCircAct );
 
     m_circToolBar.addAction( openCircAct );
@@ -295,6 +308,19 @@ void CircuitWidget::openRecentFile() {
         settings->setValue( "recentCircList", files );
         updateRecentFileActions();
     }
+}
+
+void CircuitWidget::openExampleFile() {
+    QAction* action = qobject_cast<QAction*>( sender() );
+    if ( !action )
+        return;
+
+    QString file = action->data().toString();
+    if ( QFileInfo::exists( file ) )
+        loadCirc( file );
+    else
+        QMessageBox::warning( this, "CircuitWidget::openExampleFile",
+                              tr( "\nCan't find example file:\n" ) + file );
 }
 
 void CircuitWidget::openCirc() {
@@ -524,6 +550,55 @@ void CircuitWidget::updateRecentFileActions() {
     }
     for ( int i = numRecentFiles; i < MaxRecentFiles; i++ )
         recentFileActs[i]->setVisible( false );
+}
+
+QString CircuitWidget::examplesDirPath() const {
+    const QDir appDir( QCoreApplication::applicationDirPath() );
+    const QStringList paths = { QDir::current().absoluteFilePath( "resources/data/examples" ),
+                                QCoreApplication::applicationDirPath() + "/resources/data/examples",
+                                appDir.absoluteFilePath( "../../resources/data/examples" ),
+                                appDir.absoluteFilePath( "../../../../../resources/data/examples" ),
+                                QCoreApplication::applicationDirPath() + "/data/examples" };
+
+    for ( const QString& path : paths ) {
+        if ( QDir( path ).exists() )
+            return path;
+    }
+    return paths.first();
+}
+
+void CircuitWidget::updateExampleActions() {
+    m_examplesMenu.clear();
+
+    const QString examplesPath = examplesDirPath();
+    QDir examplesDir( examplesPath );
+    if ( !examplesDir.exists() || !addExamplesToMenu( &m_examplesMenu, examplesDir ) ) {
+        QAction* emptyAct = m_examplesMenu.addAction( tr( "No examples found" ) );
+        emptyAct->setEnabled( false );
+    }
+}
+
+bool CircuitWidget::addExamplesToMenu( QMenu* menu, const QDir& dir ) {
+    bool hasExamples = false;
+
+    const QFileInfoList dirs = dir.entryInfoList( QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase );
+    for ( const QFileInfo& dirInfo : dirs ) {
+        QMenu* subMenu = new QMenu( dirInfo.fileName(), menu );
+        if ( addExamplesToMenu( subMenu, QDir( dirInfo.absoluteFilePath() ) ) ) {
+            menu->addMenu( subMenu );
+            hasExamples = true;
+        } else
+            delete subMenu;
+    }
+
+    const QFileInfoList files = dir.entryInfoList( { "*.sim2" }, QDir::Files, QDir::Name | QDir::IgnoreCase );
+    for ( const QFileInfo& fileInfo : files ) {
+        QAction* exampleAct = menu->addAction( fileInfo.completeBaseName() );
+        exampleAct->setData( fileInfo.absoluteFilePath() );
+        connect( exampleAct, &QAction::triggered, this, &CircuitWidget::openExampleFile );
+        hasExamples = true;
+    }
+    return hasExamples;
 }
 
 #include "moc_circuitwidget.cpp"

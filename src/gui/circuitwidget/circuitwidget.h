@@ -13,6 +13,7 @@
 #include "outpaneltext.h"
 
 class QSplitter;
+class QDir;
 class QLabel;
 class AboutDialog;
 class AppDialog;
@@ -51,6 +52,7 @@ public:
 public slots:
     bool newCircuit();
     void openRecentFile();
+    void openExampleFile();
     void openCirc();
     void loadCirc( QString path );
     void saveCirc( QString file );
@@ -68,6 +70,9 @@ signals:
 private:
     void createActions();
     void createToolBars();
+    QString examplesDirPath() const;
+    void updateExampleActions();
+    bool addExamplesToMenu( QMenu* menu, const QDir& dir );
 
     static CircuitWidget* m_pSelf;
 
@@ -107,6 +112,7 @@ private:
     QAction* aboutQtAct;
 
     QMenu m_fileMenu;
+    QMenu m_examplesMenu;
     QMenu m_infoMenu;
 
     QString m_curCirc;
