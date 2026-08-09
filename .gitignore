@@ -18,13 +18,6 @@ resources/data/bin/qemu-system-riscv32
 # esp32 ROM dumps (regenerated from the fork's pc-bios by scripts/build_qemu.sh)
 resources/data/bin/esp/rom/bin/
 
-# Build artifacts (out-of-source build in build_XX/)
-build_XX/Makefile
-build_XX/SimulIDE_Build.pro.user
-build_XX/.qmake.stash
-build_XX/build/
-build_XX/executables/
-build_XX/qrc_application.cpp
-build_XX/ui_*.h
-# qemu module build products (see scripts/build_qemu.sh)
-build_XX/qemu-simulide/
+# Build artifacts (out-of-source build in build/)
+/build/*
+!/build/SimulIDE_Build.pro

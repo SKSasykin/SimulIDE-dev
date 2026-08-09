@@ -37,7 +37,7 @@ MainWindow::MainWindow() : QMainWindow() {
     m_autoBck = 15;
     m_state = "■";
     m_revision = QString( REVNO ).remove( "R" ).toInt();
-    m_version = "SimulIDE_" + QString( APP_VERSION ) + "-" + QString( REVNO );
+    m_version = "SimulIDE 2 -- " + QString( BUILD_STAMP );
 
     this->setWindowTitle( m_version );
 

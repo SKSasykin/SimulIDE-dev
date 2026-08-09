@@ -22,9 +22,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 QEMU_DIR="$REPO_ROOT/third_party/qemu-simulide"
-# All build products live OUTSIDE the submodule, in the build_XX/ workspace
+# All build products live OUTSIDE the submodule, in the build/ workspace
 # (module dir qemu-simulide), so the submodule stays pristine.
-BUILD_DIR="$REPO_ROOT/build_XX/qemu-simulide"
+BUILD_DIR="$REPO_ROOT/build/qemu-simulide"
 BIN_DIR="$REPO_ROOT/resources/data/bin"
 PIN="8a3b5e7e5b2a007c047a06912b77568f2b476533"
 TARGETS=("qemu-system-arm" "qemu-system-xtensa" "qemu-system-riscv32")
@@ -168,7 +168,7 @@ fi
 # canonical resources/data/bin location, mirror the emulators + ROMs into the
 # built .app bundle when it already exists.
 BUNDLE_BIN_DIR=""
-for d in "$REPO_ROOT"/build_XX/executables/SimulIDE_*/*.app/Contents/MacOS/data/bin; do
+for d in "$REPO_ROOT"/build/executables/*.app/Contents/MacOS/data/bin; do
     if [ -d "$d" ]; then
         BUNDLE_BIN_DIR="$d"
         break

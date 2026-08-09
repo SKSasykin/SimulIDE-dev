@@ -53,7 +53,7 @@ $ export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
 $ git submodule update --init --recursive
 ```
 
-Затем перейдите в папку build_XX:
+Затем перейдите в папку build:
 
 ```
 $ qmake
@@ -72,10 +72,10 @@ ESP32-C3, `qemu-system-arm` для STM32) из подмодуля
 `./scripts/build_qemu.sh` вручную, чтобы увидеть ошибку). Если бинарники уже
 существуют и актуальны, этот шаг пропускается.
 
-В папке build_XX/executables/SimulIDE_x.x.x вы найдёте исполняемый файл
-и все файлы, необходимые для запуска SimulIDE (на macOS это
-`build_XX/executables/SimulIDE_2.0.0-/simulide.app`, с папкой данных внутри
-по пути `Contents/MacOS/data`).
+В папке build/executables вы найдёте исполняемый файл с именем
+`simulide-YYMMDD.HHMM` (на macOS это
+`build/executables/simulide-YYMMDD.HHMM.app`, с папкой данных внутри по пути
+`Contents/MacOS/data`).
 
 
 

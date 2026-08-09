@@ -123,13 +123,17 @@ contains( QMAKE_HOST.arch, arm64|aarch64 ) | contains( QMAKE_CC, .*aarch64.* ){
 }
 
 contains( QMAKE_HOST.os, Windows ) {
-    REV_NO = $$system("powershell -Command get-date -format yy-MM-dd")     # year-month-day
-    BUILD_DATE = $$system("powershell -Command get-date -format dd-MM-yy") # day-month-year
+    REV_NO = $$system("powershell -NoProfile -Command Get-Date -Format yyMMdd")       # year-month-day
+    BUILD_TIME = $$system("powershell -NoProfile -Command Get-Date -Format HHmm")     # hour-minute
+    BUILD_DATE = $$system("powershell -NoProfile -Command Get-Date -Format dd-MM-yy") # day-month-year
 }
 else {
-    REV_NO = $$system($(which date) +\"\\\"%y%m%d\\\"\")
-    BUILD_DATE = $$system($(which date) +\"\\\"%d-%m-%y\\\"\")
+    REV_NO = $$system($(which date) +%y%m%d)
+    BUILD_TIME = $$system($(which date) +%H%M)
+    BUILD_DATE = $$system($(which date) +%d-%m-%y)
 }
+
+BUILD_STAMP = $${REV_NO}.$${BUILD_TIME}
 
 CONFIG += qt 
 CONFIG += warn_on
@@ -139,15 +143,15 @@ CONFIG *= c++11
 DEFINES += REVNO=\\\"$$REV_NO\\\"
 DEFINES += APP_VERSION=\\\"$$VERSION-$$RELEASE\\\"
 DEFINES += BUILDDATE=\\\"$$BUILD_DATE\\\"
+DEFINES += BUILD_STAMP=\\\"$$BUILD_STAMP\\\"
 
-TARGET_NAME   = SimulIDE_$$VERSION-$$RELEASE
-TARGET_PREFIX = $$BUILD_DIR/executables/$$TARGET_NAME
+TARGET = simulide-$$BUILD_STAMP
 
 OBJECTS_DIR *= $$OUT_PWD/build/objects
 MOC_DIR     *= $$OUT_PWD/build/moc
 INCLUDEPATH += $$MOC_DIR
 
-DESTDIR = $$TARGET_PREFIX
+DESTDIR = $$BUILD_DIR/executables
 
 runLrelease.commands = \
     lrelease $$PWD/resources/translations/*.ts; \
@@ -170,12 +174,12 @@ macx|linux {
 
 message( "-----------------------------------")
 message( "    "                               )
-message( "    "$$TARGET_NAME for $$OS         )
+message( "    "$$TARGET for $$OS         )
 message( "    "                               )
 message( "    Host:      "$$QMAKE_HOST.os     )
 message( "    Date:      "$$BUILD_DATE        )
 message( "    Qt version: "$$QT_VERSION       )
 message( "    "                               )
 message( "    Destination Folder:"            )
-message( $$TARGET_PREFIX                      )
+message( $$DESTDIR                           )
 message( "-----------------------------------")

@@ -53,7 +53,7 @@ Once installed, initialize the QEMU submodule from the repository root:
 $ git submodule update --init --recursive
 ```
 
-Then go to build_XX folder:
+Then go to build folder:
 
 ```
 $ qmake
@@ -72,10 +72,10 @@ failure of the emulator does not stop the main build (run
 `./scripts/build_qemu.sh` manually to see the error). When the binaries are
 already present and up to date the step is skipped.
 
-In folder build_XX/executables/SimulIDE_x.x.x you will find the executable
-and all files needed to run SimulIDE (on macOS this is
-`build_XX/executables/SimulIDE_2.0.0-/simulide.app`, with the data folder
-inside at `Contents/MacOS/data`).
+In folder build/executables you will find the executable named as
+`simulide-YYMMDD.HHMM` (on macOS this is
+`build/executables/simulide-YYMMDD.HHMM.app`, with the data folder inside at
+`Contents/MacOS/data`).
 
 
 
@@ -122,5 +122,3 @@ be found, a bundled example firmware is used instead, so an empty board still
 boots and blinks: `data/bin/esp32/blink.ino.merged.bin` for ESP32,
 `data/bin/esp32s3/blink.ino.merged.bin` for ESP32-S3 and
 `data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3.
-
-
