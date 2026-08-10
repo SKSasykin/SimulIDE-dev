@@ -26,7 +26,7 @@ QEMU_DIR="$REPO_ROOT/third_party/qemu-simulide"
 # (module dir qemu-simulide), so the submodule stays pristine.
 BUILD_DIR="$REPO_ROOT/build/qemu-simulide"
 BIN_DIR="$REPO_ROOT/resources/data/bin"
-PIN="8a3b5e7e5b2a007c047a06912b77568f2b476533"
+PIN="d7ab1c2272bf9e2e8d2a822b282df2f2422b5004"
 TARGETS=("qemu-system-arm" "qemu-system-xtensa" "qemu-system-riscv32")
 # esp32 ROM dumps loaded by the esp32 core (passed as the qemu -L directory).
 # They are regenerated from the fork's pc-bios on every build, so they are not
@@ -85,7 +85,8 @@ require_gcrypt() {
 # wipe the build dir and reconfigure (checked before the fast path below).
 STALE_CONFIG=false
 if [ -f "$BUILD_DIR/build.ninja" ] && \
-   ! grep -q "hw/misc/esp32_rsa.c" "$BUILD_DIR/build.ninja"; then
+   { ! grep -q "hw/misc/esp32_rsa.c" "$BUILD_DIR/build.ninja" || \
+     ! grep -q "hw/xtensa/esp8266.c" "$BUILD_DIR/build.ninja"; }; then
     STALE_CONFIG=true
 fi
 
