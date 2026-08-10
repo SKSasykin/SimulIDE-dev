@@ -20,14 +20,15 @@ void Esp32IoMux::reset() {
 }
 
 void Esp32IoMux::readRegister() {
-    // uint64_t offset = m_eventAddress - m_memStart;
-    // uint16_t val = 0;
+    uint64_t offset = m_eventAddress - m_memStart;
+    uint16_t val = 0;
 
-    // uint32_t index = offset/4;
-    // if( index < 40 ) val = m_iomuxReg[index];
+    uint32_t index = offset / 4;
+    if ( index < 40 )
+        val = m_iomuxReg[index];
 
-    // m_arena->regData = val;
-    // m_arena->qemuAction = SIM_READ;
+    m_arena->regData = val;
+    m_arena->qemuAction = SIM_READ;
 }
 
 void Esp32IoMux::writeRegister() {
@@ -42,6 +43,8 @@ void Esp32IoMux::writeRegister() {
     if ( m_iomuxReg[index] == m_eventValue )
         return;
     m_iomuxReg[index] = m_eventValue;
+    if ( m_gpio )
+        m_gpio->writeIoMuxReg( pin, m_eventValue );
 }
 
 int Esp32IoMux::getMuxGpio( uint64_t addr ) {

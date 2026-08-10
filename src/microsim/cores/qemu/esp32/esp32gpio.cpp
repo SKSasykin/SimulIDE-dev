@@ -59,18 +59,24 @@ void Esp32Gpio::readRegister() {
     uint32_t val = 0;
 
     switch ( offset ) {
+    case 0x04:
+        val = m_gpioState;
+        break; // GPIO_OUT_REG
+    case 0x10:
+        val = m_gpioState1;
+        break; // GPIO_OUT1_REG
+    case 0x20:
+        val = m_gpioEnable;
+        break; // GPIO_ENABLE_REG
+    case 0x2C:
+        val = m_gpioEnable1;
+        break; // GPIO_ENABLE1_REG
     case 0x3C:
         val = readPort( 0 );
         break; // GPIO_IN_REG
     case 0x40:
         val = readPort( 1 );
         break; // GPIO_IN1_REG
-    case 0x10:
-        val = m_gpioState1;
-        break; // GPIO_OUT1_REG
-    case 0x2C:
-        val = m_gpioEnable1;
-        break; // GPIO_ENABLE1_REG
     }
     m_arena->regData = val;
     m_arena->qemuAction = SIM_READ;
