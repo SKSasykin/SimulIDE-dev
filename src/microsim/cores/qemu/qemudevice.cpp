@@ -8,6 +8,7 @@
 #include <QFileInfo>
 #include <QLibrary>
 #include <QMessageBox>
+#include <QProcessEnvironment>
 #include <qtconcurrentrun.h>
 
 #include <fcntl.h>
@@ -76,6 +77,7 @@ LibraryItem* QemuDevice::libraryItem() {
 QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
     m_pSelf = this;
     m_rstPin = nullptr;
+    m_emuFrequency = "auto";
 
     uint64_t pid = QCoreApplication::applicationPid();
     m_shMemKey = QString::number( pid ) + id;
@@ -128,7 +130,13 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
                                                &QemuDevice::setFirmware ),
 
                       new StrProp<QemuDevice>( "Args", tr( "Extra arguments" ), "", this, &QemuDevice::extraArgs,
-                                               &QemuDevice::setExtraArgs ) },
+                                               &QemuDevice::setExtraArgs ),
+
+                      new StrProp<QemuDevice>(
+                          "EmuFreq", tr( "Emulation frequency" ),
+                          "auto,10000000,20000000,40000000,80000000,160000000,240000000;"
+                          "Auto,10 MHz,20 MHz,40 MHz,80 MHz,160 MHz,240 MHz",
+                          this, &QemuDevice::emuFrequency, &QemuDevice::setEmuFrequency, 0, "enum" ) },
                     0 } );
 }
 QemuDevice::~QemuDevice() {
@@ -173,6 +181,15 @@ void QemuDevice::initialize() {
         module->reset();
 }
 
+void QemuDevice::setEmuFrequency( QString f ) {
+    m_emuFrequency = f;
+
+    bool ok = false;
+    double freq = f.toDouble( &ok );
+    if ( ok && freq > 0 && m_arena )
+        m_arena->ps_per_inst = 1e12 / freq;
+}
+
 void QemuDevice::stamp() {
     if ( m_shMemId == -1 )
         return;
@@ -204,6 +221,11 @@ void QemuDevice::stamp() {
             qDebug() << "Error: QemuDevice::stamp executable does not exist:" << Qt::endl << executable;
             return;
         }
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        env.remove( "SIMULIDE_QEMU_FREQ_HZ" );
+        if ( m_emuFrequency != "auto" )
+            env.insert( "SIMULIDE_QEMU_FREQ_HZ", m_emuFrequency );
+        m_qemuProcess.setProcessEnvironment( env );
         m_qemuProcess.start( executable, m_arguments );
 
         uint64_t timeout = 0;

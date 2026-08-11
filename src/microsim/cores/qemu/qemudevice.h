@@ -63,6 +63,9 @@ public:
     QString extraArgs() { return m_extraArgs; }
     void setExtraArgs( QString a ) { m_extraArgs = a; }
 
+    QString emuFrequency() { return m_emuFrequency; }
+    void setEmuFrequency( QString f );
+
     void setPackageFile( QString package );
 
     std::vector<uint32_t>* getIoMem() { return &m_ioMem; }
@@ -97,6 +100,7 @@ protected:
     QString m_packageFile;
 
     QString m_extraArgs;
+    QString m_emuFrequency;
 
     volatile qemuArena_t* m_arena;
 
