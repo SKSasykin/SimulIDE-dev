@@ -38,8 +38,8 @@ Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
 Esp32Pin::~Esp32Pin() { }
 
 void Esp32Pin::initialize() {
-    //Pin::setLabelText( m_pinLabel );
-    //Pin::setLabelColor( QColor( 250, 250, 200 ) );
+    Pin::setLabelText( m_pinLabel );
+    Pin::setLabelColor( QColor( 250, 250, 200 ) );
 
     //m_isAnalog = false;
     ////m_portState = false;
@@ -55,7 +55,14 @@ void Esp32Pin::initialize() {
 
 void Esp32Pin::updateStep() {
     IoPin::updateStep();
-    Pin::setLabelText( m_iomuxFuncs[m_iomuxIndex].label );
+    if ( Simulator::self()->isRunning() ) {
+        QString label = m_iomuxFuncs[m_iomuxIndex].label;
+        if ( label.isEmpty() || label == "---" || label == "- -" )
+            label = m_pinLabel;
+        Pin::setLabelText( label );
+    } else {
+        Pin::setLabelText( m_pinLabel );
+    }
     //Simulator::self()->remFromUpdateList( this );
 }
 
@@ -211,7 +218,7 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
     if ( m_iomuxFuncs[func].pinPointer || m_iomuxFuncs[func].label == m_pinLabel ) {
         Pin::setLabelColor( QColor( 255, 255, 100 ) );
     } else {
-        Pin::setLabelColor( QColor( 100, 100, 100 ) );
+        Pin::setLabelColor( QColor( 250, 250, 200 ) );
     }
     m_iomuxIndex = func;
     //qDebug() << this->pinId() << "Selected func"<< func << m_iomuxFuncs[func].label;
