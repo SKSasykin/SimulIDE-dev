@@ -89,6 +89,11 @@ Pin* Esp8266::addPin( QString id, QString type, QString label, int n,
         m_rstPin->setInputHighV( 0.65 );
         m_rstPin->setInputLowV( 0.65 );
     }
+    else if( id.contains( "Vdd", Qt::CaseInsensitive ) || id.contains( "Vcc", Qt::CaseInsensitive )
+             || id.contains( "Gnd", Qt::CaseInsensitive ) || id.contains( "Vss", Qt::CaseInsensitive ) )
+    {
+        pin = new IoPin( angle, QPoint(x, y), m_id+"-"+id, n-1, this, input );
+    }
     else
     {
         int gpio = Esp8266Gpio::gpioFromId( id );
