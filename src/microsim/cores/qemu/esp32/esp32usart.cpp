@@ -33,6 +33,11 @@ void Esp32Usart::reset() {
     m_baudRate = 115200;
 
     m_apbClock = 1; /// TODO: implement REF_TICK
+
+    // Sender always enabled: qemu UART TX must transmit regardless of the pad/matrix
+    // configuration, otherwise the TX FIFO never drains and the ROM busy-waits forever
+    // on its first TXFIFO_CNT poll (C3/S3/8266 boot silently dead, no UART output).
+    m_sender->enable( true );
 }
 
 void Esp32Usart::connected( bool c ) {
@@ -48,8 +53,18 @@ void Esp32Usart::writeRegister() {
 
     switch ( offset ) {
     case 0x00: { // UART_FIFO:
+        // Buffer all bytes; start transmission only when the Tx is idle (FIFO was empty).
+        // A real ESP32 TX FIFO is 128 bytes; bytes written while transmitting are queued
+        // and drained one per frame in frameSent(). Sending immediately would drop every
+        // byte after the first in a guest burst (boot log, printf strings).
         m_txFifo.enqueue( data );
-        UsartModule::sendByte( m_txFifo.dequeue() );
+        if ( m_txFifo.size() == 1 ) {
+            // Re-arm the sender: UartTR::initialize() disables it (m_enabled=false) after
+            // reset(), and the qemu usart has no matrix/connection path to enable it for
+            // C3/S3/8266. The sender must transmit whenever the guest pushes a byte.
+            m_sender->enable( true );
+            UsartModule::sendByte( m_txFifo.head() );
+        }
     } break;
         //case 0x04: break;                                // UART_INT_RAW: RO
         //case 0x08: break;                                // UART_INT_ST:  RO
@@ -64,7 +79,9 @@ void Esp32Usart::writeRegister() {
         m_divider = clkInt + clkFra;
         int br = 115200;
         if ( m_divider ) {
-            uint64_t freq = m_apbClock ? 80000000 : 1000000; // ESP32 UART default clock = APB 80 MHz
+            // UART clock = APB (80 MHz on ESP32/ESP8266, 40 MHz on S3/C3).
+            // m_frequency points to the chip's current APB clock (updated by the bridge).
+            uint64_t freq = m_apbClock ? ( m_frequency ? *m_frequency : 80000000 ) : 1000000;
             br = (freq << 4) / m_divider;
         }
         if ( m_baudRate != br )
@@ -112,6 +129,7 @@ void Esp32Usart::readRegister() {
         {
             value  = m_rxFifo.size() & 0xFF;
             value |= ( m_txFifo.size() << 16 ) & 0xFF0000;
+            if ( m_txFifo.isEmpty() ) value |= 1 << 9;  // TX_IDLE
             //qDebug() << "Esp32Usart::readRegister UART_STATUS txfifo" << m_txFifo.size();
         } break;
         ////case 0x20:                    break; // UART_CONF0:
@@ -207,8 +225,12 @@ void Esp32Usart::frameSent( uint8_t data ) {
     if ( m_txFifo.size() ) m_txFifo.dequeue();
     if ( m_txFifo.size() )
         UsartModule::sendByte( m_txFifo.head() );
+}
 
-    //qDebug() << "Esp32Usart::frameSent"<< m_number<< m_sender->m_framesize<<m_txFifo.size()<< Simulator::self()->circTime();
+void Esp32Usart::byteReceived( uint8_t data ) {
+    UsartModule::byteReceived( data );
+
+    m_rxFifo.enqueue( data );
 }
 
 //void Esp32Usart::updateIrq()

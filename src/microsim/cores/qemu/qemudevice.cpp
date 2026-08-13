@@ -305,6 +305,7 @@ void QemuDevice::runEvent() {
     runModuleEvent();
 
     uint64_t nextTime = 0;
+    uint64_t noProgress = 0;
     while ( true ) {
         m_arena->simuTime = 0;
         while ( !m_arena->simuTime ) // Wait for next event from Qemu
@@ -327,10 +328,16 @@ void QemuDevice::runEvent() {
                 doAction();
             m_arena->simuAction = 0;
 
-            if ( nextTime == now )
+            if ( nextTime == now ) {
                 runModuleEvent();
-            else
+                if ( ++noProgress >= 100 ) { // No forward progress: yield to frame loop
+                    nextTime = now + 1000000000ull;
+                    break;
+                }
+            } else {
+                noProgress = 0;
                 break;
+            }
         }
     }
     //qDebug() << "QemuDevice::runEvent Next"<< nextTime;

@@ -143,7 +143,7 @@ bool Esp32c3::createArgs() {
     m_arguments << "driver=timer.esp32c3.timg,property=wdt_disable,value=true";
 
     m_arguments << "-icount";
-    m_arguments << "shift=4,align=off,sleep=on";
+    m_arguments << "shift=4,align=off,sleep=off";
 
     return true;
 }
