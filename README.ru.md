@@ -61,8 +61,8 @@ $ make
 ```
 
 Шаг `make` автоматически собирает бинарники QEMU-эмулятора
-(`qemu-system-xtensa` для ESP32 / ESP32-S3, `qemu-system-riscv32` для
-ESP32-C3, `qemu-system-arm` для STM32) из подмодуля
+(`qemu-system-xtensa` для ESP32 / ESP32-S3 / ESP8266,
+`qemu-system-riscv32` для ESP32-C3, `qemu-system-arm` для STM32) из подмодуля
 `third_party/qemu-simulide` в `resources/data/bin/` перед линковкой
 бинарника SimulIDE. На macOS эмуляторы подписываются entitlement'ом
 `com.apple.security.cs.allow-jit` (`scripts/qemu-jit.entitlements`); без
@@ -97,17 +97,19 @@ ESP32-C3, `qemu-system-arm` для STM32) из подмодуля
 Установка не требуется: поместите папку SimulIDE в любое место и запустите исполняемый файл.
 
 
-## Эмуляция ESP32 / STM32 (QEMU):
+## Эмуляция ESP / STM32 (QEMU):
 
-Микроконтроллеры ESP32, ESP32-S3 (Xtensa) и ESP32-C3 (RISC-V), а также
-STM32 (ARM) эмулируются форком QEMU.
+Микроконтроллеры ESP32, ESP32-S3 (Xtensa), ESP32-C3 (RISC-V) и ESP8266
+(Xtensa), а также STM32 (ARM) эмулируются форком QEMU.
 Форк находится в git-подмодуле `third_party/qemu-simulide`
-(https://github.com/SKSasykin/SimulIDE-qemu), закреплённом на коммите
-`8a3b5e7`. Наши доработки (закоммичены непосредственно в форк) добавляют
+(https://github.com/SKSasykin/SimulIDE-qemu). Наши доработки (закоммичены
+непосредственно в форк) добавляют
 мост к разделяемой памяти SimulIDE, сопоставление AHB-шины с UART-FIFO,
 контроллер SDIO-slave (SLC), варианты моста для ESP32-S3
 (`esp32s3-simulide-bridge`) и ESP32-C3 (`esp32c3-simulide-bridge`), а также
 различные исправления сборки; внешний файл патча не нужен.
+
+Поддерживаемые контроллеры Espressif: ESP32, ESP32-S3, ESP32-C3 и ESP8266.
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,
@@ -122,4 +124,5 @@ ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются авт�
 примерная прошивка, так что пустая плата всё равно загрузится и начнёт
 мигать: `data/bin/esp32/blink.ino.merged.bin` для ESP32,
 `data/bin/esp32s3/blink.ino.merged.bin` для ESP32-S3 и
-`data/bin/esp32c3/blink.ino.merged.bin` для ESP32-C3.
+`data/bin/esp32c3/blink.ino.merged.bin` для ESP32-C3. Для ESP8266
+используется встроенная прошивка `data/bin/esp8266/blink.bin`.

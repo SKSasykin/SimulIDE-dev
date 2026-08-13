@@ -61,8 +61,8 @@ $ make
 ```
 
 The `make` step automatically builds the QEMU emulator binaries
-(`qemu-system-xtensa` for ESP32 / ESP32-S3, `qemu-system-riscv32` for
-ESP32-C3, `qemu-system-arm` for STM32) from the
+(`qemu-system-xtensa` for ESP32 / ESP32-S3 / ESP8266,
+`qemu-system-riscv32` for ESP32-C3, `qemu-system-arm` for STM32) from the
 `third_party/qemu-simulide` submodule into `resources/data/bin/`, before the
 SimulIDE binary is linked. On macOS the emulators are codesigned with the
 `com.apple.security.cs.allow-jit` entitlement
@@ -97,17 +97,19 @@ Run time dependencies:
 No need for installation, place SimulIDE folder wherever you want and run the executable.
 
 
-## ESP32 / STM32 emulation (QEMU):
+## ESP / STM32 emulation (QEMU):
 
-ESP32, ESP32-S3 (Xtensa) and ESP32-C3 (RISC-V), plus STM32 (ARM)
-microcontrollers are emulated by a fork of QEMU. The fork lives in the git
-submodule `third_party/qemu-simulide`
-(https://github.com/SKSasykin/SimulIDE-qemu), pinned to commit `8a3b5e7`. Our
+ESP32, ESP32-S3 (Xtensa), ESP32-C3 (RISC-V) and ESP8266 (Xtensa), plus
+STM32 (ARM) microcontrollers are emulated by a fork of QEMU. The fork lives
+in the git submodule `third_party/qemu-simulide`
+(https://github.com/SKSasykin/SimulIDE-qemu). Our
 modifications (committed directly in the fork) add the SimulIDE shared-memory
 bridge, the AHB-to-UART-FIFO mapping, the SDIO slave controller (SLC),
 per-chip bridge variants for ESP32-S3 (`esp32s3-simulide-bridge`) and
 ESP32-C3 (`esp32c3-simulide-bridge`) and misc build fixes; no external patch
 file is needed.
+
+Supported Espressif controllers: ESP32, ESP32-S3, ESP32-C3 and ESP8266.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
@@ -121,4 +123,5 @@ missing, empty or larger than 4 MB. If the configured firmware file cannot
 be found, a bundled example firmware is used instead, so an empty board still
 boots and blinks: `data/bin/esp32/blink.ino.merged.bin` for ESP32,
 `data/bin/esp32s3/blink.ino.merged.bin` for ESP32-S3 and
-`data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3.
+`data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3. ESP8266 uses the
+bundled `data/bin/esp8266/blink.bin` firmware.
