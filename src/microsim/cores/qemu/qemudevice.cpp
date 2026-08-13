@@ -4,11 +4,13 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QLibrary>
 #include <QMessageBox>
 #include <QProcessEnvironment>
+#include <QThread>
 #include <qtconcurrentrun.h>
 
 #include <fcntl.h>
@@ -226,13 +228,22 @@ void QemuDevice::stamp() {
         if ( m_emuFrequency != "auto" )
             env.insert( "SIMULIDE_QEMU_FREQ_HZ", m_emuFrequency );
         m_qemuProcess.setProcessEnvironment( env );
+
+        if ( m_qemuProcess.state() != QProcess::NotRunning ) { // Make sure previous process is gone
+            m_qemuProcess.waitForFinished( 500 );
+            if ( m_qemuProcess.state() != QProcess::NotRunning ) {
+                m_qemuProcess.kill();
+                m_qemuProcess.waitForFinished( 1000 );
+            }
+        }
         m_qemuProcess.start( executable, m_arguments );
 
-        uint64_t timeout = 0;
+        QElapsedTimer stampTimer;
+        stampTimer.start();
         while ( !m_arena->running ) // Wait for Qemu running
         {
-            //sleep( 10 );
-            if ( timeout++ > 2e9 ) // Don't wait forever
+            QThread::msleep( 10 );
+            if ( stampTimer.elapsed() > 5000 ) // Don't wait forever
             {
                 qDebug() << "Error: QemuDevice::stamp timeout";
 
@@ -306,6 +317,8 @@ void QemuDevice::runEvent() {
 
     uint64_t nextTime = 0;
     uint64_t noProgress = 0;
+    QElapsedTimer waitTimer;
+    waitTimer.start();
     while ( true ) {
         m_arena->simuTime = 0;
         while ( !m_arena->simuTime ) // Wait for next event from Qemu
@@ -315,7 +328,14 @@ void QemuDevice::runEvent() {
                 Simulator::self()->addEvent( 1, this );
                 return;
             }
+            if ( waitTimer.elapsed() > 1000 ) { // No post from Qemu: yield to frame loop
+                qDebug() << "QemuDevice::runEvent wait timeout";
+                Simulator::self()->addEvent( 1, this );
+                return;
+            }
         }
+        waitTimer.restart();
+
         nextTime = m_arena->simuTime;
 
         if ( nextTime < now )
@@ -338,6 +358,9 @@ void QemuDevice::runEvent() {
                 noProgress = 0;
                 break;
             }
+        } else { // Time posted without action: reschedule
+            noProgress = 0;
+            break;
         }
     }
     //qDebug() << "QemuDevice::runEvent Next"<< nextTime;
