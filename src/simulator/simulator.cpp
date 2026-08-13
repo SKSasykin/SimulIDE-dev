@@ -62,8 +62,10 @@ Simulator::~Simulator() {
 
 inline void Simulator::solveMatrix() {
     while ( m_changedNode ) {
-        m_changedNode->stampMatrix();
-        m_changedNode = m_changedNode->nextCH;
+        eNode* node = m_changedNode;
+        m_changedNode = node->nextCH;
+        node->nextCH = nullptr;
+        node->stampMatrix();
     }
     //if( !m_matrix->solveMatrix() ) // m_matrix sets the eNode voltages
     //    m_warning = 2;             // Warning if diagonal element = 0.
