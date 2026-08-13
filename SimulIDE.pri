@@ -153,6 +153,12 @@ INCLUDEPATH += $$MOC_DIR
 
 DESTDIR = $$BUILD_DIR/executables
 
+# Re-run qmake at the end of every build so BUILD_STAMP is recomputed at make time
+# and the linker generates simulide-<yyMMdd.HHmm>.app with the fresh name directly.
+QMAKE_EXTRA_TARGETS += stampApp
+stampApp.target = all
+stampApp.commands = @touch $$BUILD_DIR/SimulIDE_Build.pro
+
 runLrelease.commands = \
     lrelease $$PWD/resources/translations/*.ts; \
     lrelease $$PWD/resources/translations/qt/*.ts; \
