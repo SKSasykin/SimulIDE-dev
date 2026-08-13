@@ -63,13 +63,8 @@ MainWindow::MainWindow() : QMainWindow() {
     QFontDatabase::addApplicationFont( ":/UbuntuMono-RI.ttf" );
 
     float scale = 1.0;
-    if ( m_settings->contains( "fontScale" ) ) {
+    if ( m_settings->contains( "fontScale" ) )
         scale = m_settings->value( "fontScale" ).toFloat();
-    } else {
-        QScreen* screen = QGuiApplication::primaryScreen();
-        float dpiX = screen->logicalDotsPerInchX();
-        scale = dpiX / 96.0;
-    }
     setFontScale( scale );
 
     QString fontName = "Ubuntu";
