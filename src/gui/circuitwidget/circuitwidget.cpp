@@ -554,11 +554,11 @@ void CircuitWidget::updateRecentFileActions() {
 
 QString CircuitWidget::examplesDirPath() const {
     const QDir appDir( QCoreApplication::applicationDirPath() );
-    const QStringList paths = { QDir::current().absoluteFilePath( "resources/data/examples" ),
+    const QStringList paths = { QCoreApplication::applicationDirPath() + "/data/examples",
+                                QDir::current().absoluteFilePath( "resources/data/examples" ),
                                 QCoreApplication::applicationDirPath() + "/resources/data/examples",
                                 appDir.absoluteFilePath( "../../resources/data/examples" ),
-                                appDir.absoluteFilePath( "../../../../../resources/data/examples" ),
-                                QCoreApplication::applicationDirPath() + "/data/examples" };
+                                appDir.absoluteFilePath( "../../../../../resources/data/examples" ) };
 
     for ( const QString& path : paths ) {
         if ( QDir( path ).exists() )
