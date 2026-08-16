@@ -28,7 +28,7 @@
 
 <item itemtype="Tunnel" CircId="Tunnel-21" mainComp="false" Show_id="false" Show_Val="false" Pos="560,-148" rotation="90" hflip="-1" vflip="1" label="Tunnel-21" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Name="RX0" IsBus="false" />
 
-<item itemtype="QemuDevice" CircId="Esp32-23" mainComp="false" Show_id="false" Show_Val="false" Pos="480,-132" rotation="0" hflip="1" vflip="1" label="Esp32-23" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Program="/media/user/soft/simulide/tests/MCU/esp32/blink/build/esp32.esp32.esp32doit-devkit-v1/blink.ino.merged.bin" />
+<item itemtype="QemuDevice" CircId="Esp32-23" mainComp="true" Show_id="false" Show_Val="false" Pos="480,-132" rotation="0" hflip="1" vflip="1" label="Esp32-23" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Program="/media/user/soft/simulide/tests/MCU/esp32/blink/build/esp32.esp32.esp32doit-devkit-v1/blink.ino.merged.bin" />
 
 <item itemtype="Tunnel" CircId="Tunnel-24" mainComp="false" Show_id="false" Show_Val="false" Pos="616,-60" rotation="0" hflip="-1" vflip="1" label="Tunnel-24" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Name="SD3" IsBus="false" />
 

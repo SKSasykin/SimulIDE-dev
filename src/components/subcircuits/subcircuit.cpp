@@ -316,6 +316,29 @@ void SubCircuit::loadSubCircuit( QString doc ) {
     }
     for ( Linker* l : linkList )
         l->createLinks( &m_compList );
+
+    mergeMainCompsProps();
+}
+
+void SubCircuit::mergeMainCompsProps() {
+    for ( Component* mainComp : m_mainComponents.values() ) {
+        if ( !mainComp )
+            continue;
+        for ( propGroup pg : *mainComp->properties() ) {
+            if ( pg.flags & groupHidden )
+                continue;
+            propGroup* existing = getPropGroup( pg.name );
+            if ( existing ) {
+                if ( existing->propList.isEmpty() ) { // Replace empty group (ex: empty "Main")
+                    existing->propList = pg.propList;
+                    existing->flags = pg.flags | groupMainComp;
+                } // Non-empty: keep SubCircuit own properties, skip merge
+            } else {
+                pg.flags |= groupMainComp;
+                m_propGroups.append( pg );
+            }
+        }
+    }
 }
 
 Pin* SubCircuit::addPin( QString id, QString type, QString label, int, int xpos, int ypos, int angle, int length,

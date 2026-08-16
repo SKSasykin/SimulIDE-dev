@@ -117,6 +117,9 @@ QString CompBase::toString() // Used to save circuit
 {
     QString item = "\n<item ";
     for ( propGroup pg : m_propGroups ) {
+        if ( pg.flags & groupMainComp )
+            continue; // Don't save main component properties
+
         if ( !Circuit::self()->getBoard() ) // Not a Subcircit Board
         {
             if ( pg.name == "Board" )

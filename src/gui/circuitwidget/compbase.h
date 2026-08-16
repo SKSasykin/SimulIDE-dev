@@ -19,6 +19,7 @@ class ComProperty;
 enum groupFlags {
     groupHidden = 1,
     groupNoCopy = 1 << 1,
+    groupMainComp = 1 << 2,
 };
 
 struct propGroup {

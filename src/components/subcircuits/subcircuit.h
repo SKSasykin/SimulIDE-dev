@@ -43,6 +43,8 @@ protected:
 
     void addMainCompsMenu( QMenu* menu );
 
+    void mergeMainCompsProps();
+
     void openCircuit();
 
     Pin* findPin( QString pinId );
