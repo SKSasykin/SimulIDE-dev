@@ -5,6 +5,7 @@
 
 #include <QDir>
 #include <QElapsedTimer>
+#include <QCoreApplication>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QLibrary>
@@ -291,14 +292,29 @@ void QemuDevice::voltChanged() {
     bool reset = !m_rstPin->getInpState();
 
     if ( reset ) {
+        m_resetRequested = true;
         m_arena->running = 0;
 
-        if ( m_qemuProcess.state() > QProcess::NotRunning ) {
+        QMetaObject::invokeMethod( qApp, [this]() {
+            if ( m_qemuProcess.state() > QProcess::NotRunning ) {
+                Simulator::self()->cancelEvents( this );
+                m_qemuProcess.kill();
+            }
+        }, Qt::QueuedConnection );
+    } else if ( m_resetRequested ) {
+        QMetaObject::invokeMethod( qApp, [this]() {
+            if ( m_qemuProcess.state() != QProcess::NotRunning ) {
+                m_qemuProcess.waitForFinished( 500 );
+                if ( m_qemuProcess.state() != QProcess::NotRunning ) {
+                    m_qemuProcess.kill();
+                    m_qemuProcess.waitForFinished( 1000 );
+                }
+            }
             Simulator::self()->cancelEvents( this );
-            m_qemuProcess.kill();
-        }
-    } else if ( m_qemuProcess.state() == QProcess::NotRunning )
-        stamp();
+            stamp();
+            m_resetRequested = false;
+        }, Qt::QueuedConnection );
+    }
 }
 
 void QemuDevice::runModuleEvent() {
@@ -328,6 +344,8 @@ void QemuDevice::runEvent() {
                 Simulator::self()->addEvent( 1, this );
                 return;
             }
+            if ( m_resetRequested ) // Reset in progress: stamp() will reschedule
+                return;
             if ( waitTimer.elapsed() > 1000 ) { // No post from Qemu: yield to frame loop
                 qDebug() << "QemuDevice::runEvent wait timeout";
                 Simulator::self()->addEvent( 1, this );

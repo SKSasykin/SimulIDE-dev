@@ -114,6 +114,7 @@ protected:
     int m_gpioSize;
     std::vector<IoPin*> m_ioPin;
     IoPin* m_rstPin;
+    bool m_resetRequested = false;
 
     QString m_shMemKey;
     int64_t m_shMemId;
