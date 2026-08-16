@@ -43,10 +43,10 @@ double DSpinBox::valueFromText( const QString& text ) const {
 
 double DSpinBox::evaluate( QString exp ) {
     exp = "return " + exp;
-    const char* code = exp.toLocal8Bit().data();
+    QByteArray ba = exp.toLocal8Bit();
+    const char* code = ba.constData();
     double res = 0;
     int r = ExecuteString( m_aEngine, code, &res, asTYPEID_DOUBLE );
-    //qDebug()<<"----\n" <<r<<code<<  "=" << res;
     if ( r >= 0 )
         return res;
     return NAN;
