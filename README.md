@@ -193,3 +193,34 @@ Known limitations: the ESP32-C3 ADC2_CH0 silicon errata, ESP32 ADC2/Wi-Fi
 contention and the ESP8266 internal VDD measurement are not modeled. See
 [docs/esp-adc-support.md](docs/esp-adc-support.md) for the full details and
 official Espressif references.
+
+### ESP PWM (LEDC) support
+
+The LEDC PWM controllers of the supported Espressif controllers are emulated
+with datasheet-correct channel counts, timer groups, register maps and GPIO
+Matrix signal indices. As on real hardware, any channel can be routed to any
+GPIO pad through the GPIO Matrix.
+
+| Device | PWM module | Channels | Timers | Duty resolution | Counter | Duty register | Register base | GPIO Matrix signals | Emulated in SimulIDE |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ESP8266EX | none (software PWM only) | — | — | ~8-10 bit (soft) | — | — | — | — | no hardware PWM, not emulated |
+| ESP32 | LEDC | 16 (8 HS + 8 LS) | 8 (4 HS + 4 LS) | up to 25 bit | 20-bit | 25 bit (21 int + 4 frac) | 0x3FF59000 | 71-86 | full |
+| ESP32-S3 | LEDC | 8 (LS) | 4 | up to 14 bit | 14-bit | 19 bit (15 int + 4 frac) | 0x60019000 | 73-80 | full |
+| ESP32-C3 | LEDC | 6 (LS) | 4 | up to 14 bit | 14-bit | 19 bit (15 int + 4 frac) | 0x60019000 | 45-50 | full |
+
+Implementation notes:
+
+- The PWM frequency is modeled exactly:
+  `f_PWM = clk · 256 / (clock_divider · 2^duty_res)` with the 18-bit
+  fixed-point clock divider (8 fractional bits); duty is derived from the
+  DUTY register high part (`DUTY >> 4`) against a full scale of
+  `2^duty_res`, covering 0-100 %.
+- The LEDC register block is forwarded from QEMU through the bridge
+  (ESP32 at `0x00059000`, ESP32-S3/C3 at `0x00019000`).
+
+Not implemented yet: HPOINT offset, CONF1 duty fade/scale
+(DUTY_START/DUTY_INC/DUTY_NUM/DUTY_CYCLE/DUTY_SCALE), LEDC interrupts
+(INT_RAW/INT_ST/INT_ENA/INT_CLR) and the XTAL/RTC8M/REF_TICK clock sources
+(only the APB clock is modeled). ESP8266 has no hardware PWM peripheral, so
+the software PWM of the Arduino core (`analogWrite` via the FRC1 timer) is
+not emulated.

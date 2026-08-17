@@ -80,7 +80,7 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     for ( int i = 0; i < m_usartN; ++i )
         m_usarts[i]->setPins( { dummyP, dummyP } );
 
-    m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF );
+    m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF, LedcVariant::Esp32, 16, 8 );
     m_leds->setDummy( dummyP );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
