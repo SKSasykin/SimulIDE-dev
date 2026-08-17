@@ -11,12 +11,28 @@ This matrix compares the ESP devices available in SimulIDE with the controllers 
 
 ## Implemented scope
 
-- I2C implements CPU FIFO access, RSTART/WRITE/READ/STOP/END command lists, ACK/NACK status, polling interrupt-status registers, and controller clock timing.
-- SPI implements CPU data buffers up to 64 bytes, `CMD.USR`, programmable data length, clock divider, CPOL/CPHA, bit order, and automatic CS0.
-- ESP32-S3 and ESP32-C3 use their modern peripheral layouts and GPIO Matrix register offsets.
-- ESP8266 does not expose a fictitious hardware I2C controller; software I2C continues to use GPIO.
+- I2C: CPU TX/RX FIFO access, RSTART/WRITE/READ/STOP/END command lists,
+  per-command DONE flags, ACK/NACK handling, controller clock timing,
+  polling interrupt-status registers, and interrupt delivery to the guest
+  through the SimulIDE-to-QEMU bridge. The classic ESP32 APB TX FIFO aliases
+  used by ESP-IDF are bridged as well. Both the classic ESP32 (16 command
+  slots) and modern ESP32-S3/C3 (8 command slots, different opcode encoding)
+  layouts are supported.
+- SPI: CPU data buffers up to 64 bytes, `CMD.USR` start handling with the
+  modern `CMD.UPDATE` self-clear, programmable data length, clock divider,
+  CPOL/CPHA, bit order, automatic CS0, and completion polling flags.
+- ESP32-S3 and ESP32-C3 use their modern peripheral layouts and GPIO Matrix
+  register offsets. I2C and SPI pin routing works through the GPIO Matrix,
+  plus direct IO_MUX pins where the silicon provides them (ESP32 HSPI/VSPI,
+  ESP32-S3/C3 SPI2, ESP8266 HSPI).
+- ESP8266 does not expose a fictitious hardware I2C controller; software I2C
+  continues to use GPIO.
+- Classic ESP32 PlatformIO app-only images are detected and automatically
+  merged with the sibling `bootloader.bin` and `partitions.bin` into a 4 MB
+  image. Exact 2/4/8/16 MB images are accepted, and smaller valid binaries
+  are padded to 4 MB.
 
-Not implemented yet: I2C or SPI slave operation, DMA, guest interrupt delivery, SPI command/address/dummy phases, dual/quad/octal transfers, arbitration, and complete timing/error behavior. The current implementation targets polling-mode master drivers.
+Not implemented yet: slave operation for both I2C and SPI, DMA, SPI guest interrupt delivery, SPI command/address/dummy phases, dual/quad/octal transfers, arbitration, and complete timing/error behavior. The current implementation targets polling-mode master drivers.
 
 ## Official references
 
