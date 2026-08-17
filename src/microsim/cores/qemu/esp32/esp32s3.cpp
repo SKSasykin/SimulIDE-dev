@@ -10,6 +10,7 @@
 #include <QPainter>
 
 #include "circuit.h"
+#include "esp32adc.h"
 #include "esp32gpio.h"
 #include "esp32pin.h"
 #include "esp32s3.h"
@@ -35,7 +36,7 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
     m_ioMem.resize( IOMEM_SIZE, 0 );
     m_ioMemStart = IOMEM_BASE;
 
-    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 46, 32 );
+    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 49, 32 );
 
     QString package = "./data/esp32/esp32s3.package";
     if ( MainWindow::self() ) {
@@ -55,6 +56,8 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
     m_usarts[2] = new Esp32Usart( this, id + "Usart3", 2, &m_apbFreq, 0x0002E000, 0x0002EFFF );
     for ( int i = 0; i < m_usartN; ++i )
         m_usarts[i]->setPins( { dummyP, dummyP } );
+
+    m_adc = new Esp32Adc( this, id + "-ADC", 0, &m_apbFreq, 0x00008800, 0x00008FFF, m_gpio, Esp32AdcS3 );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE );
 

@@ -9,6 +9,7 @@
 #include "qemudevice.h"
 
 class LibraryItem;
+class Esp32Adc;
 class Esp32Gpio;
 
 class Esp32s3 : public QemuDevice {
@@ -32,4 +33,5 @@ protected:
     uint32_t m_apbFreq;
 
     Esp32Gpio* m_gpio;
+    Esp32Adc* m_adc;
 };

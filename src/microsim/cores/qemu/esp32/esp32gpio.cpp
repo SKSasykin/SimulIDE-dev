@@ -53,8 +53,6 @@ void Esp32Gpio::writeIoMuxReg( uint8_t pin, uint16_t value ) {
 }
 
 void Esp32Gpio::readRegister() {
-    //qDebug() <<"Esp32Gpio::readRegister"<< m_name << m_eventAddress << m_eventValue;
-
     uint64_t offset = m_eventAddress - m_memStart;
     uint32_t val = 0;
 

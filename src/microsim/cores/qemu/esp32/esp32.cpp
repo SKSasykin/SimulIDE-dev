@@ -11,6 +11,7 @@
 
 #include "circuit.h"
 #include "esp32.h"
+#include "esp32adc.h"
 #include "esp32gpio.h"
 #include "esp32iomux.h"
 #include "esp32led.h"
@@ -42,6 +43,8 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00044000, 0x00044FFF );
     m_iomux = new Esp32IoMux( this, id + "-IOMUX", 0, &m_apbFreq, 0x00049000, 0x00049FFF );
     m_iomux->setGpio( m_gpio );
+
+    m_adc = new Esp32Adc( this, id + "-ADC", 0, &m_apbFreq, 0x00048800, 0x00048FFF, m_gpio );
 
     QString package = "./data/esp32/esp32.package";
     if ( MainWindow::self() ) {

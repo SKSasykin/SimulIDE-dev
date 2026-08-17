@@ -11,6 +11,7 @@
 
 class LibraryItem;
 //class esp32Pin;
+class Esp32Adc;
 class Esp32Gpio;
 class Esp32IoMux;
 class Esp32Led;
@@ -37,6 +38,8 @@ protected:
 
     Esp32Gpio* m_gpio;
     Esp32IoMux* m_iomux;
+
+    Esp32Adc* m_adc;
 
     Esp32Led* m_leds;
 };

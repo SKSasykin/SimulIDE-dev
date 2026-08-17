@@ -27,6 +27,12 @@ public:
 
     static int gpioFromId( const QString& id );
 
+    Esp32Pin* getPad( int gpio ) {
+        if ( gpio < 0 || gpio >= (int)m_espPad.size() )
+            return nullptr;
+        return m_espPad[gpio];
+    }
+
     //Esp32Pin* getPin( int i ) { return m_pins.at(i); }
     //uint size(){ return m_pins.size(); }
 
