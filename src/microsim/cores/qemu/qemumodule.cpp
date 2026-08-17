@@ -53,6 +53,6 @@ void QemuModule::readRegister() {
 void QemuModule::setInterrupt( uint8_t number, uint8_t level ) {
     m_arena->irqNumber = number;
     m_arena->irqLevel = level ? 1 : 0;
-    //m_arena->qemuAction = SIM_INTERRUPT;
+    m_arena->qemuAction = SIM_INTERRUPT;
     //qDebug() << "QemuModule::setInterrupt" << m_name << number << level;
 }

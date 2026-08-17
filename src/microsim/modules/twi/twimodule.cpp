@@ -79,11 +79,11 @@ void TwiModule::runEvent() {
         {
             setSCL( false ); //m_toggleScl = true;
             m_lastState = I2C_IDLE;
+            m_i2cState = m_lastState;
             if ( m_i2cState == I2C_WRITE )
                 setTwiState( TWI_REP_START );
             else
                 setTwiState( TWI_START );
-            m_i2cState = m_lastState;
         }
     } break;
 
@@ -130,8 +130,8 @@ void TwiModule::runEvent() {
             setSDA( true ); //if( m_lastState == I2C_READ )
 
             twiState_t twiState = m_sendACK ? TWI_MRX_DATA_ACK : TWI_MRX_DATA_NACK;
-            setTwiState( twiState );
             m_i2cState = I2C_IDLE;
+            setTwiState( twiState );
         } else
             m_toggleScl = true;
     } break;
@@ -139,8 +139,8 @@ void TwiModule::runEvent() {
     case I2C_READACK: // Read ACK
     {
         if ( clkLow ) {
-            setTwiState( m_nextState );
             m_i2cState = I2C_IDLE;
+            setTwiState( m_nextState );
         } else {
             if ( m_isAddr ) // ACK after sendind Slave address
             {

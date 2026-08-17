@@ -54,7 +54,7 @@ Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_i2cN = 1;
     m_i2cs.resize( m_i2cN );
-    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00013000, 0x000131FF, true );
+    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00013000, 0x000131FF, true, 29 );
     m_i2cs[0]->setPins( dummyP, dummyP );
 
     m_spiN = 1;
@@ -94,8 +94,9 @@ bool Esp32c3::createArgs() {
             return false;
         }
     }
-    if ( size > 4194304 ) {
-        qDebug() << "Error firmware file size:" << size << "must be 4194304";
+    if ( size != 2 * 1024 * 1024 && size != 4 * 1024 * 1024
+         && size != 8 * 1024 * 1024 && size != 16 * 1024 * 1024 ) {
+        qDebug() << "Error firmware file size:" << size << "must be 2, 4, 8 or 16 MB";
         qDebug() << m_firmPath;
         return false;
     }

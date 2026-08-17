@@ -26,8 +26,8 @@ QEMU_DIR="$REPO_ROOT/third_party/qemu-simulide"
 # (module dir qemu-simulide), so the submodule stays pristine.
 BUILD_DIR="$REPO_ROOT/build/qemu-simulide"
 BIN_DIR="$REPO_ROOT/resources/data/bin"
-PIN="d7ab1c2272bf9e2e8d2a822b282df2f2422b5004"
 TARGETS=("qemu-system-arm" "qemu-system-xtensa" "qemu-system-riscv32")
+HEAD_STAMP="$BUILD_DIR/.simulide-qemu-head"
 # esp32 ROM dumps loaded by the esp32 core (passed as the qemu -L directory).
 # They are regenerated from the fork's pc-bios on every build, so they are not
 # committed to the repository.
@@ -90,11 +90,23 @@ if [ -f "$BUILD_DIR/build.ninja" ] && \
     STALE_CONFIG=true
 fi
 
-# Fast path: binaries + esp32 ROM dumps already in place (with crypto).
+# Fast path: binaries + ROMs must have been installed from the current
+# submodule commit. A dirty submodule always goes through Ninja so source
+# timestamp changes are honored during development.
+QEMU_HEAD="$(git -C "$QEMU_DIR" rev-parse HEAD 2>/dev/null || true)"
+EXPECTED_HEAD="$(git -C "$REPO_ROOT" rev-parse HEAD:third_party/qemu-simulide 2>/dev/null || true)"
+INSTALLED_HEAD="$(cat "$HEAD_STAMP" 2>/dev/null || true)"
+ROMS_READY=true
+for rom in "${ROM_FILES[@]}"; do
+    if [ ! -f "$ROM_DIR/$rom" ]; then ROMS_READY=false; break; fi
+done
 if [ -x "$BIN_DIR/qemu-system-xtensa" ] && [ -x "$BIN_DIR/qemu-system-arm" ] \
     && [ -x "$BIN_DIR/qemu-system-riscv32" ] \
     && is_jit_signed "$BIN_DIR/qemu-system-xtensa" \
-    && [ -f "$ROM_DIR/${ROM_FILES[0]}" ] && [ "$STALE_CONFIG" = false ]; then
+    && [ "$ROMS_READY" = true ] && [ "$STALE_CONFIG" = false ] \
+    && [ -n "$QEMU_HEAD" ] && [ "$INSTALLED_HEAD" = "$QEMU_HEAD" ] \
+    && [ "$QEMU_HEAD" = "$EXPECTED_HEAD" ] \
+    && [ -z "$(git -C "$QEMU_DIR" status --porcelain --untracked-files=no)" ]; then
     info "qemu binaries up to date, nothing to do."
     exit 0
 fi
@@ -112,13 +124,6 @@ if [ ! -e "$QEMU_DIR/.git" ]; then
     err "submodule not present at $QEMU_DIR"
     err "run: git submodule update --init --recursive"
     exit 1
-fi
-
-HEAD="$(git -C "$QEMU_DIR" rev-parse HEAD 2>/dev/null || true)"
-if [ "$HEAD" != "$PIN" ]; then
-    info "pinning submodule to $PIN (was $HEAD)..."
-    git -C "$QEMU_DIR" fetch --depth 1 origin "$PIN"
-    git -C "$QEMU_DIR" checkout --detach "$PIN"
 fi
 
 # --- 2. configure -----------------------------------------------------------
@@ -202,5 +207,6 @@ if [ -n "$BUNDLE_BIN_DIR" ]; then
     info "mirroring emulators + ROM dumps -> $BUNDLE_BIN_DIR"
     install_emulators "$BUNDLE_BIN_DIR"
 fi
+printf '%s\n' "$(git -C "$QEMU_DIR" rev-parse HEAD)" > "$HEAD_STAMP"
 
 info "done. Emulators installed to $BIN_DIR"

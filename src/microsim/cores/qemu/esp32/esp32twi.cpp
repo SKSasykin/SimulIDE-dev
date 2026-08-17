@@ -9,8 +9,8 @@
 #include "simulator.h"
 
 Esp32Twi::Esp32Twi( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
-                    bool modern )
-    : QemuTwi( mcu, name, n, clk, memStart, memEnd ), m_modern( modern ) {
+                    bool modern, int interrupt )
+    : QemuTwi( mcu, name, n, clk, memStart, memEnd ), m_modern( modern ), m_interrupt( interrupt ) {
     reset();
 }
 Esp32Twi::~Esp32Twi() { }
@@ -31,6 +31,7 @@ void Esp32Twi::reset() {
     m_txFifo.clear();
     m_rxFifo.clear();
     m_busy = false;
+    m_busBusy = false;
     m_expectAddress = false;
     m_ackCheck = false;
     m_commandIndex = 0;
@@ -76,6 +77,7 @@ void Esp32Twi::writeRegister() {
     default:
         break;
     }
+    updateInterrupt();
 }
 
 void Esp32Twi::readRegister() {
@@ -83,7 +85,7 @@ void Esp32Twi::readRegister() {
     uint32_t value = read();
     switch ( offset ) {
     case 0x08: // I2C_STATUS
-        value = ( m_busy ? 1 << 4 : 0 ) | ( uint32_t( m_rxFifo.size() ) << 8 )
+        value = ( m_busBusy ? 1 << 4 : 0 ) | ( uint32_t( m_rxFifo.size() ) << 8 )
                 | ( uint32_t( m_txFifo.size() ) << 18 );
         break;
     case 0x1C: // FIFO_DATA
@@ -159,6 +161,7 @@ void Esp32Twi::runCommand() {
         uint8_t stopOpcode = m_modern ? 2 : 3;
 
         if ( opcode == rstartOpcode ) {
+            m_busBusy = true;
             m_expectAddress = true;
             masterStart();
             return;
@@ -180,9 +183,8 @@ void Esp32Twi::runCommand() {
             masterStop();
             return;
         } else if ( opcode == 4 ) { // END
-            m_interruptRaw |= 1 << 3;
             commandDone();
-            finishTransaction();
+            finishTransaction( 1 << 3, false );
             return;
         } else {
             finishTransaction();
@@ -194,8 +196,7 @@ void Esp32Twi::runCommand() {
 
 bool Esp32Twi::writeNextByte() {
     if ( m_txFifo.empty() ) {
-        m_interruptRaw |= 1 << 6;
-        finishTransaction();
+        finishTransaction( 1 << 6 );
         return false;
     }
 
@@ -222,11 +223,19 @@ void Esp32Twi::commandDone() {
     m_remaining = 0;
 }
 
-void Esp32Twi::finishTransaction() {
+void Esp32Twi::finishTransaction( uint32_t interruptMask, bool releaseBus ) {
     m_busy = false;
+    if ( releaseBus )
+        m_busBusy = false;
     uint32_t ctr = readMem( m_memStart + 0x04 ) & ~( 1 << 5 );
     writeMem( m_memStart + 0x04, ctr );
-    m_interruptRaw |= 1 << 7;
+    m_interruptRaw |= interruptMask;
+    updateInterrupt();
+}
+
+void Esp32Twi::updateInterrupt() {
+    if ( m_interrupt >= 0 )
+        setInterrupt( m_interrupt, ( m_interruptRaw & m_interruptEnable ) != 0 );
 }
 
 void Esp32Twi::setPeriod() {
@@ -252,7 +261,7 @@ void Esp32Twi::setTwiState( twiState_t state ) {
     } else if ( state == TWI_MTX_ADR_NACK || state == TWI_MTX_DATA_NACK || state == TWI_MRX_ADR_NACK ) {
         m_interruptRaw |= 1 << 10;
         if ( m_ackCheck ) {
-            finishTransaction();
+            finishTransaction( 1 << 10 );
             return;
         }
         if ( m_remaining && --m_remaining == 0 )

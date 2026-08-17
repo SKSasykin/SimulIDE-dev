@@ -58,8 +58,8 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     Esp32Pin* dummyP = m_gpio->m_dummyPin;
     m_i2cN = 2;
     m_i2cs.resize( m_i2cN );
-    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00053000, 0x00053FFF );
-    m_i2cs[1] = new Esp32Twi( this, id + "-I2C2", 1, &m_apbFreq, 0x00067000, 0x00067FFF );
+    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00053000, 0x00053FFF, false, 49 );
+    m_i2cs[1] = new Esp32Twi( this, id + "-I2C2", 1, &m_apbFreq, 0x00067000, 0x00067FFF, false, 50 );
     for ( int i = 0; i < m_i2cN; ++i )
         m_i2cs[i]->setPins( dummyP, dummyP );
 
@@ -106,18 +106,74 @@ bool Esp32::createArgs() {
             return false;
         }
     }
-    if ( size > 4194304 ) {
-        qDebug() << "Error firmware file size:" << size << "must be 4194304";
-        qDebug() << m_firmPath;
-        return false;
-    }
-
     int index = m_firmPath.lastIndexOf( "." );
     QString firmware = m_firmPath.left( index );
     QString efuses = firmware + ".efuse";
 
+    QFile input( m_firmPath );
+    bool mergedImage = false;
+    if ( input.open( QIODevice::ReadOnly ) ) {
+        input.seek( 0x1000 );
+        bool bootImage = input.read( 1 ) == QByteArray( 1, char( 0xE9 ) );
+        input.seek( 0x10000 );
+        mergedImage = bootImage && input.read( 1 ) == QByteArray( 1, char( 0xE9 ) );
+        input.close();
+    }
+
+    if ( !mergedImage && size < 4 * 1024 * 1024 ) {
+        QDir buildDir = fi.absoluteDir();
+        QFile bootloader( buildDir.filePath( "bootloader.bin" ) );
+        QFile partitions( buildDir.filePath( "partitions.bin" ) );
+
+        if ( bootloader.open( QIODevice::ReadOnly ) && partitions.open( QIODevice::ReadOnly )
+             && input.open( QIODevice::ReadOnly ) ) {
+            QByteArray bootData = bootloader.readAll();
+            QByteArray partData = partitions.readAll();
+            QByteArray appData = input.readAll();
+
+            constexpr int flashSize = 4 * 1024 * 1024;
+            constexpr int bootOffset = 0x1000;
+            constexpr int partOffset = 0x8000;
+            constexpr int appOffset = 0x10000;
+
+            bool valid = !bootData.isEmpty() && !partData.isEmpty() && !appData.isEmpty()
+                         && uint8_t( bootData.at( 0 ) ) == 0xE9 && uint8_t( appData.at( 0 ) ) == 0xE9
+                         && bootOffset + bootData.size() <= partOffset
+                         && partOffset + partData.size() <= appOffset
+                         && appOffset + appData.size() <= flashSize;
+
+            if ( valid ) {
+                QByteArray flash( flashSize, char( 0xFF ) );
+                flash.replace( bootOffset, bootData.size(), bootData );
+                flash.replace( partOffset, partData.size(), partData );
+                flash.replace( appOffset, appData.size(), appData );
+
+                QString base = fi.baseName() + "-" + QString::number( qHash( fi.absoluteFilePath() ), 16 );
+                QString mergedPath = QDir::tempPath() + "/simulide-esp32-" + base + "-merged.bin";
+                QFile merged( mergedPath );
+                if ( merged.open( QIODevice::WriteOnly ) && merged.write( flash ) == flash.size() ) {
+                    merged.close();
+                    qDebug() << "Merged PlatformIO ESP32 flash image:" << mergedPath;
+                    firmware = mergedPath.left( mergedPath.lastIndexOf( "." ) );
+                    size = flashSize;
+                    mergedImage = true;
+                }
+            }
+        }
+        if ( !mergedImage )
+            qDebug() << "Warning: app image not merged (bootloader.bin/partitions.bin not found or invalid in"
+                     << buildDir.path() << ")";
+    }
+
+    if ( size != 2 * 1024 * 1024 && size != 4 * 1024 * 1024
+         && size != 8 * 1024 * 1024 && size != 16 * 1024 * 1024 ) {
+        qDebug() << "Error firmware file size:" << size << "must be 2, 4, 8 or 16 MB";
+        qDebug() << m_firmPath;
+        return false;
+    }
+
     if ( size < 4194304 ) {
-        QString base = QFileInfo( m_firmPath ).baseName();
+        QString base = fi.baseName() + "-" + QString::number( qHash( fi.absoluteFilePath() ), 16 );
         QString padPath = QDir::tempPath() + "/simulide-esp32-" + base + "-flash.bin";
         QFile pad( padPath );
         if ( pad.exists() )

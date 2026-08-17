@@ -18,7 +18,7 @@ class Esp32Twi : public QemuTwi {
 
 public:
     Esp32Twi( QemuDevice* mcu, QString n, int number, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
-              bool modern = false );
+              bool modern = false, int interrupt = -1 );
     ~Esp32Twi();
 
     void reset() override;
@@ -35,7 +35,8 @@ protected:
     bool writeNextByte();
     void readNextByte();
     void commandDone();
-    void finishTransaction();
+    void finishTransaction( uint32_t interruptMask = 1 << 7, bool releaseBus = true );
+    void updateInterrupt();
     void setPeriod();
 
     void setTwiState( twiState_t state ) override;
@@ -44,7 +45,9 @@ protected:
     std::deque<uint8_t> m_rxFifo;
 
     bool m_modern;
+    int m_interrupt;
     bool m_busy;
+    bool m_busBusy;
     bool m_expectAddress;
     bool m_ackCheck;
     uint8_t m_commandIndex;
