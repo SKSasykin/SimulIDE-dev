@@ -31,6 +31,7 @@ Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
     m_dummyPin = dummyPin;
 
     m_pinLabel = id;
+    m_iomuxIndex = 2;
 
     for ( int i = 0; i < 6; ++i )
         m_iomuxFuncs[i] = { nullptr, nullptr, "- -" };

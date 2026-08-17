@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <deque>
+
 #include "qemutwi.h"
 
 struct esp32TwiArena_t {
@@ -15,10 +17,11 @@ class Esp32Twi : public QemuTwi {
     friend class I2cRunner;
 
 public:
-    Esp32Twi( QemuDevice* mcu, QString n, int number, uint32_t* clk, uint64_t memStart, uint64_t memEnd );
+    Esp32Twi( QemuDevice* mcu, QString n, int number, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
+              bool modern = false );
     ~Esp32Twi();
 
-    void reset();
+    void reset() override;
 
     void connected( bool c ) override;
 
@@ -27,12 +30,26 @@ protected:
     void readRegister() override;
 
     void writeCTR();
-    void runCMD();
+    void startTransaction();
+    void runCommand();
+    bool writeNextByte();
+    void readNextByte();
+    void commandDone();
+    void finishTransaction();
     void setPeriod();
 
     void setTwiState( twiState_t state ) override;
 
-    uint8_t m_slaveCode;
-    int m_lastCommand;
-    bool m_opDone;
+    std::deque<uint8_t> m_txFifo;
+    std::deque<uint8_t> m_rxFifo;
+
+    bool m_modern;
+    bool m_busy;
+    bool m_expectAddress;
+    bool m_ackCheck;
+    uint8_t m_commandIndex;
+    uint8_t m_commandCount;
+    uint8_t m_remaining;
+    uint32_t m_interruptRaw;
+    uint32_t m_interruptEnable;
 };

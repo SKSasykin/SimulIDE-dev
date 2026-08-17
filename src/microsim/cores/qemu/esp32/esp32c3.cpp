@@ -14,6 +14,8 @@
 #include "esp32c3.h"
 #include "esp32gpio.h"
 #include "esp32pin.h"
+#include "esp32spi.h"
+#include "esp32twi.h"
 #include "esp32usart.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
@@ -23,7 +25,7 @@
 
 #define IOMEM_BASE 0x60000000
 #define IOMEM_END 0x6007FFFF
-#define IOMEM_SIZE IOMEM_END - IOMEM_BASE
+#define IOMEM_SIZE ( IOMEM_END - IOMEM_BASE + 1 )
 
 Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type, id ) {
     m_area = QRect( 0, 0, 15 * 8, 15 * 8 );
@@ -36,7 +38,8 @@ Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type,
     m_ioMem.resize( IOMEM_SIZE, 0 );
     m_ioMemStart = IOMEM_BASE;
 
-    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 22, 22 );
+    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 22, 22, 0x74,
+                            0x154, 0x554 );
 
     QString package = "./data/esp32/esp32c3.package";
     if ( MainWindow::self() ) {
@@ -49,6 +52,16 @@ Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type,
 
     Esp32Pin* dummyP = m_gpio->m_dummyPin;
 
+    m_i2cN = 1;
+    m_i2cs.resize( m_i2cN );
+    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00013000, 0x000131FF, true );
+    m_i2cs[0]->setPins( dummyP, dummyP );
+
+    m_spiN = 1;
+    m_spis.resize( m_spiN );
+    m_spis[0] = new Esp32Spi( this, id + "-FSPI", 2, &m_apbFreq, 0x00024000, 0x00024FFF, true );
+    m_spis[0]->setPins( m_gpio->m_espPad[7], m_gpio->m_espPad[2], m_gpio->m_espPad[6], m_gpio->m_espPad[10] );
+
     m_usartN = 2;
     m_usarts.resize( m_usartN );
     m_usarts[0] = new Esp32Usart( this, id + "Usart1", 0, &m_apbFreq, 0x00000000, 0x00000FFF );
@@ -58,7 +71,7 @@ Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_adc = new Esp32Adc( this, id + "-ADC", 0, &m_apbFreq, 0x00040000, 0x00040FFF, m_gpio, Esp32AdcC3 );
 
-    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE );
+    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
     createMatrix();
     m_gpio->createIoMux();
@@ -206,9 +219,23 @@ void Esp32c3::createMatrix() {
     }
 
     // UART0
-    m_gpio->m_matrixIn[14] = { m_usarts[0], m_usarts[0]->getRxPinPtr(), "Rx0" }; // U0RXD
-    m_gpio->m_matrixOut[14] = { m_usarts[0], m_usarts[0]->getTxPinPtr(), "Tx0" }; // U0TXD
+    m_gpio->m_matrixIn[6] = { m_usarts[0], m_usarts[0]->getRxPinPtr(), "Rx0" }; // U0RXD
+    m_gpio->m_matrixOut[6] = { m_usarts[0], m_usarts[0]->getTxPinPtr(), "Tx0" }; // U0TXD
     // UART1
-    m_gpio->m_matrixIn[17] = { m_usarts[1], m_usarts[1]->getRxPinPtr(), "Rx1" }; // U1RXD
-    m_gpio->m_matrixOut[17] = { m_usarts[1], m_usarts[1]->getTxPinPtr(), "Tx1" }; // U1TXD
+    m_gpio->m_matrixIn[9] = { m_usarts[1], m_usarts[1]->getRxPinPtr(), "Rx1" }; // U1RXD
+    m_gpio->m_matrixOut[9] = { m_usarts[1], m_usarts[1]->getTxPinPtr(), "Tx1" }; // U1TXD
+
+    m_gpio->m_matrixIn[53] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" };
+    m_gpio->m_matrixOut[53] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" };
+    m_gpio->m_matrixIn[54] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" };
+    m_gpio->m_matrixOut[54] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" };
+
+    m_gpio->m_matrixIn[63] = { m_spis[0], m_spis[0]->getCkPinPtr(), "Ck2" };
+    m_gpio->m_matrixOut[63] = { m_spis[0], m_spis[0]->getCkPinPtr(), "Ck2" };
+    m_gpio->m_matrixIn[64] = { m_spis[0], m_spis[0]->getMiPinPtr(), "Mi2" };
+    m_gpio->m_matrixOut[64] = { m_spis[0], m_spis[0]->getMiPinPtr(), "Mi2" };
+    m_gpio->m_matrixIn[65] = { m_spis[0], m_spis[0]->getMoPinPtr(), "Mo2" };
+    m_gpio->m_matrixOut[65] = { m_spis[0], m_spis[0]->getMoPinPtr(), "Mo2" };
+    m_gpio->m_matrixIn[68] = { m_spis[0], m_spis[0]->getSsPinPtr(), "Ss2" };
+    m_gpio->m_matrixOut[68] = { m_spis[0], m_spis[0]->getSsPinPtr(), "Ss2" };
 }

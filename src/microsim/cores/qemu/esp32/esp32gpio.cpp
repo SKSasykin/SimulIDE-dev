@@ -8,10 +8,13 @@
 #include "esp32gpio.h"
 
 Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
-                      int nPins, int in1Base )
+                       int nPins, int in1Base, uint16_t pinBase, uint16_t matrixInBase, uint16_t matrixOutBase )
     : QemuModule( mcu, name, n, clk, memStart, memEnd ), eElement( name ) {
     m_nPins = nPins;
     m_in1Base = in1Base;
+    m_pinBase = pinBase;
+    m_matrixInBase = matrixInBase;
+    m_matrixOutBase = matrixOutBase;
 
     m_dummyPin = new Esp32Pin( 0, "dummy", mcu, nullptr );
     m_dummyPin->setVisible( false );
@@ -23,6 +26,8 @@ Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint6
 Esp32Gpio::~Esp32Gpio() { }
 
 int Esp32Gpio::gpioFromId( const QString& id ) {
+    if ( !id.startsWith( 'G' ) )
+        return -1;
     int n = -1;
     int i = id.size() - 1;
     while( i >= 0 && id.at(i).isDigit() ) --i;
@@ -107,20 +112,20 @@ void Esp32Gpio::writeRegister() {
         setGpioDir1( m_gpioEnable1 | m_eventValue );
     } else if ( offset == 0x34 ) { // GPIO_ENABLE1_W1TC_REG (clear bits)
         setGpioDir1( m_gpioEnable1 & ~m_eventValue );
-    } else if ( offset >= 0x88 ) {
-        if ( offset < 0x130 ) { // GPIO_PINXX_REG
-            uint64_t pinNumber = ( offset - 0x88 ) / 4;
+    } else if ( offset >= m_pinBase ) {
+        if ( offset < m_matrixInBase ) { // GPIO_PINXX_REG
+            uint64_t pinNumber = ( offset - m_pinBase ) / 4;
             if ( pinNumber < (uint64_t)m_espPad.size() ) {
                 Esp32Pin* pin = m_espPad[pinNumber];
                 if ( pin )
                     pin->writePinReg( m_eventValue );
             }
-        } else if ( offset < 0x530 ) { // GPIO_FUNCY_IN_SEL_CFG_REG
-            int func = ( offset - 0x130 ) / 4;
+        } else if ( offset < m_matrixOutBase ) { // GPIO_FUNCY_IN_SEL_CFG_REG
+            int func = ( offset - m_matrixInBase ) / 4;
             //m_gpioInFunc[func] = m_eventValue;
             matrixInChanged( func );
-        } else if ( offset < 0x530 + (uint64_t)m_nPins*4 ) { // GPIO_FUNCX_OUT_SEL_CFG_REG
-            int pin = ( offset - 0x530 ) / 4;
+        } else if ( offset < m_matrixOutBase + (uint64_t)m_nPins*4 ) { // GPIO_FUNCX_OUT_SEL_CFG_REG
+            int pin = ( offset - m_matrixOutBase ) / 4;
             //m_gpioOutFunc[pin] = m_eventValue;
             matrixOutChanged( pin );
         }

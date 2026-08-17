@@ -27,7 +27,7 @@
 
 #define IOMEM_BASE 0x3FF00000
 #define IOMEM_END 0x3FF7FFFF
-#define IOMEM_SIZE IOMEM_END - IOMEM_BASE
+#define IOMEM_SIZE ( IOMEM_END - IOMEM_BASE + 1 )
 
 Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id ) {
     m_area = QRect( 0, 0, 15 * 8, 15 * 8 );
@@ -83,7 +83,7 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF );
     m_leds->setDummy( dummyP );
 
-    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE );
+    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
     createMatrix();
     m_gpio->createIoMux();

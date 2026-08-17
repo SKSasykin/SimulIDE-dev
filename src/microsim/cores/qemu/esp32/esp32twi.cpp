@@ -3,20 +3,41 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-#include <QDebug>
-
 #include "esp32twi.h"
 #include "iopin.h"
 #include "qemudevice.h"
 #include "simulator.h"
 
-Esp32Twi::Esp32Twi( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
-    : QemuTwi( mcu, name, n, clk, memStart, memEnd ) { }
+Esp32Twi::Esp32Twi( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
+                    bool modern )
+    : QemuTwi( mcu, name, n, clk, memStart, memEnd ), m_modern( modern ) {
+    reset();
+}
 Esp32Twi::~Esp32Twi() { }
 
 void Esp32Twi::reset() {
-    m_opDone = true;
-    m_lastCommand = -1;
+    Simulator::self()->cancelEvents( this );
+    if ( m_scl && m_sda ) {
+        m_scl->scheduleState( true, 0 );
+        m_sda->scheduleState( true, 0 );
+        setMode( TWI_OFF );
+    } else {
+        m_mode = TWI_OFF;
+        m_i2cState = I2C_IDLE;
+        m_toggleScl = false;
+    }
+    m_twiState = TWI_NO_STATE;
+    m_nextState = TWI_NO_STATE;
+    m_txFifo.clear();
+    m_rxFifo.clear();
+    m_busy = false;
+    m_expectAddress = false;
+    m_ackCheck = false;
+    m_commandIndex = 0;
+    m_commandCount = m_modern ? 8 : 16;
+    m_remaining = 0;
+    m_interruptRaw = 0;
+    m_interruptEnable = 0;
 }
 
 void Esp32Twi::connected( bool c ) {
@@ -25,7 +46,8 @@ void Esp32Twi::connected( bool c ) {
 
 void Esp32Twi::writeRegister() {
     uint64_t offset = m_eventAddress - m_memStart;
-    //qDebug() <<"Esp32Twi::writeRegister"<< offset ;
+    write();
+
     switch ( offset ) {
     case 0x00:
         setPeriod();
@@ -33,9 +55,24 @@ void Esp32Twi::writeRegister() {
     case 0x04:
         writeCTR();
         break; // I2C_CTR
-    case 0x58:
-        runCMD();
-        break; // I2C_CMD
+    case 0x18: // FIFO_CONF
+        if ( m_eventValue & ( 1 << 12 ) )
+            m_rxFifo.clear();
+        if ( m_eventValue & ( 1 << 13 ) )
+            m_txFifo.clear();
+        break;
+    case 0x1C: // FIFO_DATA
+        if ( m_txFifo.size() < 32 )
+            m_txFifo.push_back( m_eventValue & 0xFF );
+        else
+            m_interruptRaw |= 1 << 11;
+        break;
+    case 0x24: // INT_CLR
+        m_interruptRaw &= ~m_eventValue;
+        break;
+    case 0x28: // INT_ENA
+        m_interruptEnable = m_eventValue;
+        break;
     default:
         break;
     }
@@ -43,19 +80,36 @@ void Esp32Twi::writeRegister() {
 
 void Esp32Twi::readRegister() {
     uint64_t offset = m_eventAddress - m_memStart;
-    //qDebug() << "Esp32Twi::readRegister" << offset;
+    uint32_t value = read();
     switch ( offset ) {
     case 0x08: // I2C_STATUS
-        m_arena->regData = m_twiState;
+        value = ( m_busy ? 1 << 4 : 0 ) | ( uint32_t( m_rxFifo.size() ) << 8 )
+                | ( uint32_t( m_txFifo.size() ) << 18 );
+        break;
+    case 0x1C: // FIFO_DATA
+        if ( m_rxFifo.empty() ) {
+            value = 0;
+            m_interruptRaw |= 1 << 12;
+        } else {
+            value = m_rxFifo.front();
+            m_rxFifo.pop_front();
+        }
+        break;
+    case 0x20: // INT_RAW
+        value = m_interruptRaw;
+        break;
+    case 0x2C: // INT_STATUS
+        value = m_interruptRaw & m_interruptEnable;
         break;
     default:
         break;
     }
+    m_arena->regData = value;
     m_arena->qemuAction = SIM_READ;
 }
 
 void Esp32Twi::writeCTR() {
-    uint16_t data = m_eventValue;
+    uint32_t data = m_eventValue;
 
     // bit 0: I2C_SDA_FORCE_OUT 0: direct output; 1: open drain output.
     pinMode_t sdaMode = ( data & 1 << 0 ) ? openCo : output;
@@ -73,131 +127,157 @@ void Esp32Twi::writeCTR() {
         setMode( mode );
 
     // bit 5: I2C_TRANS_START Set this bit to start sending the data in txfifo.
-    //if( data & 1<<5 )
-    //{
-    //    masterStart();
-    //    m_lastCommand = 0;
-    //    //qDebug() << "Esp32Twi::writeCTR START" ;
-    //}
-
-    //esp32_i2c_do_transaction(s);
-    //m_eventValue &= ~(1<<5);
+    if ( data & 1 << 5 )
+        startTransaction();
 
     // bit 6: I2C_TX_LSB_FIRST 1: send LSB; 0: send MSB.
     // bit 7: I2C_RX_LSB_FIRST 1: receive LSB; 0: receive MSB.
 }
 
-void Esp32Twi::runCMD() {
-    // ACK_CHECK_EN,  8, 1
-    // ACK_EXP     ,  9, 1
-    // ACK_VAL     , 10, 1
-    bool ack = m_eventValue & 1 << 10; //m_sendACK = ack;
-    // OPCODE      , 11, 3
-    uint32_t opcode = ( m_eventValue & ( 0b111 << 11 ) ) >> 11;
+void Esp32Twi::startTransaction() {
+    if ( m_busy || m_mode != TWI_MASTER )
+        return;
 
-    switch ( opcode ) {
-    case 0:
-        masterStart();
-        break; // RSTART
-    case 1: // WRITE
-    {
-        uint32_t data = m_eventValue & 0xFF;
-        bool isAddr = ( m_eventValue & 1 << 16 ) != 0; //(m_lastCommand == 0);
-        if ( isAddr ) {
+    m_busy = true;
+    m_expectAddress = false;
+    m_commandIndex = 0;
+    m_remaining = 0;
+    m_interruptRaw &= ~( ( 1 << 3 ) | ( 1 << 7 ) | ( 1 << 10 ) );
+    runCommand();
+}
+
+void Esp32Twi::runCommand() {
+    while ( m_busy && m_commandIndex < m_commandCount ) {
+        uint32_t address = m_memStart + 0x58 + m_commandIndex * 4;
+        uint32_t command = readMem( address );
+        uint8_t opcode = ( command >> 11 ) & 7;
+        m_remaining = command & 0xFF;
+        m_ackCheck = command & ( 1 << 8 );
+
+        uint8_t rstartOpcode = m_modern ? 6 : 0;
+        uint8_t readOpcode = m_modern ? 3 : 2;
+        uint8_t stopOpcode = m_modern ? 2 : 3;
+
+        if ( opcode == rstartOpcode ) {
+            m_expectAddress = true;
             masterStart();
-            m_write = ( data & 1 ) == 0;
-            m_slaveCode = data;
-            //qDebug() <<"Esp32Twi::runCMD WRITE addr"<<data;
+            return;
+        } else if ( opcode == 1 ) { // WRITE
+            if ( !m_remaining ) {
+                commandDone();
+                continue;
+            }
+            writeNextByte();
+            return;
+        } else if ( opcode == readOpcode ) { // READ
+            if ( !m_remaining ) {
+                commandDone();
+                continue;
+            }
+            readNextByte();
+            return;
+        } else if ( opcode == stopOpcode ) { // STOP
+            masterStop();
+            return;
+        } else if ( opcode == 4 ) { // END
+            m_interruptRaw |= 1 << 3;
+            commandDone();
+            finishTransaction();
+            return;
         } else {
-            masterWrite( data, false, m_write );
-            //qDebug() <<"Esp32Twi::runCMD WRITE data"<<data;
+            finishTransaction();
+            return;
         }
-    } break;
-    case 2:
-        masterRead( ack );
-        break; // READ
-    case 3:
-        masterStop();
-        break; // STOP
-    case 4:
-        break; // END
-    default:
-        break;
     }
-    m_lastCommand = opcode;
+    finishTransaction();
+}
+
+bool Esp32Twi::writeNextByte() {
+    if ( m_txFifo.empty() ) {
+        m_interruptRaw |= 1 << 6;
+        finishTransaction();
+        return false;
+    }
+
+    uint8_t data = m_txFifo.front();
+    m_txFifo.pop_front();
+    bool addressByte = m_expectAddress;
+    if ( addressByte ) {
+        m_write = ( data & 1 ) == 0;
+        m_expectAddress = false;
+    }
+    masterWrite( data, addressByte, m_write );
+    return true;
+}
+
+void Esp32Twi::readNextByte() {
+    uint32_t command = readMem( m_memStart + 0x58 + m_commandIndex * 4 );
+    masterRead( ( command & ( 1 << 10 ) ) == 0 );
+}
+
+void Esp32Twi::commandDone() {
+    uint32_t address = m_memStart + 0x58 + m_commandIndex * 4;
+    writeMem( address, readMem( address ) | 0x80000000 );
+    ++m_commandIndex;
+    m_remaining = 0;
+}
+
+void Esp32Twi::finishTransaction() {
+    m_busy = false;
+    uint32_t ctr = readMem( m_memStart + 0x04 ) & ~( 1 << 5 );
+    writeMem( m_memStart + 0x04, ctr );
+    m_interruptRaw |= 1 << 7;
 }
 
 void Esp32Twi::setPeriod() {
-    uint32_t period_ns = m_eventValue;
-    m_clockPeriod = period_ns * 1000 / 2;
-    //qDebug() << "Esp32Twi::setPeriod" << m_clockPeriod<< 1e9/period_ns<<"Hz";
+    uint32_t cycles = m_eventValue & ( m_modern ? 0x1FF : 0x3FFF );
+    if ( cycles && m_frequency && *m_frequency )
+        m_clockPeriod = uint64_t( cycles ) * 1000000000000ULL / *m_frequency;
 }
 
 void Esp32Twi::setTwiState( twiState_t state ) {
     TwiModule::setTwiState( state );
-    uint8_t ackT = 1;
-    uint8_t ackR = 1;
+    if ( !m_busy )
+        return;
 
-    switch ( state ) { // MASTER
-    case TWI_START: // START transmitted
-    case TWI_REP_START: // Repeated START transmitted
-        masterWrite( m_slaveCode, true, m_write );
-        m_lastState = I2C_WRITE;
-        break;
-    case TWI_MTX_ADR_ACK:
-        ackT = 0; // SLA+W transmitted, ACK  received
-        //fall through
-    case TWI_MTX_ADR_NACK: // SLA+W transmitted, NACK received
-        break;
-    case TWI_MTX_DATA_ACK:
-        ackT = 0; // Data transmitted, ACK  received
-        //fall through
-    case TWI_MTX_DATA_NACK: // Data transmitted, NACK received
-        break;
-    case TWI_MRX_ADR_ACK:
-        ackT = 0; // SLA+R transmitted, ACK  received
-        //fall through
-    case TWI_MRX_ADR_NACK: // SLA+R transmitted, NACK received
-        break;
-    case TWI_MRX_DATA_ACK:
-        ackR = 0; // Data received, ACK  returned
-        //fall through
-    case TWI_MRX_DATA_NACK: // Data received, NACK returned
-        break;
-
-        // SLAVE
-    case TWI_SRX_ADR_ACK:
-        ackR = 0;
-        break; // Own SLA+W received, ACK returned
-    case TWI_SRX_GEN_ACK:
-        ackR = 0;
-        break; // General call received, ACK returned
-    case TWI_SRX_ADR_DATA_ACK:
-        ackR = 0;
-        break; // data received, ACK returned
-    case TWI_SRX_ADR_DATA_NACK: // data received, NACK returned
-        //m_DR = m_rxReg;
-        break;
-    case TWI_SRX_GEN_DATA_ACK:
-        ackR = 0;
-        break; // general call; data received, ACK  returned
-    case TWI_SRX_GEN_DATA_NACK:; // general call; data received, NACK returned
-        //m_DR = m_rxReg;
-        break;
-
-    case TWI_STX_ADR_ACK:
-        ackR = 0;
-        break; // Own SLA+R received, ACK returned
-    case TWI_STX_DATA_ACK:
-        ackT = 0; // Data transmitted, ACK received
-    case TWI_STX_DATA_NACK:
-        break; // Data transmitted, NACK received
-
-    case TWI_NO_STATE:
-        break; // STOP transmitted, Transmission ended
-    default:
-        break;
+    if ( state == TWI_START || state == TWI_REP_START ) {
+        commandDone();
+    } else if ( state == TWI_MTX_ADR_ACK || state == TWI_MTX_DATA_ACK || state == TWI_MRX_ADR_ACK ) {
+        if ( m_remaining && --m_remaining == 0 )
+            commandDone();
+        else if ( m_remaining ) {
+            writeNextByte();
+            return;
+        }
+    } else if ( state == TWI_MTX_ADR_NACK || state == TWI_MTX_DATA_NACK || state == TWI_MRX_ADR_NACK ) {
+        m_interruptRaw |= 1 << 10;
+        if ( m_ackCheck ) {
+            finishTransaction();
+            return;
+        }
+        if ( m_remaining && --m_remaining == 0 )
+            commandDone();
+        else if ( m_remaining ) {
+            writeNextByte();
+            return;
+        }
+    } else if ( state == TWI_MRX_DATA_ACK || state == TWI_MRX_DATA_NACK ) {
+        if ( m_rxFifo.size() < 32 )
+            m_rxFifo.push_back( m_rxReg );
+        else
+            m_interruptRaw |= 1 << 2;
+        if ( m_remaining && --m_remaining == 0 )
+            commandDone();
+        else if ( m_remaining ) {
+            readNextByte();
+            return;
+        }
+    } else if ( state == TWI_NO_STATE ) {
+        commandDone();
+        finishTransaction();
+        return;
+    } else {
+        return;
     }
-
-    //if( state != TWI_START ) qDebug() << "Esp32Twi::setTwiState" << state << Simulator::self()->circTime();
+    runCommand();
 }

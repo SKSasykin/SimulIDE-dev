@@ -14,6 +14,8 @@
 #include "esp32gpio.h"
 #include "esp32pin.h"
 #include "esp32s3.h"
+#include "esp32spi.h"
+#include "esp32twi.h"
 #include "esp32usart.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
@@ -23,7 +25,7 @@
 
 #define IOMEM_BASE 0x60000000
 #define IOMEM_END 0x6007FFFF
-#define IOMEM_SIZE IOMEM_END - IOMEM_BASE
+#define IOMEM_SIZE ( IOMEM_END - IOMEM_BASE + 1 )
 
 Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type, id ) {
     m_area = QRect( 0, 0, 15 * 8, 15 * 8 );
@@ -36,7 +38,8 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
     m_ioMem.resize( IOMEM_SIZE, 0 );
     m_ioMemStart = IOMEM_BASE;
 
-    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 49, 32 );
+    m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 49, 32, 0x74,
+                            0x154, 0x554 );
 
     QString package = "./data/esp32/esp32s3.package";
     if ( MainWindow::self() ) {
@@ -49,6 +52,20 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
 
     Esp32Pin* dummyP = m_gpio->m_dummyPin;
 
+    m_i2cN = 2;
+    m_i2cs.resize( m_i2cN );
+    m_i2cs[0] = new Esp32Twi( this, id + "-I2C1", 0, &m_apbFreq, 0x00013000, 0x000131FF, true );
+    m_i2cs[1] = new Esp32Twi( this, id + "-I2C2", 1, &m_apbFreq, 0x00027000, 0x000271FF, true );
+    for ( int i = 0; i < m_i2cN; ++i )
+        m_i2cs[i]->setPins( dummyP, dummyP );
+
+    m_spiN = 2;
+    m_spis.resize( m_spiN );
+    m_spis[0] = new Esp32Spi( this, id + "-FSPI", 2, &m_apbFreq, 0x00024000, 0x00024FFF, true );
+    m_spis[1] = new Esp32Spi( this, id + "-SPI3", 3, &m_apbFreq, 0x00025000, 0x00025FFF, true );
+    m_spis[0]->setPins( m_gpio->m_espPad[11], m_gpio->m_espPad[13], m_gpio->m_espPad[12], m_gpio->m_espPad[10] );
+    m_spis[1]->setPins( dummyP, dummyP, dummyP, dummyP );
+
     m_usartN = 3;
     m_usarts.resize( m_usartN );
     m_usarts[0] = new Esp32Usart( this, id + "Usart1", 0, &m_apbFreq, 0x00000000, 0x00000FFF );
@@ -59,7 +76,7 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_adc = new Esp32Adc( this, id + "-ADC", 0, &m_apbFreq, 0x00008800, 0x00008FFF, m_gpio, Esp32AdcS3 );
 
-    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE );
+    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
     createMatrix();
     m_gpio->createIoMux();
@@ -207,12 +224,39 @@ void Esp32s3::createMatrix() {
     }
 
     // UART0
-    m_gpio->m_matrixIn[14] = { m_usarts[0], m_usarts[0]->getRxPinPtr(), "Rx0" }; // U0RXD
-    m_gpio->m_matrixOut[14] = { m_usarts[0], m_usarts[0]->getTxPinPtr(), "Tx0" }; // U0TXD
+    m_gpio->m_matrixIn[12] = { m_usarts[0], m_usarts[0]->getRxPinPtr(), "Rx0" }; // U0RXD
+    m_gpio->m_matrixOut[12] = { m_usarts[0], m_usarts[0]->getTxPinPtr(), "Tx0" }; // U0TXD
     // UART1
-    m_gpio->m_matrixIn[17] = { m_usarts[1], m_usarts[1]->getRxPinPtr(), "Rx1" }; // U1RXD
-    m_gpio->m_matrixOut[17] = { m_usarts[1], m_usarts[1]->getTxPinPtr(), "Tx1" }; // U1TXD
+    m_gpio->m_matrixIn[15] = { m_usarts[1], m_usarts[1]->getRxPinPtr(), "Rx1" }; // U1RXD
+    m_gpio->m_matrixOut[15] = { m_usarts[1], m_usarts[1]->getTxPinPtr(), "Tx1" }; // U1TXD
     // UART2
-    m_gpio->m_matrixIn[198] = { m_usarts[2], m_usarts[2]->getRxPinPtr(), "Rx2" }; // U2RXD
-    m_gpio->m_matrixOut[198] = { m_usarts[2], m_usarts[2]->getTxPinPtr(), "Tx2" }; // U2TXD
+    m_gpio->m_matrixIn[18] = { m_usarts[2], m_usarts[2]->getRxPinPtr(), "Rx2" }; // U2RXD
+    m_gpio->m_matrixOut[18] = { m_usarts[2], m_usarts[2]->getTxPinPtr(), "Tx2" }; // U2TXD
+
+    m_gpio->m_matrixIn[66] = { m_spis[1], m_spis[1]->getCkPinPtr(), "Ck3" };
+    m_gpio->m_matrixOut[66] = { m_spis[1], m_spis[1]->getCkPinPtr(), "Ck3" };
+    m_gpio->m_matrixIn[67] = { m_spis[1], m_spis[1]->getMiPinPtr(), "Mi3" };
+    m_gpio->m_matrixOut[67] = { m_spis[1], m_spis[1]->getMiPinPtr(), "Mi3" };
+    m_gpio->m_matrixIn[68] = { m_spis[1], m_spis[1]->getMoPinPtr(), "Mo3" };
+    m_gpio->m_matrixOut[68] = { m_spis[1], m_spis[1]->getMoPinPtr(), "Mo3" };
+    m_gpio->m_matrixIn[71] = { m_spis[1], m_spis[1]->getSsPinPtr(), "Ss3" };
+    m_gpio->m_matrixOut[71] = { m_spis[1], m_spis[1]->getSsPinPtr(), "Ss3" };
+
+    m_gpio->m_matrixIn[89] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" };
+    m_gpio->m_matrixOut[89] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" };
+    m_gpio->m_matrixIn[90] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" };
+    m_gpio->m_matrixOut[90] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" };
+    m_gpio->m_matrixIn[91] = { m_i2cs[1], m_i2cs[1]->getSclPinPtr(), "Scl1" };
+    m_gpio->m_matrixOut[91] = { m_i2cs[1], m_i2cs[1]->getSclPinPtr(), "Scl1" };
+    m_gpio->m_matrixIn[92] = { m_i2cs[1], m_i2cs[1]->getSdaPinPtr(), "Sda1" };
+    m_gpio->m_matrixOut[92] = { m_i2cs[1], m_i2cs[1]->getSdaPinPtr(), "Sda1" };
+
+    m_gpio->m_matrixIn[101] = { m_spis[0], m_spis[0]->getCkPinPtr(), "Ck2" };
+    m_gpio->m_matrixOut[101] = { m_spis[0], m_spis[0]->getCkPinPtr(), "Ck2" };
+    m_gpio->m_matrixIn[102] = { m_spis[0], m_spis[0]->getMiPinPtr(), "Mi2" };
+    m_gpio->m_matrixOut[102] = { m_spis[0], m_spis[0]->getMiPinPtr(), "Mi2" };
+    m_gpio->m_matrixIn[103] = { m_spis[0], m_spis[0]->getMoPinPtr(), "Mo2" };
+    m_gpio->m_matrixOut[103] = { m_spis[0], m_spis[0]->getMoPinPtr(), "Mo2" };
+    m_gpio->m_matrixIn[110] = { m_spis[0], m_spis[0]->getSsPinPtr(), "Ss2" };
+    m_gpio->m_matrixOut[110] = { m_spis[0], m_spis[0]->getSsPinPtr(), "Ss2" };
 }

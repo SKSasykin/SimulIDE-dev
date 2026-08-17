@@ -16,7 +16,8 @@ class Esp32Gpio : public QemuModule, public eElement {
 
 public:
     Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
-               uint64_t memEnd = 0, int nPins = 40, int in1Base = 33 );
+               uint64_t memEnd = 0, int nPins = 40, int in1Base = 33, uint16_t pinBase = 0x88,
+               uint16_t matrixInBase = 0x130, uint16_t matrixOutBase = 0x530 );
     ~Esp32Gpio();
 
     void reset() override;
@@ -60,6 +61,9 @@ protected:
 
     int m_nPins;
     int m_in1Base;
+    uint16_t m_pinBase;
+    uint16_t m_matrixInBase;
+    uint16_t m_matrixOutBase;
 
     uint16_t m_pinState;
 

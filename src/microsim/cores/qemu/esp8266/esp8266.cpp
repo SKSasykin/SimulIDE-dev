@@ -14,6 +14,7 @@
 #include <QPainter>
 
 #include "circuit.h"
+#include "esp32spi.h"
 #include "esp32usart.h"
 #include "esp8266adc.h"
 #include "esp8266gpio.h"
@@ -25,7 +26,7 @@
 
 #define IOMEM_BASE 0x60000000
 #define IOMEM_END  0x6000FFFF
-#define IOMEM_SIZE IOMEM_END - IOMEM_BASE
+#define IOMEM_SIZE ( IOMEM_END - IOMEM_BASE + 1 )
 
 Esp8266::Esp8266( QString type, QString id, QString device )
         : QemuDevice( type, id )
@@ -55,6 +56,11 @@ Esp8266::Esp8266( QString type, QString id, QString device )
 
     m_adc = new Esp8266Adc( this, id+"-ADC", 0, &m_apbFreq, 0x00000D00, 0x00000DFF, m_adcPin );
 
+    m_spiN = 1;
+    m_spis.resize( m_spiN );
+    m_spis[0] = new Esp32Spi( this, id+"-HSPI", 1, &m_apbFreq, 0x00000100, 0x000001FF, false, true );
+    m_spis[0]->setPins( m_gpio->m_espPad[13], m_gpio->m_espPad[12], m_gpio->m_espPad[14], m_gpio->m_espPad[15] );
+
     m_usartN = 2;
     m_usarts.resize( m_usartN );
     m_usarts[0] = new Esp32Usart( this, id+"Usart1", 0, &m_apbFreq, 0x00000000, 0x00000FFF );
@@ -63,7 +69,7 @@ Esp8266::Esp8266( QString type, QString id, QString device )
     m_usarts[0]->setPins( { m_gpio->m_espPad[1], m_gpio->m_espPad[3] } ); // UART0: TX=GPIO1, RX=GPIO3
     m_usarts[1]->setPins( { m_gpio->m_espPad[2], m_gpio->m_espPad[8] } ); // UART1: TX=GPIO2, RX=GPIO8
 
-    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE );
+    m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 }
 
 Esp8266::~Esp8266()
