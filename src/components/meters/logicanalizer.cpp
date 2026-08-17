@@ -191,6 +191,7 @@ void LAnalizer::expand( bool e ) {
     int centerY = widgetSizeY / 2;
     m_dataWidget->setFixedSize( widgetSizeX, widgetSizeY );
     m_proxy->setPos( -80 + 2, -centerY - 2 + 4 );
+    updateProxyFlip();
     m_area = QRectF( -80, -centerY, widgetSizeX + 4, widgetSizeY + 4 + 2 );
 
     m_display->setExpand( e );

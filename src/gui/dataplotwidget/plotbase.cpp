@@ -4,6 +4,9 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include "plotbase.h"
+
+#include <QGraphicsProxyWidget>
+
 #include "batchtest.h"
 #include "circuit.h"
 #include "circuitwidget.h"
@@ -350,4 +353,16 @@ void PlotBase::paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w
     p->setPen( pen );
 
     Component::paintSelected( p );
+}
+
+void PlotBase::setflip() {
+    Component::setflip();
+    updateProxyFlip();
+}
+
+void PlotBase::updateProxyFlip() {
+    QWidget* widget = m_proxy->widget();
+    double cx = widget->width() / 2.0;
+    double cy = widget->height() / 2.0;
+    m_proxy->setTransform( QTransform().translate( cx, cy ).scale( hflip(), vflip() ).translate( -cx, -cy ) );
 }

@@ -95,9 +95,12 @@ public:
 
     virtual void paint( QPainter* p, const QStyleOptionGraphicsItem* o, QWidget* w ) override;
 
+    void setflip() override;
+
 protected:
     virtual void slotProperties() override;
     void updtProperties();
+    void updateProxyFlip();
 
     int m_bufferSize;
     int m_trigger;
