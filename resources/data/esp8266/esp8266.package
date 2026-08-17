@@ -27,6 +27,7 @@
     <pin type=""    xpos="40"   ypos="-8"   angle="90"  length="8"  space="0"   id="Vdd"   label="Vdd" />
     <pin type=""    xpos="48"   ypos="-8"   angle="90"  length="8"  space="0"   id="Vdd2"  label="Vdd" />
     <pin type=""    xpos="56"   ypos="-8"   angle="90"  length="8"  space="0"   id="Vdd3"  label="Vdd" />
+    <pin type=""    xpos="72"   ypos="-8"   angle="90"  length="8"  space="0"   id="A0"    label="A0/TOUT" />
 
     <pin type=""    xpos="16"   ypos="128"  angle="270" length="8"  space="0"   id="Gnd1"  label="Gnd" />
     <pin type=""    xpos="24"   ypos="128"  angle="270" length="8"  space="0"   id="Gnd2"  label="Gnd" />

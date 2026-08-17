@@ -10,7 +10,9 @@
 #include "qemudevice.h"
 
 class LibraryItem;
+class Esp8266Adc;
 class Esp8266Gpio;
+class IoPin;
 
 class Esp8266 : public QemuDevice {
     public:
@@ -31,4 +33,6 @@ class Esp8266 : public QemuDevice {
         uint32_t m_apbFreq;
 
         Esp8266Gpio* m_gpio;
+        Esp8266Adc* m_adc;
+        IoPin* m_adcPin;
 };

@@ -15,6 +15,7 @@
 
 #include "circuit.h"
 #include "esp32usart.h"
+#include "esp8266adc.h"
 #include "esp8266gpio.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
@@ -30,6 +31,7 @@ Esp8266::Esp8266( QString type, QString id, QString device )
         : QemuDevice( type, id )
         , m_cpuFreq( 80000000 )
         , m_apbFreq( 80000000 )
+        , m_adcPin( nullptr )
 {
     m_area = QRect( 0, 0, 15*8, 15*8 );
     m_color = QColor( 50, 50, 70 );
@@ -50,6 +52,8 @@ Esp8266::Esp8266( QString type, QString id, QString device )
     }
     setPackageFile( package );
     Chip::setName( m_device );
+
+    m_adc = new Esp8266Adc( this, id+"-ADC", 0, &m_apbFreq, 0x00000D00, 0x00000DFF, m_adcPin );
 
     m_usartN = 2;
     m_usarts.resize( m_usartN );
@@ -79,7 +83,12 @@ Pin* Esp8266::addPin( QString id, QString type, QString label, int n,
     Q_UNUSED(n)
     IoPin* pin = nullptr;
 
-    if( type.contains("rst") || id.contains("rst", Qt::CaseInsensitive)
+    if( id == "A0" || id == "TOUT" )
+    {
+        pin = new IoPin( angle, QPoint(x, y), m_id+"-"+id, n-1, this, input );
+        m_adcPin = pin;
+    }
+    else if( type.contains("rst") || id.contains("rst", Qt::CaseInsensitive)
         || id == "CHIP_EN" || id == "CH_PD" || id == "EN" )
     {
         pin = new IoPin( angle, QPoint(x, y), m_id+"-"+id, n-1, this, input );
