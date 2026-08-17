@@ -7,9 +7,9 @@
     <pin type=""    xpos="128"  ypos="32"   angle="0"   length="8"  space="0"   id="G05"  label="G05" />
     <pin type=""    xpos="80"   ypos="-8"   angle="90"  length="8"  space="0"   id="G03"  label="G03" />
     <pin type=""    xpos="72"   ypos="-8"   angle="90"  length="8"  space="0"   id="G01"  label="G01" />
-    <pin type="nc"  xpos="48"   ypos="-8"   angle="90"  length="8"  space="0"   id="XTALi"label="XTALi"/>
-    <pin type="nc"  xpos="40"   ypos="-8"   angle="90"  length="8"  space="0"   id="XTALo"label="XTALo"/>
-    <pin type="nc"  xpos="32"   ypos="-8"   angle="90"  length="8"  space="0"   id="VddA1"label="VddA"/>
+    <pin type="nc"  xpos="48"   ypos="-8"   angle="90"  length="8"  space="0"   id="XTALi" label="XTALi"/>
+    <pin type="nc"  xpos="40"   ypos="-8"   angle="90"  length="8"  space="0"   id="XTALo" label="XTALo"/>
+    <pin type="nc"  xpos="32"   ypos="-8"   angle="90"  length="8"  space="0"   id="VddA1" label="VddA"/>
     <pin type=""    xpos="128"  ypos="40"   angle="0"   length="8"  space="0"   id="G08"  label="G08" />
     <pin type=""    xpos="128"  ypos="48"   angle="0"   length="8"  space="0"   id="G07"  label="G07" />
     <pin type=""    xpos="128"  ypos="56"   angle="0"   length="8"  space="0"   id="G06"  label="G06" />
@@ -28,7 +28,7 @@
     <pin type="rst" xpos="-8"   ypos="80"   angle="180" length="8"  space="0"   id="Rst"  label="Rst" />
     <pin type="nc"  xpos="104"  ypos="-8"   angle="90"  length="8"  space="0"   id="Vdd4" label="Vdd" />
     <pin type="nc"  xpos="-8"   ypos="40"   angle="180" length="8"  space="0"   id="Vdd5" label="Vdd" />
-    <pin type="nc"  xpos="-8"   ypos="16"   angle="180" length="8"  space="0"   id="Vdda2"label="Vdd" />
+    <pin type="nc"  xpos="-8"   ypos="16"   angle="180" length="8"  space="0"   id="Vdda2" label="Vdd" />
     <pin type="nc"  xpos="-8"   ypos="24"   angle="180" length="8"  space="0"   id="Lna"  label="Lna" />
     <pin type="nc"  xpos="-8"   ypos="32"   angle="180" length="8"  space="0"   id="Vdd6" label="Vdd" />
     <pin type="nc"  xpos="16"   ypos="-8"   angle="90"  length="8"  space="0"   id="Ca1"  label="Ca1" />
@@ -40,7 +40,7 @@
     <pin type=""    xpos="40"   ypos="128"  angle="270" length="8"  space="0"   id="G27"  label="G27" />
     <pin type=""    xpos="32"   ypos="128"  angle="270" length="8"  space="0"   id="G26"  label="G26" />
     <pin type=""    xpos="24"   ypos="128"  angle="270" length="8"  space="0"   id="G25"  label="G25" />
-    <pin type="nc"  xpos="56"   ypos="-8"   angle="90"  length="8"  space="0"   id="VddA2"label="VddA"/>
+    <pin type="nc"  xpos="56"   ypos="-8"   angle="90"  length="8"  space="0"   id="VddA2" label="VddA"/>
     <pin type=""    xpos="96"   ypos="-8"   angle="90"  length="8"  space="0"   id="G19"  label="G19" />
     <pin type=""    xpos="88"   ypos="-8"   angle="90"  length="8"  space="0"   id="G22"  label="G22" />
     <pin type=""    xpos="-8"   ypos="48"   angle="180" length="8"  space="0"   id="G36"  label="G36" />
