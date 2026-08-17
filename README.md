@@ -223,4 +223,5 @@ Not implemented yet: HPOINT offset, CONF1 duty fade/scale
 (INT_RAW/INT_ST/INT_ENA/INT_CLR) and the XTAL/RTC8M/REF_TICK clock sources
 (only the APB clock is modeled). ESP8266 has no hardware PWM peripheral, so
 the software PWM of the Arduino core (`analogWrite` via the FRC1 timer) is
-not emulated.
+not emulated. See [docs/esp-pwm-support.md](docs/esp-pwm-support.md) for the
+full matrix and official Espressif references.

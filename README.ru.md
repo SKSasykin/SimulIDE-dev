@@ -229,4 +229,6 @@ PWM-контроллеры LEDC поддерживаемых контролле�
 (INT_RAW/INT_ST/INT_ENA/INT_CLR) и источники тактирования
 XTAL/RTC8M/REF_TICK (моделируются только APB-часы). У ESP8266 нет
 аппаратного PWM-периферийного модуля, поэтому программный PWM ядра
-Arduino (`analogWrite` через таймер FRC1) не эмулируется.
+Arduino (`analogWrite` через таймер FRC1) не эмулируется. Полная матрица
+и ссылки на официальную документацию Espressif — в
+[docs/esp-pwm-support.md](docs/esp-pwm-support.md).
