@@ -12,6 +12,7 @@
 #include "circuit.h"
 #include "esp32adc.h"
 #include "esp32gpio.h"
+#include "esp32iomux.h"
 #include "esp32led.h"
 #include "esp32pin.h"
 #include "esp32s3.h"
@@ -41,6 +42,8 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_gpio = new Esp32Gpio( this, id + "-GPIO", 0, &m_apbFreq, 0x00004000, 0x00004FFF, 49, 32, 0x74,
                             0x154, 0x554 );
+    m_iomux = new Esp32IoMux( this, id + "-IOMUX", 0, &m_apbFreq, 0x00009000, 0x00009FFF );
+    m_iomux->setGpio( m_gpio );
 
     QString package = "./data/esp32/esp32s3.package";
     if ( MainWindow::self() ) {
@@ -78,7 +81,6 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
     m_adc = new Esp32Adc( this, id + "-ADC", 0, &m_apbFreq, 0x00008800, 0x00008FFF, m_gpio, Esp32AdcS3 );
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00019000, 0x00019FFF, LedcVariant::Esp32s3, 8, 4 );
-    m_leds->setDummy( dummyP );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
@@ -268,6 +270,7 @@ void Esp32s3::createMatrix() {
     // LEDC low-speed channels 0-7 (LEDC_LS_SIG_OUT0-7 = signals 73-80)
     for ( int i = 0; i < 8; ++i ) {
         int sig = 73 + i;
-        m_gpio->m_matrixOut[sig] = { m_leds, m_leds->getPinPtr( i ), "L" + QString::number( i ) };
+        m_gpio->m_matrixOut[sig] = { m_leds, nullptr, "L" + QString::number( i ),
+                                      m_leds->getOutputSignal( i ) };
     }
 }

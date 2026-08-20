@@ -81,7 +81,6 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
         m_usarts[i]->setPins( { dummyP, dummyP } );
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF, LedcVariant::Esp32, 16, 8 );
-    m_leds->setDummy( dummyP );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
@@ -666,22 +665,22 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[69] = { nullptr, nullptr, "Cs1V" }; // spis[1]->cs_pin[1] // VSPICS1
     m_gpio->m_matrixOut[70] = { nullptr, nullptr, "Cs2V" }; // spis[1]->cs_pin[2] // VSPICS2
 
-    m_gpio->m_matrixOut[71] = { m_leds, m_leds->getPinPtr( 0 ), "Lh0" }; // ledc_hs_sig_out0
-    m_gpio->m_matrixOut[72] = { m_leds, m_leds->getPinPtr( 1 ), "Lh1" }; // ledc_hs_sig_out1
-    m_gpio->m_matrixOut[73] = { m_leds, m_leds->getPinPtr( 2 ), "Lh2" }; // ledc_hs_sig_out2
-    m_gpio->m_matrixOut[74] = { m_leds, m_leds->getPinPtr( 3 ), "Lh3" }; // ledc_hs_sig_out3
-    m_gpio->m_matrixOut[75] = { m_leds, m_leds->getPinPtr( 4 ), "Lh4" }; // ledc_hs_sig_out4
-    m_gpio->m_matrixOut[76] = { m_leds, m_leds->getPinPtr( 5 ), "Lh5" }; // ledc_hs_sig_out5
-    m_gpio->m_matrixOut[77] = { m_leds, m_leds->getPinPtr( 6 ), "Lh6" }; // ledc_hs_sig_out6
-    m_gpio->m_matrixOut[78] = { m_leds, m_leds->getPinPtr( 7 ), "Lh7" }; // ledc_hs_sig_out7
-    m_gpio->m_matrixOut[79] = { m_leds, m_leds->getPinPtr( 8 ), "Ll0" }; // ledc_ls_sig_out0
-    m_gpio->m_matrixOut[80] = { m_leds, m_leds->getPinPtr( 9 ), "Ll1" }; // ledc_ls_sig_out1
-    m_gpio->m_matrixOut[81] = { m_leds, m_leds->getPinPtr( 10 ), "Ll2" }; // ledc_ls_sig_out2
-    m_gpio->m_matrixOut[82] = { m_leds, m_leds->getPinPtr( 11 ), "Ll3" }; // ledc_ls_sig_out3
-    m_gpio->m_matrixOut[83] = { m_leds, m_leds->getPinPtr( 12 ), "Ll4" }; // ledc_ls_sig_out4
-    m_gpio->m_matrixOut[84] = { m_leds, m_leds->getPinPtr( 13 ), "Ll5" }; // ledc_ls_sig_out5
-    m_gpio->m_matrixOut[85] = { m_leds, m_leds->getPinPtr( 14 ), "Ll6" }; // ledc_ls_sig_out6
-    m_gpio->m_matrixOut[86] = { m_leds, m_leds->getPinPtr( 15 ), "Ll7" }; // ledc_ls_sig_out7
+    m_gpio->m_matrixOut[71] = { m_leds, nullptr, "Lh0", m_leds->getOutputSignal( 0 ) }; // ledc_hs_sig_out0
+    m_gpio->m_matrixOut[72] = { m_leds, nullptr, "Lh1", m_leds->getOutputSignal( 1 ) }; // ledc_hs_sig_out1
+    m_gpio->m_matrixOut[73] = { m_leds, nullptr, "Lh2", m_leds->getOutputSignal( 2 ) }; // ledc_hs_sig_out2
+    m_gpio->m_matrixOut[74] = { m_leds, nullptr, "Lh3", m_leds->getOutputSignal( 3 ) }; // ledc_hs_sig_out3
+    m_gpio->m_matrixOut[75] = { m_leds, nullptr, "Lh4", m_leds->getOutputSignal( 4 ) }; // ledc_hs_sig_out4
+    m_gpio->m_matrixOut[76] = { m_leds, nullptr, "Lh5", m_leds->getOutputSignal( 5 ) }; // ledc_hs_sig_out5
+    m_gpio->m_matrixOut[77] = { m_leds, nullptr, "Lh6", m_leds->getOutputSignal( 6 ) }; // ledc_hs_sig_out6
+    m_gpio->m_matrixOut[78] = { m_leds, nullptr, "Lh7", m_leds->getOutputSignal( 7 ) }; // ledc_hs_sig_out7
+    m_gpio->m_matrixOut[79] = { m_leds, nullptr, "Ll0", m_leds->getOutputSignal( 8 ) }; // ledc_ls_sig_out0
+    m_gpio->m_matrixOut[80] = { m_leds, nullptr, "Ll1", m_leds->getOutputSignal( 9 ) }; // ledc_ls_sig_out1
+    m_gpio->m_matrixOut[81] = { m_leds, nullptr, "Ll2", m_leds->getOutputSignal( 10 ) }; // ledc_ls_sig_out2
+    m_gpio->m_matrixOut[82] = { m_leds, nullptr, "Ll3", m_leds->getOutputSignal( 11 ) }; // ledc_ls_sig_out3
+    m_gpio->m_matrixOut[83] = { m_leds, nullptr, "Ll4", m_leds->getOutputSignal( 12 ) }; // ledc_ls_sig_out4
+    m_gpio->m_matrixOut[84] = { m_leds, nullptr, "Ll5", m_leds->getOutputSignal( 13 ) }; // ledc_ls_sig_out5
+    m_gpio->m_matrixOut[85] = { m_leds, nullptr, "Ll6", m_leds->getOutputSignal( 14 ) }; // ledc_ls_sig_out6
+    m_gpio->m_matrixOut[86] = { m_leds, nullptr, "Ll7", m_leds->getOutputSignal( 15 ) }; // ledc_ls_sig_out7
     m_gpio->m_matrixOut[87] = { nullptr, nullptr, "Rmt0" }; // rmt_sig_out0
     m_gpio->m_matrixOut[88] = { nullptr, nullptr, "Rmt1" }; // rmt_sig_out1
     m_gpio->m_matrixOut[89] = { nullptr, nullptr, "Rmt2" }; // rmt_sig_out2

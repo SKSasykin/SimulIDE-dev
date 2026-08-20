@@ -11,6 +11,7 @@
 class LibraryItem;
 class Esp32Adc;
 class Esp32Gpio;
+class Esp32IoMux;
 class Esp32Led;
 
 class Esp32s3 : public QemuDevice {
@@ -34,6 +35,7 @@ protected:
     uint32_t m_apbFreq;
 
     Esp32Gpio* m_gpio;
+    Esp32IoMux* m_iomux;
     Esp32Adc* m_adc;
     Esp32Led* m_leds;
 };

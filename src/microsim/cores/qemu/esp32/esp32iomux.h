@@ -23,7 +23,7 @@ public:
 private:
     int getMuxGpio( uint64_t addr );
 
-    uint16_t m_iomuxReg[40];
+    uint16_t m_iomuxReg[49];
 
     Esp32Gpio* m_gpio;
 };

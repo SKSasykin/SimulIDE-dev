@@ -10,6 +10,32 @@
 #include "qemumodule.h"
 #include "simulator.h"
 
+void Esp32OutputSignal::connectPad( Esp32Pin* pin ) {
+    if ( !m_pads.contains( pin ) )
+        m_pads.append( pin );
+    pin->outputSignalChanged( this );
+}
+
+void Esp32OutputSignal::disconnectPad( Esp32Pin* pin ) {
+    m_pads.removeOne( pin );
+}
+
+void Esp32OutputSignal::setState( bool state ) {
+    if ( m_state == state )
+        return;
+    m_state = state;
+    for ( Esp32Pin* pin : m_pads )
+        pin->outputSignalChanged( this );
+}
+
+void Esp32OutputSignal::setOutputEnable( bool enabled ) {
+    if ( m_outputEnable == enabled )
+        return;
+    m_outputEnable = enabled;
+    for ( Esp32Pin* pin : m_pads )
+        pin->outputSignalChanged( this );
+}
+
 Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
     : IoPin( 0, QPoint( 0, 0 ), mcu->getId() + "-" + id, i, mcu, input )
 //, QemuModule( mcu, i )
@@ -32,6 +58,10 @@ Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
 
     m_pinLabel = id;
     m_iomuxIndex = 2;
+    m_matrixMuxIndex = 2;
+    m_matrixOutConfig = 256;
+    m_gpioState = false;
+    m_gpioOutputEnable = false;
 
     for ( int i = 0; i < 6; ++i )
         m_iomuxFuncs[i] = { nullptr, nullptr, "- -" };
@@ -137,6 +167,22 @@ void Esp32Pin::setPortState( bool high ) // Set output from Port register
     setPinState( high );
 }
 
+void Esp32Pin::setGpioState( bool high ) {
+    m_gpioState = high;
+    if ( m_iomuxIndex == m_matrixMuxIndex )
+        refreshMatrixOutput();
+    else
+        setPinState( high );
+}
+
+void Esp32Pin::setGpioOutputEnable( bool enabled ) {
+    m_gpioOutputEnable = enabled;
+    if ( m_iomuxIndex == m_matrixMuxIndex )
+        refreshMatrixOutput();
+    else
+        setPinMode( enabled ? output : input );
+}
+
 void Esp32Pin::setOutState( bool high ) // Set output from Alternate (peripheral)
 {
     //if( m_alternate )
@@ -196,10 +242,13 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
         return;
     }
     if ( m_iomuxIndex < 6 ) {
-        if ( m_iomuxFuncs[m_iomuxIndex].pinPointer )
-            *m_iomuxFuncs[m_iomuxIndex].pinPointer = m_dummyPin;
+        funcPin& oldFunc = m_iomuxFuncs[m_iomuxIndex];
+        if ( oldFunc.outputSignal )
+            oldFunc.outputSignal->disconnectPad( this );
+        if ( oldFunc.pinPointer && *oldFunc.pinPointer == this )
+            *oldFunc.pinPointer = m_dummyPin;
 
-        QemuModule* mod = m_iomuxFuncs[m_iomuxIndex].module;
+        QemuModule* mod = oldFunc.module;
         if ( mod )
             mod->connected( false );
     }
@@ -207,8 +256,11 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
         m_iomuxFuncs[func].label = m_pinLabel;
 
     Simulator::self()->addToUpdateList( this ); /// FIXME
+    m_iomuxIndex = func;
 
-    if ( m_iomuxFuncs[func].pinPointer ) {
+    if ( m_iomuxFuncs[func].outputSignal ) {
+        m_iomuxFuncs[func].outputSignal->connectPad( this );
+    } else if ( m_iomuxFuncs[func].pinPointer ) {
         //qDebug() << this->pinId() << "Selected func"<< func << m_iomuxPin[func].label;
         *m_iomuxFuncs[func].pinPointer = this;
 
@@ -216,12 +268,13 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
         if ( mod )
             mod->connected( true );
     }
+    if ( func == m_matrixMuxIndex )
+        refreshMatrixOutput();
     if ( m_iomuxFuncs[func].pinPointer || m_iomuxFuncs[func].label == m_pinLabel ) {
         Pin::setLabelColor( QColor( 255, 255, 100 ) );
     } else {
         Pin::setLabelColor( QColor( 250, 250, 200 ) );
     }
-    m_iomuxIndex = func;
     //qDebug() << this->pinId() << "Selected func"<< func << m_iomuxFuncs[func].label;
     //update();
 }
@@ -229,9 +282,55 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
 void Esp32Pin::setMatrixFunc( uint16_t val, funcPin func ) // Set Function for GPIO Matrix: index=2
 {
     //qDebug() << this->pinId() << "Matrix function"<< func.label<< (val & 0b111000000000);
-    m_iomuxFuncs[2] = func;
-    if ( m_iomuxIndex == 2 )
-        selectIoMuxFunc( 2 );
+    m_iomuxFuncs[m_matrixMuxIndex] = func;
+    if ( m_iomuxIndex == m_matrixMuxIndex )
+        selectIoMuxFunc( m_matrixMuxIndex );
+}
+
+void Esp32Pin::setMatrixOutput( uint16_t val, funcPin func ) {
+    m_matrixOutConfig = val;
+    m_iomuxFuncs[m_matrixMuxIndex] = func;
+    if ( m_iomuxIndex == m_matrixMuxIndex )
+        selectIoMuxFunc( m_matrixMuxIndex );
+}
+
+void Esp32Pin::outputSignalChanged( Esp32OutputSignal* signal ) {
+    if ( m_iomuxIndex == m_matrixMuxIndex && m_iomuxFuncs[m_matrixMuxIndex].outputSignal == signal )
+        refreshMatrixOutput();
+}
+
+void Esp32Pin::resetMatrixOutput() {
+    funcPin& matrixFunc = m_iomuxFuncs[m_matrixMuxIndex];
+    if ( matrixFunc.outputSignal )
+        matrixFunc.outputSignal->disconnectPad( this );
+    if ( matrixFunc.pinPointer && *matrixFunc.pinPointer == this )
+        *matrixFunc.pinPointer = m_dummyPin;
+
+    m_matrixOutConfig = 256;
+    m_gpioState = false;
+    m_gpioOutputEnable = false;
+    m_iomuxFuncs[m_matrixMuxIndex] = { nullptr, nullptr, "GPIO" };
+    if ( m_iomuxIndex == m_matrixMuxIndex )
+        refreshMatrixOutput();
+}
+
+void Esp32Pin::refreshMatrixOutput() {
+    if ( m_iomuxIndex != m_matrixMuxIndex )
+        return;
+
+    Esp32OutputSignal* signal = m_iomuxFuncs[m_matrixMuxIndex].outputSignal;
+    bool state = signal ? signal->state() : m_gpioState;
+    bool outputEnable = signal ? signal->outputEnable() : m_gpioOutputEnable;
+
+    if ( m_matrixOutConfig & ( 1 << 10 ) )
+        outputEnable = m_gpioOutputEnable;
+    if ( m_matrixOutConfig & ( 1 << 11 ) )
+        outputEnable = !outputEnable;
+    if ( m_matrixOutConfig & ( 1 << 9 ) )
+        state = !state;
+
+    setPinMode( outputEnable ? output : input );
+    setPinState( state );
 }
 
 void Esp32Pin::writeIoMuxReg( uint16_t value ) {

@@ -47,6 +47,10 @@ void Esp32Gpio::reset() {
     m_gpioEnable1 = 0;
     m_gpioStatus[0] = 0;
     m_gpioStatus[1] = 0;
+    for ( Esp32Pin* pin : m_espPad ) {
+        if ( pin )
+            pin->resetMatrixOutput();
+    }
 }
 
 void Esp32Gpio::writeIoMuxReg( uint8_t pin, uint16_t value ) {
@@ -157,7 +161,7 @@ void Esp32Gpio::matrixInChanged( int func ) {
 void Esp32Gpio::matrixOutChanged( int pin ) {
     if ( pin >= m_nPins )
         return;
-    int func = m_eventValue & 0xFF;
+    int func = m_eventValue & 0x1FF;
 
     Esp32Pin* espPin = m_espPad[pin];
     if ( !espPin )
@@ -167,18 +171,16 @@ void Esp32Gpio::matrixOutChanged( int pin ) {
 
     if ( func < 256 )
         fp = m_matrixOut[func];
-    //else if( func == 256 ) fp = { nullptr, &m_ioPin[pin], ""};
+    else if ( func == 256 )
+        fp = { nullptr, nullptr, "GPIO" };
 
     //qDebug() << "Esp32::matrixOutChanged"<< espPin->pinId() << func << fp.label;
-    if ( fp.label == "---" )
-        return;
-
     // val & 1<<11: OEN_INV_SEL 1: Invert the output enable signal
     // val & 1<<10: 1: use output enable from bit n of GPIO_ENABLE_REG;
     //              0: use output enable from peripheral. (R/W)
     // val & 1<< 9: 1. Invert the output value
 
-    espPin->setMatrixFunc( m_eventValue, fp );
+    espPin->setMatrixOutput( m_eventValue, fp );
 }
 
 uint32_t Esp32Gpio::readPort( int in ) {
@@ -213,7 +215,7 @@ void Esp32Gpio::setGpioState( uint32_t newState ) {
 
         uint32_t mask = 1 << i;
         if ( changed & mask )
-            pin->setOutState( newState & mask );
+            pin->setGpioState( newState & mask );
     }
 
     m_gpioState = newState;
@@ -233,10 +235,7 @@ void Esp32Gpio::setGpioDir( uint32_t newEnable ) {
 
         uint32_t mask = 1 << i;
         if ( changed & mask ) {
-            if ( newEnable & mask )
-                pin->setPinMode( output );
-            else
-                pin->setPinMode( input );
+            pin->setGpioOutputEnable( newEnable & mask );
             //qDebug() << "Esp32Gpio::setGpioDir" << i << newEnable;
             //pin->changeCallBack( this, !newDirec ); // CallBack only on Inputs
         }
@@ -257,7 +256,7 @@ void Esp32Gpio::setGpioState1( uint32_t newState ) { // GPIO_OUT1_REG (pins 32-4
 
         uint32_t mask = 1 << ( i - 32 );
         if ( changed & mask )
-            pin->setOutState( newState & mask );
+            pin->setGpioState( newState & mask );
     }
 
     m_gpioState1 = newState;
@@ -276,10 +275,7 @@ void Esp32Gpio::setGpioDir1( uint32_t newEnable ) { // GPIO_ENABLE1_REG (pins 32
 
         uint32_t mask = 1 << ( i - 32 );
         if ( changed & mask ) {
-            if ( newEnable & mask )
-                pin->setPinMode( output );
-            else
-                pin->setPinMode( input );
+            pin->setGpioOutputEnable( newEnable & mask );
         }
     }
     m_gpioEnable1 = newEnable;
@@ -329,11 +325,13 @@ void Esp32Gpio::createIoMux() {
         "GPIO" }; /// FIXME: pointer to this, same than any peripheral, Gpio shouldn't control pin if it is assigned to other
 
     if ( m_nPins != 40 ) {
-        // ESP32-S3 / ESP32-C3: no default peripheral functions, all pads plain GPIO
+        // ESP32-S3 / ESP32-C3 use IO_MUX function 1 for GPIO Matrix.
         for ( int i = 0; i < m_nPins; ++i ) {
             Esp32Pin* pad = m_espPad[i];
-            if ( pad )
-                pad->setIoMuxFuncs( { GPIO, DUMMY, GPIO, DUMMY, DUMMY, DUMMY } );
+            if ( pad ) {
+                pad->setMatrixMuxIndex( 1 );
+                pad->setIoMuxFuncs( { DUMMY, GPIO, DUMMY, DUMMY, DUMMY, DUMMY } );
+            }
         }
         return;
     }

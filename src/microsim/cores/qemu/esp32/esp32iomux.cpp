@@ -15,7 +15,7 @@ Esp32IoMux::Esp32IoMux( QemuDevice* mcu, QString name, int n, uint32_t* clk, uin
 Esp32IoMux::~Esp32IoMux() { }
 
 void Esp32IoMux::reset() {
-    for ( int i = 0; i < 40; ++i )
+    for ( int i = 0; i < 49; ++i )
         m_iomuxReg[i] = 0;
 }
 
@@ -24,7 +24,7 @@ void Esp32IoMux::readRegister() {
     uint16_t val = 0;
 
     uint32_t index = offset / 4;
-    if ( index < 40 )
+    if ( index < 49 )
         val = m_iomuxReg[index];
 
     m_arena->regData = val;
@@ -40,6 +40,8 @@ void Esp32IoMux::writeRegister() {
         return;
 
     uint32_t index = offset / 4;
+    if ( index >= 49 )
+        return;
     if ( m_iomuxReg[index] == m_eventValue )
         return;
     m_iomuxReg[index] = m_eventValue;
@@ -48,6 +50,10 @@ void Esp32IoMux::writeRegister() {
 }
 
 int Esp32IoMux::getMuxGpio( uint64_t addr ) {
+    if ( m_memStart == 0x00009000 ) {
+        int gpio = addr / 4 - 1;
+        return gpio >= 0 && gpio < 49 ? gpio : -1;
+    }
     switch ( addr ) {
     case 0x04:
         return 36;
