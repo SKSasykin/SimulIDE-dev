@@ -9,7 +9,7 @@ ESP-IDF `soc` headers.
 | Device | PWM module | Channels | Timers | Duty resolution | Counter | Duty register | Register base | GPIO Matrix signals |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ESP8266EX | none (software PWM only) | — | — | ~8-10 bit (soft) | — | — | — | — |
-| ESP32 | LEDC | 16 (8 HS + 8 LS) | 8 (4 HS + 4 LS) | up to 25 bit | 20-bit | 25 bit (21 int + 4 frac) | 0x3FF59000 | 71-86 |
+| ESP32 | LEDC | 16 (8 HS + 8 LS) | 8 (4 HS + 4 LS) | up to 20 bit | 20-bit | 25 bit (21 int + 4 frac) | 0x3FF59000 | 71-86 |
 | ESP32-S3 | LEDC | 8 (LS) | 4 | up to 14 bit | 14-bit | 19 bit (15 int + 4 frac) | 0x60019000 | 73-80 |
 | ESP32-C3 | LEDC | 6 (LS) | 4 | up to 14 bit | 14-bit | 19 bit (15 int + 4 frac) | 0x60019000 | 45-50 |
 
@@ -20,8 +20,8 @@ Notes on the hardware:
   (divide ratio = field / 256). The register bit offset of the field differs
   per chip (ESP32 `S=5`, ESP32-S3/C3 `S=4`), but the fraction is always 8
   bits.
-- `duty_res` selects the counter full scale `2^duty_res` (ESP32 field 5 bits
-  -> up to 25 bit; ESP32-S3/C3 field 4 bits -> up to 14 bit).
+- `duty_res` selects the counter full scale `2^duty_res` (ESP32 field 5 bits,
+  with a 20-bit counter; ESP32-S3/C3 field 4 bits -> up to 14 bit).
 - On-time ticks are given by the integer part of the DUTY register
   (`DUTY >> 4`); the low 4 bits are a fractional dithering part.
 - As on real hardware, channels have no fixed pins: any channel is routed to
@@ -40,10 +40,11 @@ Notes on the hardware:
   LS timers 4-7; ESP32-S3/C3 channels select their single timer group.
 - `SIG_OUT_EN`, `IDLE_LV` and `PAUSE`/`RST` of the timer are honored: a
   disabled channel drives its `IDLE_LV`, a paused/reset timer stops.
-- Frequency is computed exactly with the fixed-point divider formula above,
-  using the chip APB clock reported by QEMU (80 MHz ESP32, 40 MHz
-  ESP32-S3/C3); `clock_divider` and `duty_res` are extracted from their real
-  bit fields.
+- Frequency is computed with the fixed-point divider formula above. ESP32
+  supports APB (80 MHz) and REF_TICK (1 MHz); ESP32-S3/C3 additionally decode
+  the global `apb_clk_sel` mux for APB (80 MHz), RC_FAST (8 MHz) and XTAL
+  (40 MHz). `clock_divider` and `duty_res` are extracted from their real bit
+  fields.
 - Duty spans 0-100 %: `DUTY >> 4` high-phase ticks against the `2^duty_res`
   full scale; the low (fractional) nibble is rounded out. The `DUTY`
   register is also readable from firmware (`DUTY_R`).
@@ -52,17 +53,33 @@ Notes on the hardware:
   output channel is exposed to the GPIO Matrix under its datasheet signal
   index (ESP32 71-86, ESP32-S3 73-80, ESP32-C3 45-50), so routing to any
   GPIO works like real hardware.
+- Low-speed channel and timer parameters use their hardware `PARA_UP`
+  strobes. High-speed ESP32 parameters update immediately.
+- `HPOINT`, timer `VALUE`, duty fade/scale, timer/fade/overflow-count status,
+  and `INT_RAW`/`INT_ST`/`INT_ENA`/`INT_CLR` are modeled. LEDC interrupts are
+  routed to the family-specific interrupt source.
+- GPIO Matrix output selector bits 8:0, per-pad output inversion, output-enable
+  selection/inversion, and one-to-many LEDC fan-out are modeled. ESP32-S3/C3
+  also model their IO_MUX GPIO function at `0x60009000`.
+- Reset rebinds every channel to timer 0, clears matrix subscriptions and IRQ
+  state, and cancels stale events. Changing a running timer reschedules it at
+  the new period.
+- ESP8266 FRC1 is modeled as a 23-bit countdown timer with LOAD rearm,
+  `/1`/`/16`/`/256` dividers, one-shot/autoreload behavior and regular IRQ9.
+  The ESP8266 machine accepts ELF, Espressif `0xE9`, and flat IRAM images.
 
 ## Known limitations
 
-- `HPOINT` offset is not applied to the duty comparison.
-- `CONF1` duty fade/scale (`DUTY_START`/`DUTY_INC`/`DUTY_NUM`/`DUTY_CYCLE`/
-  `DUTY_SCALE`) is not modeled.
-- LEDC interrupts (`INT_RAW`/`INT_ST`/`INT_ENA`/`INT_CLR`) are not modeled.
-- Only the APB clock is modeled; the XTAL/RTC8M/REF_TICK timer clock sources
-  and the global `apb_clk_sel` mux are not.
-- ESP8266 has no hardware PWM peripheral; the software PWM of the Arduino
-  core (`analogWrite` via the FRC1 timer) is not emulated.
+- The low four DUTY bits are retained but fractional-duty dithering is not
+  synthesized; waveform timing uses the integer `DUTY >> 4` value.
+- Fade progression is evaluated at PWM overflow boundaries; sub-cycle fade
+  micro-timing is not modeled.
+- LEDC logical fan-out is implemented. Other GPIO Matrix peripheral outputs
+  still use the legacy single-pad routing path.
+- ESP8266 has no hardware PWM peripheral. Its FRC1 timer and regular IRQ9 are
+  available to self-contained firmware, but stock Arduino `analogWrite()` is
+  still unsupported because the machine has no ESP8266 boot ROM, flash-cache
+  execution, or `NmiTimSetFunc`/NMI14 dispatch infrastructure.
 
 ## Official references
 
