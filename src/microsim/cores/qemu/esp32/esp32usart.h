@@ -7,6 +7,7 @@
 
 #include <QQueue>
 
+#include "esp32pin.h"
 #include "qemuusart.h"
 
 class Esp32Usart : public QemuUsart {
@@ -20,6 +21,12 @@ public:
 
     //void enable( bool e ) override;
     void connected( bool c ) override;
+    void driveTx( bool state ) override;
+    bool sampleRx() override;
+    void watchRx( eElement* listener, bool enabled ) override;
+
+    Esp32OutputSignal* getTxOutputSignal() { return &m_txOutput; }
+    Esp32InputSignal* getRxInputSignal() { return &m_rxInput; }
 
     void frameSent( uint8_t data ) override;
     void byteReceived( uint8_t data ) override;
@@ -36,6 +43,8 @@ private:
     uint32_t m_divider;
 
     uint8_t m_apbClock;
+    Esp32OutputSignal m_txOutput;
+    Esp32InputSignal m_rxInput;
     //uint8_t m_rxFullThrhd;
     //uint8_t m_txEmptyThrhd;
 

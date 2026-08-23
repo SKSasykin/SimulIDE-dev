@@ -84,6 +84,8 @@ private:
     int m_edgeIndex;
 
     uint32_t m_duty;
+    uint32_t m_cycleHigh;
+    uint8_t m_ditherAccumulator;
     uint32_t m_rawConf0;
     uint32_t m_rawHpoint;
     uint32_t m_rawDuty;

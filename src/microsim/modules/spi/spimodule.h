@@ -42,6 +42,16 @@ protected:
     void resetSR();
     inline void keepClocking();
 
+    virtual void driveClock( bool state );
+    virtual void driveData( bool state );
+    virtual void driveSelect( bool state );
+    virtual bool sampleClock();
+    virtual bool sampleData();
+    virtual bool sampleSelect();
+    virtual bool drivenClock();
+    virtual void watchClock( eElement* listener, bool enabled );
+    virtual void watchSelect( eElement* listener, bool enabled );
+
     uint64_t m_clockPeriod; // SPI Clock half period in ps
 
     bool m_lsbFirst;

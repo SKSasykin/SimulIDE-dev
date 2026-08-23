@@ -46,8 +46,10 @@ Notes on the hardware:
   (40 MHz). `clock_divider` and `duty_res` are extracted from their real bit
   fields.
 - Duty spans 0-100 %: `DUTY >> 4` high-phase ticks against the `2^duty_res`
-  full scale; the low (fractional) nibble is rounded out. The `DUTY`
-  register is also readable from firmware (`DUTY_R`).
+  full scale. The low nibble is synthesized with the hardware's 16-period
+  fractional dithering: a value of `N` produces exactly `N` one-tick-longer
+  pulses per 16 PWM periods. The `DUTY` register is also readable from
+  firmware (`DUTY_R`).
 - The LEDC register block is forwarded from QEMU to SimulIDE through the
   bridge (ESP32 at `0x00059000`, ESP32-S3/C3 at `0x00019000`), and every
   output channel is exposed to the GPIO Matrix under its datasheet signal
@@ -70,12 +72,10 @@ Notes on the hardware:
 
 ## Known limitations
 
-- The low four DUTY bits are retained but fractional-duty dithering is not
-  synthesized; waveform timing uses the integer `DUTY >> 4` value.
-- Fade progression is evaluated at PWM overflow boundaries; sub-cycle fade
-  micro-timing is not modeled.
-- LEDC logical fan-out is implemented. Other GPIO Matrix peripheral outputs
-  still use the legacy single-pad routing path.
+- LEDC fan-out and the SPI, I2C and UART matrix outputs are wired through the
+  GPIO Matrix `Esp32OutputSignal`/`Esp32InputSignal` endpoint model. The MCPWM
+  and the remaining unimplemented matrix outputs (RMT, I2S, PCNT, TWAI, EMAC,
+  SDIO) are still label-only `nullptr` entries with no SimulIDE module.
 - ESP8266 has no hardware PWM peripheral. Its FRC1 timer and regular IRQ9 are
   available to self-contained firmware, but stock Arduino `analogWrite()` is
   still unsupported because the machine has no ESP8266 boot ROM, flash-cache

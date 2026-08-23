@@ -60,6 +60,8 @@ protected:
     Esp32Pin* m_dummyPin;
 
     int m_nPins;
+    int m_constLowSelector;
+    int m_constHighSelector;
     int m_in1Base;
     uint16_t m_pinBase;
     uint16_t m_matrixInBase;
@@ -84,6 +86,7 @@ protected:
     //uint32_t m_gpioInFunc[256];
     //uint32_t m_gpioOutFunc[256];
 
-    funcPin m_matrixIn[256]; // Matrix created in Esp32::createMatrix()
+    inputFunc m_matrixIn[256]; // Matrix created in Esp32::createMatrix()
+    Esp32Pin* m_matrixInputPads[256] = { nullptr };
     funcPin m_matrixOut[256]; // Matrix created in Esp32::createMatrix()
 };

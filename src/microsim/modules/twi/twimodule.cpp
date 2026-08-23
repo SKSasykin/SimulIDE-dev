@@ -38,7 +38,7 @@ void TwiModule::runEvent() {
     if ( m_mode != TWI_MASTER )
         return;
 
-    updateClock();
+    updateTwiClock();
     bool clkLow = ( ( m_clkState == Clock_Low ) || ( m_clkState == Clock_Falling ) );
 
     if ( m_toggleScl ) {
@@ -163,7 +163,7 @@ void TwiModule::voltChanged() // Used by slave
     if ( m_mode != TWI_SLAVE )
         return;
 
-    updateClock();
+    updateTwiClock();
     getSdaState(); // State of SDA pin
 
     if ( m_clkState == Clock_High && m_i2cState != I2C_ACK ) {
@@ -248,11 +248,10 @@ void TwiModule::voltChanged() // Used by slave
 }
 
 void TwiModule::setMode( twiMode_t mode ) {
-    m_scl->changeCallBack( this, mode == TWI_SLAVE );
-    m_sda->changeCallBack( this, mode == TWI_SLAVE );
+    watchLines( this, mode == TWI_SLAVE );
 
     if ( mode > TWI_OFF ) {
-        m_scl->scheduleState( true, 10000 /*m_clockPeriod/4*/ ); // Avoid false stop condition
+        driveScl( true, 10000 /*m_clockPeriod/4*/ ); // Avoid false stop condition
         setSDA( true );
     }
     m_mode = mode;
@@ -261,17 +260,50 @@ void TwiModule::setMode( twiMode_t mode ) {
 }
 
 void TwiModule::setSCL( bool st ) {
-    m_scl->scheduleState( st, 0 );
+    driveScl( st, 0 );
 }
 void TwiModule::setSDA( bool st ) {
-    m_sda->scheduleState( st, 0 );
+    driveSda( st, 0 );
 }
 void TwiModule::getSdaState() {
-    m_sdaState = m_sda->getInpState();
+    m_sdaState = sampleSda();
 }
 
 void TwiModule::scheduleSDA( bool state ) {
-    m_sda->scheduleState( state, 10000 );
+    driveSda( state, 10000 );
+}
+
+void TwiModule::updateTwiClock() {
+    bool clock = sampleScl();
+    m_clkState = Clock_Low;
+    if ( !m_clock && clock )
+        m_clkState = Clock_Rising;
+    else if ( m_clock && clock )
+        m_clkState = Clock_High;
+    else if ( m_clock && !clock )
+        m_clkState = Clock_Falling;
+    m_clock = clock;
+}
+
+void TwiModule::driveScl( bool state, uint64_t delay ) {
+    m_scl->scheduleState( state, delay );
+}
+
+void TwiModule::driveSda( bool state, uint64_t delay ) {
+    m_sda->scheduleState( state, delay );
+}
+
+bool TwiModule::sampleScl() {
+    return m_scl->getInpState();
+}
+
+bool TwiModule::sampleSda() {
+    return m_sda->getInpState();
+}
+
+void TwiModule::watchLines( eElement* listener, bool enabled ) {
+    m_scl->changeCallBack( listener, enabled );
+    m_sda->changeCallBack( listener, enabled );
 }
 
 void TwiModule::readBit() {

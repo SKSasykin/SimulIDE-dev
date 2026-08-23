@@ -45,9 +45,10 @@ void SpiModule::runEvent() {
         return;
 
     if ( m_toggleSck ) {
-        m_clkPin->toggleOutState();
+        m_clock = !m_clock;
+        driveClock( m_clock );
         m_toggleSck = false;
-        m_clkState = m_clkPin->getOutState() ? Clock_Rising : Clock_Falling;
+        m_clkState = m_clock ? Clock_Rising : Clock_Falling;
         if ( m_bitCount == 8 )
             endTransaction();
         else
@@ -60,23 +61,30 @@ void SpiModule::voltChanged() // Called in Slave mode on SCK or SS changes
     if ( m_mode != SPI_SLAVE )
         return;
 
-    updateClock();
+    m_clkState = Clock_Low;
+    bool clock = sampleClock();
+    if ( !m_clock && clock )
+        m_clkState = Clock_Rising;
+    else if ( m_clock && clock )
+        m_clkState = Clock_High;
+    else if ( m_clock && !clock )
+        m_clkState = Clock_Falling;
+    m_clock = clock;
 
     bool enabled = true;
     if ( m_useSS && m_SS )
-        enabled = !m_SS->getInpState(); // SS active LOW
+        enabled = !sampleSelect(); // SS active LOW
 
     if ( enabled != m_enabled ) // Enabling or Disabling
     {
         if ( enabled && !m_enabled ) // Enabling
         {
-            m_clkPin->changeCallBack( this, true );
+            watchClock( this, true );
             resetSR();
             if ( m_dataOutPin )
-                m_dataOutPin->scheduleState( ( m_srReg & m_outBit ) > 0,
-                                             0 ); // Write one bit (Only if dataOut Pin exist)
+                driveData( ( m_srReg & m_outBit ) > 0 );
         } else { // Disabling
-            m_clkPin->changeCallBack( this, false );
+            watchClock( this, false );
             m_srReg = 0; // Reset SPI Logic
         }
         if ( m_useSS && m_SS )
@@ -94,7 +102,7 @@ void SpiModule::voltChanged() // Called in Slave mode on SCK or SS changes
 void SpiModule::endTransaction() {
     if ( m_mode == SPI_MASTER ) {
         if ( m_dataOutPin )
-            m_dataOutPin->setOutState( true );
+            driveData( true );
         printOut( m_txReg );
         printIn( m_srReg );
     } else
@@ -105,6 +113,8 @@ void SpiModule::StartTransaction() {
     //qDebug() <<"SpiModule::StartTransaction"<<this->getId() << m_mode<<m_bitCount;
     resetSR();
     Simulator::self()->cancelEvents( this );
+    if ( m_mode == SPI_MASTER )
+        m_clock = drivenClock();
     if ( m_sampleEdge == m_leadEdge ) // Sample in first Leading Edge => setup now
     {
         //m_clkState = m_tailEdge; // Force setup
@@ -135,13 +145,13 @@ void SpiModule::step() {
     {
         m_bitCount++;
 
-        if ( m_dataInPin->getInpState() )
+        if ( sampleData() )
             m_srReg |= m_inBit;
     } else {
         if ( m_bitCount == 8 )
             endTransaction();
         if ( m_dataOutPin )
-            m_dataOutPin->scheduleState( ( m_srReg & m_outBit ) > 0, 0 ); // Write one bit (Only if dataOut Pin exist)
+            driveData( ( m_srReg & m_outBit ) > 0 );
 
         if ( m_lsbFirst )
             m_srReg >>= 1;
@@ -163,18 +173,15 @@ void SpiModule::setMode( spiMode_t mode ) {
             m_MOSI->changeCallBack( this, false );
         if ( m_MISO )
             m_MISO->changeCallBack( this, false );
-        if ( m_clkPin )
-            m_clkPin->changeCallBack( this, false );
-        if ( m_SS )
-            m_SS->changeCallBack( this, false );
+        watchClock( this, false );
+        watchSelect( this, false );
     } else if ( mode == SPI_MASTER ) {
         if ( !m_MOSI || !m_MISO || !m_clkPin ) {
             m_mode = SPI_OFF;
             return;
         }
-        if ( m_SS )
-            m_SS->changeCallBack( this, false );
-        m_clkPin->changeCallBack( this, false );
+        watchSelect( this, false );
+        watchClock( this, false );
         m_dataOutPin = m_MOSI;
         m_dataInPin = m_MISO;
     } else if ( mode == SPI_SLAVE ) {
@@ -184,15 +191,15 @@ void SpiModule::setMode( spiMode_t mode ) {
         }
         m_dataOutPin = m_MISO;
         m_dataInPin = m_MOSI;
-        m_clkPin->changeCallBack( this, true );
+        watchClock( this, true );
 
         if ( m_SS ) {
-            m_SS->changeCallBack( this, m_useSS );
+            watchSelect( this, m_useSS );
             SpiModule::voltChanged();
         }
     }
     if ( m_dataOutPin && m_mode == SPI_MASTER )
-        m_dataOutPin->setOutState( true );
+        driveData( true );
 }
 
 void SpiModule::setUseSS( bool u ) {
@@ -201,7 +208,7 @@ void SpiModule::setUseSS( bool u ) {
     m_useSS = u;
 
     if ( m_SS ) {
-        m_SS->changeCallBack( this, m_useSS );
+        watchSelect( this, m_useSS );
         SpiModule::voltChanged();
     }
 }
@@ -211,4 +218,45 @@ void SpiModule::setPins( IoPin* mosi, IoPin* miso, IoPin* clk, IoPin* ss ) {
     setMisoPin( miso );
     setClockPin( clk );
     setSsPin( ss );
+}
+
+void SpiModule::driveClock( bool state ) {
+    if ( m_clkPin )
+        m_clkPin->setOutState( state );
+}
+
+void SpiModule::driveData( bool state ) {
+    if ( m_dataOutPin )
+        m_dataOutPin->scheduleState( state, 0 );
+}
+
+void SpiModule::driveSelect( bool state ) {
+    if ( m_SS )
+        m_SS->setOutState( state );
+}
+
+bool SpiModule::sampleClock() {
+    return m_clkPin ? m_clkPin->getInpState() : false;
+}
+
+bool SpiModule::sampleData() {
+    return m_dataInPin ? m_dataInPin->getInpState() : true;
+}
+
+bool SpiModule::sampleSelect() {
+    return m_SS ? m_SS->getInpState() : true;
+}
+
+bool SpiModule::drivenClock() {
+    return m_clkPin ? m_clkPin->getOutState() : false;
+}
+
+void SpiModule::watchClock( eElement* listener, bool enabled ) {
+    if ( m_clkPin )
+        m_clkPin->changeCallBack( listener, enabled );
+}
+
+void SpiModule::watchSelect( eElement* listener, bool enabled ) {
+    if ( m_SS )
+        m_SS->changeCallBack( listener, enabled );
 }

@@ -27,22 +27,26 @@ void Esp32Spi::reset() {
     m_dataBytes = 0;
     m_data.fill( 0 );
     setMode( SPI_OFF );
-    if ( m_MOSI )
-        m_MOSI->setOutState( true );
-    if ( m_clkPin )
-        m_clkPin->setOutState( false );
-    if ( m_SS )
-        m_SS->setOutState( true );
+    m_ckOutput.resetState( false );
+    m_miOutput.resetState( true );
+    m_moOutput.resetState( true );
+    m_ssOutput.resetState( true );
+    m_clock = false;
+    updateOutputEnables();
 }
 
 void Esp32Spi::connected( bool c ) {
-    if ( c && m_mode == SPI_MASTER ) {
-        m_dataOutPin = m_MOSI;
-        m_dataInPin = m_MISO;
-    } else if ( !c ) {
-        m_dataOutPin = nullptr;
-        m_dataInPin = nullptr;
-    }
+    (void)c;
+}
+
+void Esp32Spi::setMode( spiMode_t mode ) {
+    SpiModule::setMode( mode );
+    updateOutputEnables();
+}
+
+void Esp32Spi::ssChanged( bool enable ) {
+    (void)enable;
+    updateOutputEnables();
 }
 
 void Esp32Spi::writeRegister() {
@@ -108,7 +112,7 @@ void Esp32Spi::endTransaction() {
     uint32_t doneAddress = m_memStart + ( m_modern ? 0x3C : ( m_esp8266 ? 0x30 : 0x38 ) );
     writeMem( doneAddress, readMem( doneAddress ) | ( 1 << ( m_modern ? 12 : 4 ) ) );
     if ( m_SS )
-        m_SS->setOutState( true );
+        driveSelect( true );
 }
 
 void Esp32Spi::configureClock() {
@@ -135,8 +139,8 @@ void Esp32Spi::configureMode() {
     m_sampleEdge = phase ? m_tailEdge : m_leadEdge;
     uint32_t control = readMem( m_memStart + 0x08 );
     m_lsbFirst = control & ( m_modern ? ( 3 << 25 ) : ( 1 << 26 ) );
-    if ( m_clkPin )
-        m_clkPin->setOutState( idleHigh );
+    driveClock( idleHigh );
+    m_clock = idleHigh;
 }
 
 void Esp32Spi::startUserTransaction() {
@@ -144,7 +148,11 @@ void Esp32Spi::startUserTransaction() {
         return;
     if ( m_mode != SPI_MASTER )
         setMode( SPI_MASTER );
-    if ( m_mode != SPI_MASTER || !m_dataInPin || !m_dataOutPin || !m_clkPin ) {
+    bool endpointsRouted = m_ckOutput.routed() && m_moOutput.routed() && m_miInput.routed();
+    if ( m_SS )
+        endpointsRouted = endpointsRouted && m_ssOutput.routed();
+    if ( m_mode != SPI_MASTER || ( m_esp8266 ? ( !m_dataInPin || !m_dataOutPin || !m_clkPin )
+                                                  : !endpointsRouted ) ) {
         writeMem( m_memStart, readMem( m_memStart ) & ~( 1 << ( m_modern ? 24 : 18 ) ) );
         return;
     }
@@ -173,17 +181,19 @@ void Esp32Spi::startUserTransaction() {
 
     configureClock();
     configureMode();
-    m_MOSI->setPinMode( output );
-    m_MISO->setPinMode( input );
-    m_clkPin->setPinMode( output );
-    if ( m_SS )
-        m_SS->setPinMode( output );
+    if ( m_esp8266 ) {
+        m_MOSI->setPinMode( output );
+        m_MISO->setPinMode( input );
+        m_clkPin->setPinMode( output );
+        if ( m_SS )
+            m_SS->setPinMode( output );
+    }
     m_dataIndex = 0;
     m_transactionActive = true;
     uint32_t doneAddress = m_memStart + ( m_modern ? 0x3C : ( m_esp8266 ? 0x30 : 0x38 ) );
     writeMem( doneAddress, readMem( doneAddress ) & ~( 1 << ( m_modern ? 12 : 4 ) ) );
     if ( m_SS )
-        m_SS->setOutState( false );
+        driveSelect( false );
     loadByte();
     StartTransaction();
 }
@@ -192,4 +202,71 @@ void Esp32Spi::loadByte() {
     uint8_t word = m_dataIndex / 4;
     uint8_t shift = ( m_dataIndex % 4 ) * 8;
     m_srReg = ( m_data[word] >> shift ) & 0xFF;
+}
+
+void Esp32Spi::updateOutputEnables() {
+    if ( m_esp8266 )
+        return;
+
+    bool master = m_mode == SPI_MASTER;
+    bool slave = m_mode == SPI_SLAVE;
+    m_ckOutput.setOutputEnable( master );
+    m_moOutput.setOutputEnable( master );
+    m_ssOutput.setOutputEnable( master );
+    m_miOutput.setOutputEnable( slave && ( !m_useSS || !sampleSelect() ) );
+}
+
+void Esp32Spi::driveClock( bool state ) {
+    if ( m_esp8266 )
+        SpiModule::driveClock( state );
+    else
+        m_ckOutput.setState( state );
+}
+
+void Esp32Spi::driveData( bool state ) {
+    if ( m_esp8266 )
+        SpiModule::driveData( state );
+    else if ( m_mode == SPI_SLAVE )
+        m_miOutput.setState( state );
+    else
+        m_moOutput.setState( state );
+}
+
+void Esp32Spi::driveSelect( bool state ) {
+    if ( m_esp8266 )
+        SpiModule::driveSelect( state );
+    else
+        m_ssOutput.setState( state );
+}
+
+bool Esp32Spi::sampleClock() {
+    return m_esp8266 ? SpiModule::sampleClock() : m_ckInput.state();
+}
+
+bool Esp32Spi::sampleData() {
+    if ( m_esp8266 )
+        return SpiModule::sampleData();
+    return m_mode == SPI_SLAVE ? m_moInput.state() : m_miInput.state();
+}
+
+bool Esp32Spi::sampleSelect() {
+    return m_esp8266 ? SpiModule::sampleSelect() : m_ssInput.state();
+}
+
+bool Esp32Spi::drivenClock() {
+    return m_esp8266 ? SpiModule::drivenClock() : m_ckOutput.state();
+}
+
+void Esp32Spi::watchClock( eElement* listener, bool enabled ) {
+    if ( m_esp8266 )
+        SpiModule::watchClock( listener, enabled );
+    else
+        m_ckInput.watch( listener, enabled );
+}
+
+void Esp32Spi::watchSelect( eElement* listener, bool enabled ) {
+    if ( m_esp8266 )
+        SpiModule::watchSelect( listener, enabled );
+    else
+        m_ssInput.watch( listener, enabled );
 }

@@ -17,15 +17,11 @@ Esp32Twi::~Esp32Twi() { }
 
 void Esp32Twi::reset() {
     Simulator::self()->cancelEvents( this );
-    if ( m_scl && m_sda ) {
-        m_scl->scheduleState( true, 0 );
-        m_sda->scheduleState( true, 0 );
-        setMode( TWI_OFF );
-    } else {
-        m_mode = TWI_OFF;
-        m_i2cState = I2C_IDLE;
-        m_toggleScl = false;
-    }
+    TwiModule::initialize();
+    m_sclOutput.resetState( true );
+    m_sdaOutput.resetState( true );
+    setMode( TWI_OFF );
+    m_clock = false;
     m_twiState = TWI_NO_STATE;
     m_nextState = TWI_NO_STATE;
     m_txFifo.clear();
@@ -42,7 +38,14 @@ void Esp32Twi::reset() {
 }
 
 void Esp32Twi::connected( bool c ) {
-    m_clkPin = m_scl;
+    (void)c;
+}
+
+void Esp32Twi::setMode( twiMode_t mode ) {
+    TwiModule::setMode( mode );
+    bool enabled = mode != TWI_OFF;
+    m_sclOutput.setOutputEnable( enabled );
+    m_sdaOutput.setOutputEnable( enabled );
 }
 
 void Esp32Twi::writeRegister() {
@@ -114,12 +117,12 @@ void Esp32Twi::writeCTR() {
     uint32_t data = m_eventValue;
 
     // bit 0: I2C_SDA_FORCE_OUT 0: direct output; 1: open drain output.
-    pinMode_t sdaMode = ( data & 1 << 0 ) ? openCo : output;
-    this->m_sda->setPinMode( sdaMode );
+    m_sdaOutput.setDriveMode( ( data & 1 << 0 ) ? Esp32OutputSignal::OpenDrain
+                                                : Esp32OutputSignal::PushPull );
 
     // bit 1: I2C_SCL_FORCE_OUT 0: direct output; 1: open drain output.
-    pinMode_t sclMode = ( data & 1 << 1 ) ? openCo : output;
-    this->m_scl->setPinMode( sclMode );
+    m_sclOutput.setDriveMode( ( data & 1 << 1 ) ? Esp32OutputSignal::OpenDrain
+                                                : Esp32OutputSignal::PushPull );
 
     // bit 2: I2C_SAMPLE_SCL_LEVEL 1: sample SDA on SCL low; 0: sample SDA on SCL high.
 
@@ -289,4 +292,25 @@ void Esp32Twi::setTwiState( twiState_t state ) {
         return;
     }
     runCommand();
+}
+
+void Esp32Twi::driveScl( bool state, uint64_t delay ) {
+    m_sclOutput.scheduleState( state, delay );
+}
+
+void Esp32Twi::driveSda( bool state, uint64_t delay ) {
+    m_sdaOutput.scheduleState( state, delay );
+}
+
+bool Esp32Twi::sampleScl() {
+    return m_sclInput.state();
+}
+
+bool Esp32Twi::sampleSda() {
+    return m_sdaInput.state();
+}
+
+void Esp32Twi::watchLines( eElement* listener, bool enabled ) {
+    m_sclInput.watch( listener, enabled );
+    m_sdaInput.watch( listener, enabled );
 }

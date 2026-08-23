@@ -39,6 +39,8 @@ void Esp32Led::reset() {
     for ( int i = 0; i < m_nChannels; ++i ) {
         Simulator::self()->cancelEvents( m_leds[i] );
         m_leds[i]->m_duty = 0;
+        m_leds[i]->m_cycleHigh = 0;
+        m_leds[i]->m_ditherAccumulator = 0;
         m_leds[i]->m_rawConf0 = 0;
         m_leds[i]->m_rawHpoint = 0;
         m_leds[i]->m_rawDuty = 0;
@@ -176,6 +178,8 @@ void Esp32Led::commitChannel( int ch ) {
     pwm->m_activeHpoint = pwm->m_rawHpoint;
     pwm->m_activeConf1 = pwm->m_rawConf1;
     pwm->m_duty = pwm->m_rawDuty;
+    pwm->m_cycleHigh = pwm->m_duty >> 4;
+    pwm->m_ditherAccumulator = pwm->m_duty & 0xF;
 
     int timer = pwm->m_activeConf0 & 0b11;
     if ( m_variant == LedcVariant::Esp32 && ch >= 8 )
@@ -355,6 +359,8 @@ LedPwm::~LedPwm() { }
 
 void LedPwm::initialize() {
     m_duty = 0;
+    m_cycleHigh = 0;
+    m_ditherAccumulator = 0;
     m_rawDuty = 0;
     m_enabled = false;
     m_idleLevel = false;
@@ -385,7 +391,7 @@ void LedPwm::ovf( uint64_t p ) {
         dutyRes = 0;
     uint64_t ticks = 1ULL << dutyRes; // counter period in clock ticks
 
-    uint64_t high = m_duty >> 4;
+    uint64_t high = m_cycleHigh;
     if ( high == 0 ) {
         setOutput( false );
         return;
@@ -469,6 +475,13 @@ void LedPwm::timerOverflow( uint64_t p ) {
             m_overflowCount = 0;
             m_owner->channelOverflowEnded( m_channel );
         }
+    }
+
+    m_cycleHigh = m_duty >> 4;
+    m_ditherAccumulator += m_duty & 0xF;
+    if ( m_ditherAccumulator >= 16 ) {
+        m_ditherAccumulator -= 16;
+        ++m_cycleHigh;
     }
 
     ovf( p );

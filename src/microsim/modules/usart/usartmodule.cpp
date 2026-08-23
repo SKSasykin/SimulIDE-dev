@@ -70,6 +70,18 @@ void UsartModule::sendByte( uint8_t data ) // Buffer is being written
         m_sender->processData( data );
 }
 
+void UsartModule::driveTx( bool state ) {
+    m_sender->getPin()->setOutState( state );
+}
+
+bool UsartModule::sampleRx() {
+    return m_receiver->getPin()->getInpState();
+}
+
+void UsartModule::watchRx( eElement* listener, bool enabled ) {
+    m_receiver->getPin()->changeCallBack( listener, enabled );
+}
+
 void UsartModule::frameSent( uint8_t data ) {
     printOut( data );
 }

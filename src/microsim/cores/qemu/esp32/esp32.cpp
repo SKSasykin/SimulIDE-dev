@@ -314,20 +314,20 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixIn[6] = { nullptr, nullptr, "SPICS1" }; // SPICS1
     m_gpio->m_matrixIn[7] = { nullptr, nullptr, "SPICS2" }; // SPICS2
 
-    m_gpio->m_matrixIn[8] = { m_spis[0], m_spis[0]->getCkPinPtr(), "CkH" }; // HSPICLK
-    m_gpio->m_matrixIn[9] = { m_spis[0], m_spis[0]->getMiPinPtr(), "MiH" }; // HSPIQ
-    m_gpio->m_matrixIn[10] = { m_spis[0], m_spis[0]->getMoPinPtr(), "MoH" }; // HSPID
-    m_gpio->m_matrixIn[11] = { m_spis[0], m_spis[0]->getSsPinPtr(), "SsH" }; // HSPICS0
+    m_gpio->m_matrixIn[8] = { m_spis[0], nullptr, "CkH", static_cast<Esp32Spi*>( m_spis[0] )->getCkInputSignal() }; // HSPICLK
+    m_gpio->m_matrixIn[9] = { m_spis[0], nullptr, "MiH", static_cast<Esp32Spi*>( m_spis[0] )->getMiInputSignal() }; // HSPIQ
+    m_gpio->m_matrixIn[10] = { m_spis[0], nullptr, "MoH", static_cast<Esp32Spi*>( m_spis[0] )->getMoInputSignal() }; // HSPID
+    m_gpio->m_matrixIn[11] = { m_spis[0], nullptr, "SsH", static_cast<Esp32Spi*>( m_spis[0] )->getSsInputSignal() }; // HSPICS0
 
     m_gpio->m_matrixIn[12] = { nullptr, nullptr, "HdH" }; // HSPIHD
     m_gpio->m_matrixIn[13] = { nullptr, nullptr, "WpH" }; // HSPIWP
 
-    m_gpio->m_matrixIn[14] = { m_usarts[0], m_usarts[0]->getRxPinPtr(), "Rx0" }; // U0RXD
+    m_gpio->m_matrixIn[14] = { m_usarts[0], nullptr, "Rx0", static_cast<Esp32Usart*>( m_usarts[0] )->getRxInputSignal() }; // U0RXD
 
     m_gpio->m_matrixIn[15] = { nullptr, nullptr, "U0CTS" }; // U0CTS
     m_gpio->m_matrixIn[16] = { nullptr, nullptr, "U0DSR" }; // U0DSR
 
-    m_gpio->m_matrixIn[17] = { m_usarts[1], m_usarts[1]->getRxPinPtr(), "Rx1" }; // U1RXD
+    m_gpio->m_matrixIn[17] = { m_usarts[1], nullptr, "Rx1", static_cast<Esp32Usart*>( m_usarts[1] )->getRxInputSignal() }; // U1RXD
 
     m_gpio->m_matrixIn[18] = { nullptr, nullptr, "U1CTS" }; // U1CTS
     m_gpio->m_matrixIn[19] = { nullptr, nullptr, "---" }; // (not assigned)
@@ -341,8 +341,8 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixIn[27] = { nullptr, nullptr, "I2S0I_BCK" }; // I2S0I_BCK
     m_gpio->m_matrixIn[28] = { nullptr, nullptr, "I2S0I_WS" }; // I2S0I_WS
 
-    m_gpio->m_matrixIn[29] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" }; // I2CEXT0_SCL
-    m_gpio->m_matrixIn[30] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" }; // I2CEXT0_SDA
+    m_gpio->m_matrixIn[29] = { m_i2cs[0], nullptr, "Scl0", static_cast<Esp32Twi*>( m_i2cs[0] )->getSclInputSignal() }; // I2CEXT0_SCL
+    m_gpio->m_matrixIn[30] = { m_i2cs[0], nullptr, "Sda0", static_cast<Esp32Twi*>( m_i2cs[0] )->getSdaInputSignal() }; // I2CEXT0_SDA
 
     m_gpio->m_matrixIn[31] = { nullptr, nullptr, "PWM0_SYNC0" }; // PWM0_SYNC0
     m_gpio->m_matrixIn[32] = { nullptr, nullptr, "PWM0_SYNC1" }; // PWM0_SYNC1
@@ -376,12 +376,12 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixIn[60] = { nullptr, nullptr, "---" }; // (not assigned)
     m_gpio->m_matrixIn[61] = { nullptr, nullptr, "Cs1H" }; // HSPICS1
     m_gpio->m_matrixIn[62] = { nullptr, nullptr, "Cs2H" }; // HSPICS2
-    m_gpio->m_matrixIn[63] = { m_spis[1], m_spis[1]->getCkPinPtr(), "CkV" }; // VSPICLK
-    m_gpio->m_matrixIn[64] = { m_spis[1], m_spis[1]->getMiPinPtr(), "MiV" }; // VSPIQ
-    m_gpio->m_matrixIn[65] = { m_spis[1], m_spis[1]->getMoPinPtr(), "MoV" }; // VSPID
+    m_gpio->m_matrixIn[63] = { m_spis[1], nullptr, "CkV", static_cast<Esp32Spi*>( m_spis[1] )->getCkInputSignal() }; // VSPICLK
+    m_gpio->m_matrixIn[64] = { m_spis[1], nullptr, "MiV", static_cast<Esp32Spi*>( m_spis[1] )->getMiInputSignal() }; // VSPIQ
+    m_gpio->m_matrixIn[65] = { m_spis[1], nullptr, "MoV", static_cast<Esp32Spi*>( m_spis[1] )->getMoInputSignal() }; // VSPID
     m_gpio->m_matrixIn[66] = { nullptr, nullptr, "HdV" }; // VSPIHD
     m_gpio->m_matrixIn[67] = { nullptr, nullptr, "WpV" }; // VSPIWP
-    m_gpio->m_matrixIn[68] = { m_spis[1], m_spis[1]->getSsPinPtr(), "SsV" }; // VSPICS0
+    m_gpio->m_matrixIn[68] = { m_spis[1], nullptr, "SsV", static_cast<Esp32Spi*>( m_spis[1] )->getSsInputSignal() }; // VSPICS0
     m_gpio->m_matrixIn[69] = { nullptr, nullptr, "Cs1V" }; // VSPICS1
     m_gpio->m_matrixIn[70] = { nullptr, nullptr, "Cs2V" }; // VSPICS2
     m_gpio->m_matrixIn[71] = { nullptr, nullptr, "PCNT_SIG_CH0_5" }; // PCNT_SIG_CH0_IN5
@@ -409,8 +409,8 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixIn[93] = { nullptr, nullptr, "---" }; // (not assigned)
     m_gpio->m_matrixIn[94] = { nullptr, nullptr, "TWAI_RX" }; // TWAI_RX
 
-    m_gpio->m_matrixIn[95] = { m_i2cs[1], m_i2cs[1]->getSclPinPtr(), "Scl1" }; // I2CEXT1_SCL
-    m_gpio->m_matrixIn[96] = { m_i2cs[1], m_i2cs[1]->getSdaPinPtr(), "Sda1" }; // I2CEXT1_SDA
+    m_gpio->m_matrixIn[95] = { m_i2cs[1], nullptr, "Scl1", static_cast<Esp32Twi*>( m_i2cs[1] )->getSclInputSignal() }; // I2CEXT1_SCL
+    m_gpio->m_matrixIn[96] = { m_i2cs[1], nullptr, "Sda1", static_cast<Esp32Twi*>( m_i2cs[1] )->getSdaInputSignal() }; // I2CEXT1_SDA
 
     m_gpio->m_matrixIn[97] = { nullptr, nullptr, "HOST_CARD_DETECT_N_1" }; // HOST_CARD_DETECT_N_1
     m_gpio->m_matrixIn[98] = { nullptr, nullptr, "HOST_CARD_DETECT_N_2" }; // HOST_CARD_DETECT_N_2
@@ -516,7 +516,7 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixIn[196] = { nullptr, nullptr, "---" }; // (not assigned)
     m_gpio->m_matrixIn[197] = { nullptr, nullptr, "---" }; // (not assigned)
 
-    m_gpio->m_matrixIn[198] = { m_usarts[2], m_usarts[2]->getRxPinPtr(), "Rx2" }; // U2RXD
+    m_gpio->m_matrixIn[198] = { m_usarts[2], nullptr, "Rx2", static_cast<Esp32Usart*>( m_usarts[2] )->getRxInputSignal() }; // U2RXD
 
     m_gpio->m_matrixIn[199] = { nullptr, nullptr, "U2CTS" }; // U2CTS_IN
     m_gpio->m_matrixIn[200] = { nullptr, nullptr, "EMAC_MDC_I" }; // EMAC_MDC_I
@@ -589,20 +589,20 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[6] = { nullptr, nullptr, "SPICS1" }; // SPICS1
     m_gpio->m_matrixOut[7] = { nullptr, nullptr, "SPICS2" }; // SPICS2
 
-    m_gpio->m_matrixOut[8] = { m_spis[0], m_spis[0]->getCkPinPtr(), "CkH" }; // HSPICLK
-    m_gpio->m_matrixOut[9] = { m_spis[0], m_spis[0]->getMiPinPtr(), "MiH" }; // HSPIQ
-    m_gpio->m_matrixOut[10] = { m_spis[0], m_spis[0]->getMoPinPtr(), "MoH" }; // HSPID
-    m_gpio->m_matrixOut[11] = { m_spis[0], m_spis[0]->getSsPinPtr(), "SsH" }; // HSPICS0
+    m_gpio->m_matrixOut[8] = { m_spis[0], nullptr, "CkH", static_cast<Esp32Spi*>( m_spis[0] )->getCkOutputSignal() }; // HSPICLK
+    m_gpio->m_matrixOut[9] = { m_spis[0], nullptr, "MiH", static_cast<Esp32Spi*>( m_spis[0] )->getMiOutputSignal() }; // HSPIQ
+    m_gpio->m_matrixOut[10] = { m_spis[0], nullptr, "MoH", static_cast<Esp32Spi*>( m_spis[0] )->getMoOutputSignal() }; // HSPID
+    m_gpio->m_matrixOut[11] = { m_spis[0], nullptr, "SsH", static_cast<Esp32Spi*>( m_spis[0] )->getSsOutputSignal() }; // HSPICS0
 
     m_gpio->m_matrixOut[12] = { nullptr, nullptr, "HdH" }; // HSPIHD
     m_gpio->m_matrixOut[13] = { nullptr, nullptr, "WpH" }; // HSPIWP
 
-    m_gpio->m_matrixOut[14] = { m_usarts[0], m_usarts[0]->getTxPinPtr(), "Tx0" }; // U0TXD
+    m_gpio->m_matrixOut[14] = { m_usarts[0], nullptr, "Tx0", static_cast<Esp32Usart*>( m_usarts[0] )->getTxOutputSignal() }; // U0TXD
 
     m_gpio->m_matrixOut[15] = { nullptr, nullptr, "U0RTS" }; // U0RTS
     m_gpio->m_matrixOut[16] = { nullptr, nullptr, "U0DTR" }; // U0DTR
 
-    m_gpio->m_matrixOut[17] = { m_usarts[1], m_usarts[1]->getTxPinPtr(), "Tx1" }; // U1TXD
+    m_gpio->m_matrixOut[17] = { m_usarts[1], nullptr, "Tx1", static_cast<Esp32Usart*>( m_usarts[1] )->getTxOutputSignal() }; // U1TXD
 
     m_gpio->m_matrixOut[18] = { nullptr, nullptr, "U1RTS" }; // U1RTS
     m_gpio->m_matrixOut[19] = { nullptr, nullptr, "---" }; // (not assigned)
@@ -616,8 +616,8 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[27] = { nullptr, nullptr, "I2S0I_BCK" }; // I2S0I_BCK
     m_gpio->m_matrixOut[28] = { nullptr, nullptr, "I2S0I_WS" }; // I2S0I_WS
 
-    m_gpio->m_matrixOut[29] = { m_i2cs[0], m_i2cs[0]->getSclPinPtr(), "Scl0" }; // I2CEXT0_SCL
-    m_gpio->m_matrixOut[30] = { m_i2cs[0], m_i2cs[0]->getSdaPinPtr(), "Sda0" }; // I2CEXT0_SDA
+    m_gpio->m_matrixOut[29] = { m_i2cs[0], nullptr, "Scl0", static_cast<Esp32Twi*>( m_i2cs[0] )->getSclOutputSignal() }; // I2CEXT0_SCL
+    m_gpio->m_matrixOut[30] = { m_i2cs[0], nullptr, "Sda0", static_cast<Esp32Twi*>( m_i2cs[0] )->getSdaOutputSignal() }; // I2CEXT0_SDA
 
     m_gpio->m_matrixOut[31] = { nullptr, nullptr, "SDIO_TOHOST_INT" }; // SDIO_TOHOST_INT
     m_gpio->m_matrixOut[32] = { nullptr, nullptr, "PWM0_OUT0A" }; // PWM0_OUT0A
@@ -653,14 +653,14 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[61] = { nullptr, nullptr, "Cs1H" }; // spis[0]->cs_pin[1] // HSPICS1
     m_gpio->m_matrixOut[62] = { nullptr, nullptr, "Cs2H" }; // spis[0]->cs_pin[2] // HSPICS2
 
-    m_gpio->m_matrixOut[63] = { m_spis[1], m_spis[1]->getCkPinPtr(), "CkV" }; // VSPICLK
-    m_gpio->m_matrixOut[64] = { m_spis[1], m_spis[1]->getMiPinPtr(), "MiV" }; // VSPIQ
-    m_gpio->m_matrixOut[65] = { m_spis[1], m_spis[1]->getMoPinPtr(), "MoV" }; // VSPID
+    m_gpio->m_matrixOut[63] = { m_spis[1], nullptr, "CkV", static_cast<Esp32Spi*>( m_spis[1] )->getCkOutputSignal() }; // VSPICLK
+    m_gpio->m_matrixOut[64] = { m_spis[1], nullptr, "MiV", static_cast<Esp32Spi*>( m_spis[1] )->getMiOutputSignal() }; // VSPIQ
+    m_gpio->m_matrixOut[65] = { m_spis[1], nullptr, "MoV", static_cast<Esp32Spi*>( m_spis[1] )->getMoOutputSignal() }; // VSPID
 
     m_gpio->m_matrixOut[66] = { nullptr, nullptr, "HdV" }; // VSPIHD
     m_gpio->m_matrixOut[67] = { nullptr, nullptr, "WpV" }; // VSPIWP
 
-    m_gpio->m_matrixOut[68] = { m_spis[1], m_spis[1]->getSsPinPtr(), "SsV" }; // VSPICS0
+    m_gpio->m_matrixOut[68] = { m_spis[1], nullptr, "SsV", static_cast<Esp32Spi*>( m_spis[1] )->getSsOutputSignal() }; // VSPICS0
 
     m_gpio->m_matrixOut[69] = { nullptr, nullptr, "Cs1V" }; // spis[1]->cs_pin[1] // VSPICS1
     m_gpio->m_matrixOut[70] = { nullptr, nullptr, "Cs2V" }; // spis[1]->cs_pin[2] // VSPICS2
@@ -689,8 +689,8 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[92] = { nullptr, nullptr, "Rmt5" }; // rmt_sig_out5
     m_gpio->m_matrixOut[93] = { nullptr, nullptr, "Rmt6" }; // rmt_sig_out6
     m_gpio->m_matrixOut[94] = { nullptr, nullptr, "Rmt7" }; // rmt_sig_out7
-    m_gpio->m_matrixOut[95] = { m_i2cs[1], m_i2cs[1]->getSclPinPtr(), "Scl1" }; // I2CEXT1_SCL
-    m_gpio->m_matrixOut[96] = { m_i2cs[1], m_i2cs[1]->getSdaPinPtr(), "Sda1" }; // I2CEXT1_SDA
+    m_gpio->m_matrixOut[95] = { m_i2cs[1], nullptr, "Scl1", static_cast<Esp32Twi*>( m_i2cs[1] )->getSclOutputSignal() }; // I2CEXT1_SCL
+    m_gpio->m_matrixOut[96] = { m_i2cs[1], nullptr, "Sda1", static_cast<Esp32Twi*>( m_i2cs[1] )->getSdaOutputSignal() }; // I2CEXT1_SDA
 
     m_gpio->m_matrixOut[97] = { nullptr, nullptr, "HOST_CCMD_OD_PULLUP_EN_N" }; // HOST_CCMD_OD_PULLUP_EN_N
     m_gpio->m_matrixOut[98] = { nullptr, nullptr, "HOST_RST_N_1" }; // HOST_RST_N_1
@@ -794,7 +794,7 @@ void Esp32::createMatrix() {
     m_gpio->m_matrixOut[196] = { nullptr, nullptr, "---" }; // (not assigned)
     m_gpio->m_matrixOut[197] = { nullptr, nullptr, "---" }; // (not assigned)
 
-    m_gpio->m_matrixOut[198] = { m_usarts[2], m_usarts[2]->getTxPinPtr(), "Tx2" }; // U2RTXD
+    m_gpio->m_matrixOut[198] = { m_usarts[2], nullptr, "Tx2", static_cast<Esp32Usart*>( m_usarts[2] )->getTxOutputSignal() }; // U2RTXD
 
     m_gpio->m_matrixOut[199] = { nullptr, nullptr, "U2RTS_OUT" }; // U2RTS_OUT
     m_gpio->m_matrixOut[200] = { nullptr, nullptr, "EMAC_MDC_O" }; // EMAC_MDC_O

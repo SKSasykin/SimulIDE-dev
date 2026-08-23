@@ -37,13 +37,25 @@ void Esp32Usart::reset() {
     // Sender always enabled: qemu UART TX must transmit regardless of the pad/matrix
     // configuration, otherwise the TX FIFO never drains and the ROM busy-waits forever
     // on its first TXFIFO_CNT poll (C3/S3/8266 boot silently dead, no UART output).
+    m_txOutput.setState( true );
+    m_txOutput.setOutputEnable( true );
     m_sender->enable( true );
 }
 
 void Esp32Usart::connected( bool c ) {
-    enable( c );
-    if ( c )
-        m_sender->getPin()->setPinMode( output );
+    m_receiver->enable( c );
+}
+
+void Esp32Usart::driveTx( bool state ) {
+    m_txOutput.setState( state );
+}
+
+bool Esp32Usart::sampleRx() {
+    return m_rxInput.state();
+}
+
+void Esp32Usart::watchRx( eElement* listener, bool enabled ) {
+    m_rxInput.watch( listener, enabled );
 }
 
 void Esp32Usart::writeRegister() {

@@ -107,7 +107,12 @@ modifications (committed directly in the fork) add the SimulIDE shared-memory
 bridge, the AHB-to-UART-FIFO mapping, the SDIO slave controller (SLC),
 per-chip bridge variants for ESP32-S3 (`esp32s3-simulide-bridge`) and
 ESP32-C3 (`esp32c3-simulide-bridge`) and misc build fixes; no external patch
-file is needed.
+  file is needed.
+
+  On the SimulIDE application side, the ESP32-family GPIO Matrix is modeled with
+  `Esp32OutputSignal`/`Esp32InputSignal` endpoint objects: the SPI, I2C, UART
+  and LEDC matrix outputs and inputs are wired through the full matrix routing
+  path, while the MCPWM and other unimplemented peripherals stay label-only.
 
 Supported Espressif controllers: ESP32, ESP32-S3, ESP32-C3 and ESP8266.
 

@@ -58,6 +58,14 @@ protected:
     inline void setSDA( bool st );
     inline void getSdaState();
     inline void scheduleSDA( bool state );
+    void updateTwiClock();
+
+    virtual void driveScl( bool state, uint64_t delay );
+    virtual void driveSda( bool state, uint64_t delay );
+    virtual bool sampleScl();
+    virtual bool sampleSda();
+    virtual void watchLines( eElement* listener, bool enabled );
+
     inline void readBit();
     inline void writeBit();
     inline void waitACK();

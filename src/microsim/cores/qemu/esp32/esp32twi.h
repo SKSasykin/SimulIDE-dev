@@ -7,6 +7,7 @@
 
 #include <deque>
 
+#include "esp32pin.h"
 #include "qemutwi.h"
 
 struct esp32TwiArena_t {
@@ -24,6 +25,12 @@ public:
     void reset() override;
 
     void connected( bool c ) override;
+    void setMode( twiMode_t mode ) override;
+
+    Esp32OutputSignal* getSclOutputSignal() { return &m_sclOutput; }
+    Esp32OutputSignal* getSdaOutputSignal() { return &m_sdaOutput; }
+    Esp32InputSignal* getSclInputSignal() { return &m_sclInput; }
+    Esp32InputSignal* getSdaInputSignal() { return &m_sdaInput; }
 
 protected:
     void writeRegister() override;
@@ -41,6 +48,12 @@ protected:
 
     void setTwiState( twiState_t state ) override;
 
+    void driveScl( bool state, uint64_t delay ) override;
+    void driveSda( bool state, uint64_t delay ) override;
+    bool sampleScl() override;
+    bool sampleSda() override;
+    void watchLines( eElement* listener, bool enabled ) override;
+
     std::deque<uint8_t> m_txFifo;
     std::deque<uint8_t> m_rxFifo;
 
@@ -55,4 +68,8 @@ protected:
     uint8_t m_remaining;
     uint32_t m_interruptRaw;
     uint32_t m_interruptEnable;
+    Esp32OutputSignal m_sclOutput;
+    Esp32OutputSignal m_sdaOutput;
+    Esp32InputSignal m_sclInput;
+    Esp32InputSignal m_sdaInput;
 };

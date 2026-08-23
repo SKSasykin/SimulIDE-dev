@@ -10,6 +10,8 @@
 #include "qemumodule.h"
 #include "simulator.h"
 
+Esp32OutputSignal::Esp32OutputSignal() : eElement( QString() ) { }
+
 void Esp32OutputSignal::connectPad( Esp32Pin* pin ) {
     if ( !m_pads.contains( pin ) )
         m_pads.append( pin );
@@ -18,14 +20,47 @@ void Esp32OutputSignal::connectPad( Esp32Pin* pin ) {
 
 void Esp32OutputSignal::disconnectPad( Esp32Pin* pin ) {
     m_pads.removeOne( pin );
+    if ( m_pads.isEmpty() && m_statePending ) {
+        Simulator::self()->cancelEvents( this );
+        m_statePending = false;
+    }
 }
 
 void Esp32OutputSignal::setState( bool state ) {
+    if ( m_statePending ) {
+        Simulator::self()->cancelEvents( this );
+        m_statePending = false;
+    }
     if ( m_state == state )
         return;
     m_state = state;
     for ( Esp32Pin* pin : m_pads )
         pin->outputSignalChanged( this );
+}
+
+void Esp32OutputSignal::scheduleState( bool state, uint64_t delay ) {
+    if ( m_statePending )
+        Simulator::self()->cancelEvents( this );
+    if ( !delay ) {
+        m_statePending = false;
+        setState( state );
+        return;
+    }
+    m_scheduledState = state;
+    m_statePending = true;
+    Simulator::self()->addEvent( delay, this );
+}
+
+void Esp32OutputSignal::resetState( bool state ) {
+    if ( m_statePending )
+        Simulator::self()->cancelEvents( this );
+    m_statePending = false;
+    setState( state );
+}
+
+void Esp32OutputSignal::runEvent() {
+    m_statePending = false;
+    setState( m_scheduledState );
 }
 
 void Esp32OutputSignal::setOutputEnable( bool enabled ) {
@@ -34,6 +69,111 @@ void Esp32OutputSignal::setOutputEnable( bool enabled ) {
     m_outputEnable = enabled;
     for ( Esp32Pin* pin : m_pads )
         pin->outputSignalChanged( this );
+}
+
+void Esp32OutputSignal::setDriveMode( DriveMode mode ) {
+    if ( m_driveMode == mode )
+        return;
+    m_driveMode = mode;
+    for ( Esp32Pin* pin : m_pads )
+        pin->outputSignalChanged( this );
+}
+
+Esp32Pin* Esp32InputSignal::activePin() const {
+    return m_matrixSelected ? m_matrixPin : m_ioMuxPin;
+}
+
+void Esp32InputSignal::beginRouteChange() {
+    Esp32Pin* pin = activePin();
+    if ( pin && m_listener && m_watching )
+        pin->changeCallBack( m_listener, false );
+}
+
+void Esp32InputSignal::endRouteChange() {
+    Esp32Pin* pin = activePin();
+    if ( pin && m_listener && m_watching )
+        pin->changeCallBack( m_listener, true );
+}
+
+void Esp32InputSignal::setIoMuxRoute( Esp32Pin* pin ) {
+    beginRouteChange();
+    m_ioMuxPin = pin;
+    endRouteChange();
+}
+
+void Esp32InputSignal::clearIoMuxRoute( Esp32Pin* pin ) {
+    if ( pin && m_ioMuxPin != pin )
+        return;
+    setIoMuxRoute( nullptr );
+}
+
+void Esp32InputSignal::setMatrixRoute( Esp32Pin* pin, bool inverted ) {
+    beginRouteChange();
+    m_matrixPin = pin;
+    m_matrixConstant = NoConstant;
+    m_matrixInverted = inverted;
+    endRouteChange();
+}
+
+void Esp32InputSignal::setMatrixConstant( Constant constant, bool inverted ) {
+    beginRouteChange();
+    m_matrixPin = nullptr;
+    m_matrixConstant = constant;
+    m_matrixInverted = inverted;
+    endRouteChange();
+}
+
+void Esp32InputSignal::selectMatrix( bool selected ) {
+    beginRouteChange();
+    m_matrixSelected = selected;
+    endRouteChange();
+}
+
+void Esp32InputSignal::clearMatrixRoute() {
+    beginRouteChange();
+    m_matrixPin = nullptr;
+    m_matrixConstant = NoConstant;
+    m_matrixInverted = false;
+    m_matrixSelected = false;
+    endRouteChange();
+}
+
+void Esp32InputSignal::clearRoutes() {
+    beginRouteChange();
+    m_ioMuxPin = nullptr;
+    m_matrixPin = nullptr;
+    m_matrixConstant = NoConstant;
+    m_matrixInverted = false;
+    m_matrixSelected = false;
+    endRouteChange();
+}
+
+bool Esp32InputSignal::state() const {
+    if ( !m_matrixSelected )
+        return m_ioMuxPin ? m_ioMuxPin->getInpState() : true;
+    bool state = true;
+    if ( m_matrixPin )
+        state = m_matrixPin->getInpState();
+    else if ( m_matrixConstant != NoConstant )
+        state = m_matrixConstant == ConstantHigh;
+    return state ^ m_matrixInverted;
+}
+
+bool Esp32InputSignal::routed() const {
+    if ( !m_matrixSelected )
+        return m_ioMuxPin != nullptr;
+    return m_matrixPin || m_matrixConstant != NoConstant;
+}
+
+void Esp32InputSignal::watch( eElement* listener, bool enabled ) {
+    Esp32Pin* pin = activePin();
+    if ( pin && m_listener && m_watching )
+        pin->changeCallBack( m_listener, false );
+    m_listener = listener;
+    m_watching = enabled;
+    pin = activePin();
+    if ( pin && m_listener && m_watching )
+        pin->changeCallBack( m_listener, true );
 }
 
 Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
@@ -235,23 +375,32 @@ void Esp32Pin::setIoMuxFuncs( QList<funcPin> functions ) // Set IO_MUX functions
     }
 }
 
+void Esp32Pin::disconnectIoMuxFunc() {
+    if ( m_iomuxIndex < 6 ) {
+        funcPin& oldFunc = m_iomuxFuncs[m_iomuxIndex];
+        if ( oldFunc.outputSignal )
+            oldFunc.outputSignal->disconnectPad( this );
+        if ( oldFunc.inputSignal )
+            oldFunc.inputSignal->clearIoMuxRoute( this );
+        if ( oldFunc.pinPointer && *oldFunc.pinPointer == this )
+            *oldFunc.pinPointer = m_dummyPin;
+
+        QemuModule* mod = oldFunc.module;
+        if ( mod && oldFunc.inputSignal )
+            mod->connected( oldFunc.inputSignal->routed() );
+        else if ( mod && oldFunc.pinPointer )
+            mod->connected( false );
+    }
+    m_iomuxIndex = 6;
+}
+
 void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
 {
     if ( func > 5 ) {
         qDebug() << this->pinId() << "Selected func ERROR" << func;
         return;
     }
-    if ( m_iomuxIndex < 6 ) {
-        funcPin& oldFunc = m_iomuxFuncs[m_iomuxIndex];
-        if ( oldFunc.outputSignal )
-            oldFunc.outputSignal->disconnectPad( this );
-        if ( oldFunc.pinPointer && *oldFunc.pinPointer == this )
-            *oldFunc.pinPointer = m_dummyPin;
-
-        QemuModule* mod = oldFunc.module;
-        if ( mod )
-            mod->connected( false );
-    }
+    disconnectIoMuxFunc();
     if ( m_iomuxFuncs[func].label == "GPIO" )
         m_iomuxFuncs[func].label = m_pinLabel;
 
@@ -260,6 +409,12 @@ void Esp32Pin::selectIoMuxFunc( uint8_t func ) // Select IO_MUX function
 
     if ( m_iomuxFuncs[func].outputSignal ) {
         m_iomuxFuncs[func].outputSignal->connectPad( this );
+    }
+    if ( m_iomuxFuncs[func].inputSignal ) {
+        m_iomuxFuncs[func].inputSignal->setIoMuxRoute( this );
+        QemuModule* mod = m_iomuxFuncs[func].module;
+        if ( mod )
+            mod->connected( m_iomuxFuncs[func].inputSignal->routed() );
     } else if ( m_iomuxFuncs[func].pinPointer ) {
         //qDebug() << this->pinId() << "Selected func"<< func << m_iomuxPin[func].label;
         *m_iomuxFuncs[func].pinPointer = this;
@@ -288,9 +443,12 @@ void Esp32Pin::setMatrixFunc( uint16_t val, funcPin func ) // Set Function for G
 }
 
 void Esp32Pin::setMatrixOutput( uint16_t val, funcPin func ) {
+    bool selected = m_iomuxIndex == m_matrixMuxIndex;
+    if ( selected )
+        disconnectIoMuxFunc();
     m_matrixOutConfig = val;
     m_iomuxFuncs[m_matrixMuxIndex] = func;
-    if ( m_iomuxIndex == m_matrixMuxIndex )
+    if ( selected )
         selectIoMuxFunc( m_matrixMuxIndex );
 }
 
@@ -303,6 +461,8 @@ void Esp32Pin::resetMatrixOutput() {
     funcPin& matrixFunc = m_iomuxFuncs[m_matrixMuxIndex];
     if ( matrixFunc.outputSignal )
         matrixFunc.outputSignal->disconnectPad( this );
+    if ( matrixFunc.inputSignal )
+        matrixFunc.inputSignal->clearIoMuxRoute( this );
     if ( matrixFunc.pinPointer && *matrixFunc.pinPointer == this )
         *matrixFunc.pinPointer = m_dummyPin;
 
@@ -312,6 +472,11 @@ void Esp32Pin::resetMatrixOutput() {
     m_iomuxFuncs[m_matrixMuxIndex] = { nullptr, nullptr, "GPIO" };
     if ( m_iomuxIndex == m_matrixMuxIndex )
         refreshMatrixOutput();
+}
+
+void Esp32Pin::resetRoutes() {
+    disconnectIoMuxFunc();
+    resetMatrixOutput();
 }
 
 void Esp32Pin::refreshMatrixOutput() {
@@ -329,7 +494,10 @@ void Esp32Pin::refreshMatrixOutput() {
     if ( m_matrixOutConfig & ( 1 << 9 ) )
         state = !state;
 
-    setPinMode( outputEnable ? output : input );
+    pinMode_t mode = output;
+    if ( signal && signal->driveMode() == Esp32OutputSignal::OpenDrain )
+        mode = openCo;
+    setPinMode( outputEnable ? mode : input );
     setPinState( state );
 }
 

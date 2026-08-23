@@ -55,6 +55,9 @@ public:
     virtual void setBit9Rx( uint8_t bit ) { ; }
 
     virtual void sendByte( uint8_t data );
+    virtual void driveTx( bool state );
+    virtual bool sampleRx();
+    virtual void watchRx( eElement* listener, bool enabled );
     virtual void bufferEmpty() { ; }
     virtual void frameSent( uint8_t data );
     virtual void readByte( uint8_t data ) { ; }

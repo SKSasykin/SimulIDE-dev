@@ -28,13 +28,13 @@ void UartRx::enable( uint8_t en ) {
         m_framesize = 1 + mDATABITS + mPARITY + mSTOPBITS;
         m_currentBit = 0;
         m_fifoP = -1;
-        m_startHigh = m_ioPin->getInpState();
+        m_startHigh = m_usart->sampleRx();
     } else {
         m_state = usartSTOPPED;
         Simulator::self()->cancelEvents( this );
     }
 
-    m_ioPin->changeCallBack( this, enabled ); // Wait for start bit if enabled
+    m_usart->watchRx( this, enabled ); // Wait for start bit if enabled
     m_frame = 0;
 }
 
@@ -42,14 +42,14 @@ void UartRx::voltChanged() {
     if ( !m_enabled || m_sleeping )
         return;
 
-    bool bit = m_ioPin->getInpState();
+    bool bit = m_usart->sampleRx();
 
     if ( !m_startHigh && bit )
         m_startHigh = true;
     else if ( m_startHigh && !bit ) // Start bit detected
     {
         m_state = usartRECEIVE;
-        m_ioPin->changeCallBack( this, false );
+        m_usart->watchRx( this, false );
         if ( m_period )
             Simulator::self()->addEvent( m_period / 2, this ); // Shedule reception
     }
@@ -61,7 +61,7 @@ void UartRx::runEvent() {
 }
 
 void UartRx::readBit() {
-    bool bit = m_ioPin->getInpState();
+    bool bit = m_usart->sampleRx();
 
     if ( bit ) {
         if ( m_currentBit == 0 ) {
@@ -83,7 +83,7 @@ void UartRx::rxEnd() {
     m_frame = 0;
 
     m_state = usartIDLE;
-    m_ioPin->changeCallBack( this, true ); // Wait for next start bit
+    m_usart->watchRx( this, true ); // Wait for next start bit
 
     if ( m_period )
         Simulator::self()->cancelEvents( this );

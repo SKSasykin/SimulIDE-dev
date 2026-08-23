@@ -11,6 +11,9 @@ Esp32Gpio::Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint6
                        int nPins, int in1Base, uint16_t pinBase, uint16_t matrixInBase, uint16_t matrixOutBase )
     : QemuModule( mcu, name, n, clk, memStart, memEnd ), eElement( name ) {
     m_nPins = nPins;
+    // GPIO matrix constant selectors differ between the three modeled variants.
+    m_constLowSelector = nPins == 40 ? 0x30 : ( nPins == 49 ? 0x3C : 0x1F );
+    m_constHighSelector = nPins == 40 ? 0x38 : ( nPins == 49 ? 0x38 : 0x1E );
     m_in1Base = in1Base;
     m_pinBase = pinBase;
     m_matrixInBase = matrixInBase;
@@ -47,9 +50,19 @@ void Esp32Gpio::reset() {
     m_gpioEnable1 = 0;
     m_gpioStatus[0] = 0;
     m_gpioStatus[1] = 0;
+    for ( int i = 0; i < 256; ++i ) {
+        inputFunc& func = m_matrixIn[i];
+        if ( func.inputSignal )
+            func.inputSignal->clearMatrixRoute();
+        if ( func.pinPointer && m_matrixInputPads[i] && *func.pinPointer == m_matrixInputPads[i] )
+            *func.pinPointer = m_dummyPin;
+        if ( func.module && ( m_matrixInputPads[i] || func.inputSignal ) )
+            func.module->connected( func.inputSignal && func.inputSignal->routed() );
+        m_matrixInputPads[i] = nullptr;
+    }
     for ( Esp32Pin* pin : m_espPad ) {
         if ( pin )
-            pin->resetMatrixOutput();
+            pin->resetRoutes();
     }
 }
 
@@ -138,24 +151,38 @@ void Esp32Gpio::writeRegister() {
 
 void Esp32Gpio::matrixInChanged( int func ) {
     int pin = m_eventValue & 0x3F;
-    if ( pin >= m_nPins )
-        return;
-
-    Esp32Pin* espPin = m_espPad[pin];
-    if ( !espPin )
-        return;
-
-    funcPin fp = { nullptr, nullptr, "---" };
+    inputFunc fp = { nullptr, nullptr, "---" };
 
     if ( func < 256 )
         fp = m_matrixIn[func];
-    //else if( func == 256 ) fp = { nullptr, &m_ioPin[pin], ""};
-
-    //qDebug() << "Esp32::matrixInFunc"<< espPin->pinId() << func << fp.label;
     if ( fp.label == "---" )
         return;
 
-    espPin->setMatrixFunc( m_eventValue, fp );
+    Esp32Pin* espPin = pin < m_nPins ? m_espPad[pin] : nullptr;
+    bool inverted = m_eventValue & ( 1 << 6 );
+    bool selected = m_eventValue & ( 1 << 7 );
+
+    if ( fp.inputSignal ) {
+        if ( espPin )
+            fp.inputSignal->setMatrixRoute( espPin, inverted );
+        else if ( pin == m_constLowSelector )
+            fp.inputSignal->setMatrixConstant( Esp32InputSignal::ConstantLow, inverted );
+        else if ( pin == m_constHighSelector )
+            fp.inputSignal->setMatrixConstant( Esp32InputSignal::ConstantHigh, inverted );
+        else
+            fp.inputSignal->setMatrixConstant( Esp32InputSignal::NoConstant, inverted );
+        fp.inputSignal->selectMatrix( selected );
+        if ( fp.module )
+            fp.module->connected( fp.inputSignal->routed() );
+    } else if ( fp.pinPointer ) {
+        if ( m_matrixInputPads[func] && *fp.pinPointer == m_matrixInputPads[func] )
+            *fp.pinPointer = m_dummyPin;
+        m_matrixInputPads[func] = selected ? espPin : nullptr;
+        if ( selected && espPin )
+            *fp.pinPointer = espPin;
+        if ( fp.module )
+            fp.module->connected( selected && espPin != nullptr );
+    }
 }
 
 void Esp32Gpio::matrixOutChanged( int pin ) {
@@ -309,15 +336,6 @@ Esp32Pin* Esp32Gpio::createPin( int i, QString id, QemuDevice* mcu ) {
 #define U0TXD m_matrixOut[14]
 #define U1TXD m_matrixOut[17]
 #define U2TXD m_matrixOut[198]
-#define HSPICLK m_matrixOut[8]
-#define HSPIQ m_matrixOut[9]
-#define HSPID m_matrixOut[10]
-#define HSPICS0 m_matrixOut[11]
-#define VSPICLK m_matrixOut[63]
-#define VSPIQ m_matrixOut[64]
-#define VSPID m_matrixOut[65]
-#define VSPICS0 m_matrixOut[68]
-
 void Esp32Gpio::createIoMux() {
     funcPin DUMMY = { nullptr, nullptr, "---" };
     funcPin GPIO = {
@@ -333,8 +351,46 @@ void Esp32Gpio::createIoMux() {
                 pad->setIoMuxFuncs( { DUMMY, GPIO, DUMMY, DUMMY, DUMMY, DUMMY } );
             }
         }
+
+        int clk = m_nPins == 49 ? 101 : 63;
+        int miso = clk + 1;
+        int mosi = clk + 2;
+        int cs = m_nPins == 49 ? 110 : 68;
+        funcPin CLK = { m_matrixOut[clk].module, nullptr, m_matrixOut[clk].label,
+                        m_matrixOut[clk].outputSignal, m_matrixIn[clk].inputSignal };
+        funcPin MISO = { m_matrixOut[miso].module, nullptr, m_matrixOut[miso].label,
+                         m_matrixOut[miso].outputSignal, m_matrixIn[miso].inputSignal };
+        funcPin MOSI = { m_matrixOut[mosi].module, nullptr, m_matrixOut[mosi].label,
+                         m_matrixOut[mosi].outputSignal, m_matrixIn[mosi].inputSignal };
+        funcPin CS = { m_matrixOut[cs].module, nullptr, m_matrixOut[cs].label,
+                       m_matrixOut[cs].outputSignal, m_matrixIn[cs].inputSignal };
+        int clkPin = m_nPins == 49 ? 12 : 6;
+        int misoPin = m_nPins == 49 ? 13 : 2;
+        int mosiPin = m_nPins == 49 ? 11 : 7;
+        int csPin = 10;
+        m_espPad[clkPin]->setIoMuxFuncs( { DUMMY, GPIO, CLK, DUMMY, DUMMY, DUMMY } );
+        m_espPad[misoPin]->setIoMuxFuncs( { DUMMY, GPIO, MISO, DUMMY, DUMMY, DUMMY } );
+        m_espPad[mosiPin]->setIoMuxFuncs( { DUMMY, GPIO, MOSI, DUMMY, DUMMY, DUMMY } );
+        m_espPad[csPin]->setIoMuxFuncs( { DUMMY, GPIO, CS, DUMMY, DUMMY, DUMMY } );
         return;
     }
+
+    funcPin HSPICLK = { m_matrixOut[8].module, nullptr, m_matrixOut[8].label,
+                        m_matrixOut[8].outputSignal, m_matrixIn[8].inputSignal };
+    funcPin HSPIQ = { m_matrixOut[9].module, nullptr, m_matrixOut[9].label,
+                      m_matrixOut[9].outputSignal, m_matrixIn[9].inputSignal };
+    funcPin HSPID = { m_matrixOut[10].module, nullptr, m_matrixOut[10].label,
+                      m_matrixOut[10].outputSignal, m_matrixIn[10].inputSignal };
+    funcPin HSPICS0 = { m_matrixOut[11].module, nullptr, m_matrixOut[11].label,
+                        m_matrixOut[11].outputSignal, m_matrixIn[11].inputSignal };
+    funcPin VSPICLK = { m_matrixOut[63].module, nullptr, m_matrixOut[63].label,
+                        m_matrixOut[63].outputSignal, m_matrixIn[63].inputSignal };
+    funcPin VSPIQ = { m_matrixOut[64].module, nullptr, m_matrixOut[64].label,
+                      m_matrixOut[64].outputSignal, m_matrixIn[64].inputSignal };
+    funcPin VSPID = { m_matrixOut[65].module, nullptr, m_matrixOut[65].label,
+                      m_matrixOut[65].outputSignal, m_matrixIn[65].inputSignal };
+    funcPin VSPICS0 = { m_matrixOut[68].module, nullptr, m_matrixOut[68].label,
+                        m_matrixOut[68].outputSignal, m_matrixIn[68].inputSignal };
 
     // 0:  GPIO0    CLK_OUT1 GPIO0  ----      ----      EMAC_TX_CLK
     m_espPad[0]->setIoMuxFuncs( { GPIO, DUMMY, GPIO, DUMMY, DUMMY, DUMMY } );
