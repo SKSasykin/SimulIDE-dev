@@ -4,6 +4,7 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QApplication>
+#include <QDir>
 #include <QStandardPaths>
 #include <QTranslator>
 #include <QtGui>
@@ -59,7 +60,7 @@ int main( int argc, char* argv[] ) {
 
     QApplication app( argc, argv );
 
-    QSettings settings( QStandardPaths::standardLocations( QStandardPaths::AppDataLocation ).first() + "/simulide.ini",
+    QSettings settings( QDir::homePath() + "/.config/simulide/simulide.ini",
                         QSettings::IniFormat, 0l );
 
     QString locale = QLocale::system().name();

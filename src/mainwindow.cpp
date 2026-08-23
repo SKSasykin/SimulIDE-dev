@@ -41,7 +41,8 @@ MainWindow::MainWindow() : QMainWindow() {
 
     this->setWindowTitle( m_version );
 
-    m_configDir.setPath( QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) );
+    m_configDir.setPath( QDir::homePath() + "/.config/simulide" );
+    m_configDir.mkpath( m_configDir.absolutePath() );
 
     m_settings = new QSettings( getConfigPath( "simulide.ini" ), QSettings::IniFormat, this );
     m_compSettings = new QSettings( getConfigPath( "compList.ini" ), QSettings::IniFormat, this );
