@@ -155,7 +155,8 @@ bool Esp8266::createArgs()
                 << "qemu-system-xtensa"
                 << "-M"    << "esp8266-simul"
                 << "-bios" << m_firmPath
-                << "-icount" << "shift=4,align=off,sleep=on";
+                << "-icount" << "shift=4,align=off,sleep=on"
+                << "-L"    << QFileInfo( m_executable ).absolutePath();
     return true;
 }
 
