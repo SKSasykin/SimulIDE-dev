@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QDir>
 //#include <QDebug>
 #include "circuit.h"
 #include "codeeditor.h"
@@ -139,7 +140,7 @@ void InoDebugger::setToolPath( QString path ) {
 #ifdef Q_OS_LINUX // Linux
                 m_toolPath = QStandardPaths::writableLocation( QStandardPaths::HomeLocation ) + "/.arduino15";
 #else // MacOS
-                m_toolPath = QStandardPaths::writableLocation( QStandardPaths::GenericDataLocation ) + "/../Arduino15";
+                m_toolPath = QDir::homePath() + "/.config/simulide/Arduino15";
 #endif
 #endif
             }
