@@ -5,6 +5,13 @@ RELEASE = ""
 TEMPLATE = app
 TARGET = simulide
 
+macx {
+    # Fixed bundle identifier (no build timestamp) while the .app name keeps <ts>.
+    # Settings live in ~/.config/simulide; this keeps OS artifacts (Saved State, crash logs) stable too.
+    QMAKE_TARGET_BUNDLE_PREFIX = org.simulide
+    QMAKE_INFO_PLIST = $$PWD/resources/Info.plist
+}
+
 QT += svg
 QT += xml
 QT += widgets
