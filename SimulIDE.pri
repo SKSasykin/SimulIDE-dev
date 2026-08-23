@@ -149,6 +149,8 @@ TARGET = simulide-$$BUILD_STAMP
 
 OBJECTS_DIR *= $$OUT_PWD/build/objects
 MOC_DIR     *= $$OUT_PWD/build/moc
+UI_DIR      *= $$OUT_PWD/build/ui
+RCC_DIR     *= $$OUT_PWD/build/rcc
 INCLUDEPATH += $$MOC_DIR
 
 DESTDIR = $$BUILD_DIR/executables
