@@ -24,6 +24,7 @@ SimulIDE также включает редактор кода и отладчи
  - Qt5Xml
  - Qt5Widgets
  - Qt5Concurrent
+ - Qt5Network
  - Qt5svg dev
  - Qt5 Multimedia dev
  - Qt5 Serialport dev
@@ -33,12 +34,13 @@ SimulIDE также включает редактор кода и отладчи
  - libgcrypt >= 1.8 (для эмуляции ESP32/STM32; macOS: `brew install libgcrypt`,
    Debian/Ubuntu: `libgcrypt20-dev`, Fedora: `libgcrypt-devel`)
  - Стандартные зависимости сборки QEMU: пакеты разработки glib-2.0 и pixman
+ - libslirp >= 4.0 (пользовательская сеть виртуального WiFi ESP)
 
 На macOS (Homebrew) всё вышеперечисленное устанавливается так:
 
 ```
 $ xcode-select --install
-$ brew install qt@5 libgcrypt glib pixman ninja pkgconf python3
+$ brew install qt@5 libgcrypt glib pixman libslirp ninja pkgconf python3
 ```
 
 Примечание: `qt@5` — keg-only, поэтому сначала добавьте его bin в `PATH`:
@@ -89,6 +91,7 @@ $ make
  - Qt5svg
  - Qt5Widgets
  - Qt5Concurrent
+ - Qt5Network
  - Qt5 Multimedia
  - Qt5 Multimedia Plugins
  - Qt5 Serialport
@@ -112,6 +115,38 @@ $ make
 Поддерживаемые контроллеры Espressif: ESP32, ESP32-S3, ESP32-C3 и ESP8266.
 
 ![ESP32 DevKit в SimulIDE](docs/esp32-devkit.png)
+
+### Поддержка виртуального WiFi и Bluetooth для ESP
+
+| Устройство | Виртуальный WiFi | Встроенный пример HTTP | Bluetooth |
+| --- | --- | --- | --- |
+| ESP32 | SLC DMA NIC с DHCP/NAT через libslirp | Да | Не поддерживается |
+| ESP32-S3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | Не поддерживается |
+| ESP32-C3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | Не поддерживается |
+| ESP8266EX | Виртуальный SLC NIC доступен; готового примера прошивки пока нет | Нет | В микросхеме отсутствует |
+
+Встроенные примеры **WiFi HTTP Hello World** для ESP32, ESP32-S3 и ESP32-C3
+используют специальный транспорт ESP-NETIF поверх эмулируемого контроллера
+SLC DMA. Backend libslirp в QEMU предоставляет DHCP и NAT без TAP-интерфейса
+и прав администратора. Это виртуальная сеть на уровне пакетов, а не эмуляция
+радио 802.11: произвольная прошивка с закрытым аппаратным WiFi-драйвером
+Espressif не заработает автоматически без транспорта виртуальной сети.
+
+Свойство `HostForwardPort` необязательно и по умолчанию равно `0` (выключено).
+Положительное значение перенаправляет выбранный TCP-порт хоста на TCP-порт 80
+гостя. Встроенные HTTP-примеры используют порт хоста `8080` и доступны по
+адресу `http://127.0.0.1:8080/`. Выбранный порт хоста должен быть свободен.
+Обычные примеры ESP не занимают порт и могут запускаться параллельно.
+Текущее правило QEMU слушает все IPv4-интерфейсы хоста; предупреждение по
+безопасности приведено в подробной документации.
+
+Bluetooth Classic и BLE пока **не поддерживаются end-to-end**. В коде есть
+внутренние кольца разделяемой памяти и заготовки мостов ESP32/ESP32-S3 для
+будущего HCI-транспорта, но пока отсутствуют эмулируемый Bluetooth-контроллер,
+виртуальный радиоэфир, scanning, соединения, GATT и проброс Bluetooth-адаптера
+хоста. Экспериментальные настройки канала намеренно скрыты из панели свойств.
+Полная архитектура, настройка и ограничения описаны в
+[docs/esp-wireless-support.md](docs/esp-wireless-support.md).
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,

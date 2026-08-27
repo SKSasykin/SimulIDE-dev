@@ -24,6 +24,7 @@ Build dependencies:
  - Qt5Xml
  - Qt5Widgets
  - Qt5Concurrent
+ - Qt5Network
  - Qt5svg dev
  - Qt5 Multimedia dev
  - Qt5 Serialport dev
@@ -33,12 +34,13 @@ Build dependencies:
  - libgcrypt >= 1.8 (ESP32/STM32 emulation; macOS: `brew install libgcrypt`,
    Debian/Ubuntu: `libgcrypt20-dev`, Fedora: `libgcrypt-devel`)
  - Standard QEMU host build deps: glib-2.0 and pixman dev packages
+ - libslirp >= 4.0 (ESP virtual WiFi user-mode networking)
 
 On macOS (Homebrew) everything above is installed with:
 
 ```
 $ xcode-select --install
-$ brew install qt@5 libgcrypt glib pixman ninja pkgconf python3
+$ brew install qt@5 libgcrypt glib pixman libslirp ninja pkgconf python3
 ```
 
 Note: `qt@5` is keg-only, so add its bin dir to your `PATH` first:
@@ -89,6 +91,7 @@ Run time dependencies:
  - Qt5svg
  - Qt5Widgets
  - Qt5Concurrent
+ - Qt5Network
  - Qt5 Multimedia
  - Qt5 Multimedia Plugins
  - Qt5 Serialport
@@ -117,6 +120,40 @@ ESP32-C3 (`esp32c3-simulide-bridge`) and misc build fixes; no external patch
 Supported Espressif controllers: ESP32, ESP32-S3, ESP32-C3 and ESP8266.
 
 ![ESP32 DevKit running in SimulIDE](docs/esp32-devkit.png)
+
+### ESP virtual WiFi and Bluetooth support
+
+| Device | Virtual WiFi backend | Bundled HTTP example | Bluetooth |
+| --- | --- | --- | --- |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
+| ESP8266EX | Virtual SLC NIC available; no bundled guest demo yet | No | Not available on the chip |
+
+The bundled ESP32, ESP32-S3 and ESP32-C3 **WiFi HTTP Hello World** examples
+use a custom ESP-NETIF transport over the emulated SLC DMA controller. QEMU's
+libslirp backend supplies DHCP and NAT without requiring a host TAP device or
+administrator privileges. This is packet-level virtual networking, not an
+802.11 radio simulation: arbitrary firmware using the closed Espressif WiFi
+hardware driver will not automatically work without the virtual network
+transport.
+
+`HostForwardPort` is optional and defaults to `0` (disabled). A positive value
+forwards that TCP port on the host to TCP port 80 in the guest; the bundled
+HTTP examples use host port `8080`, so they are reachable at
+`http://127.0.0.1:8080/`. The selected host port must be free. Ordinary ESP
+examples do not reserve a host port and can run in parallel. The current QEMU
+rule binds to all host IPv4 interfaces; see the security note in the detailed
+documentation.
+
+Bluetooth Classic and BLE are **not supported end-to-end yet**. The codebase
+contains internal shared-memory rings and ESP32/ESP32-S3 bridge scaffolding for
+future HCI transport, but there is currently no emulated Bluetooth controller,
+virtual radio, scanning, connections, GATT, or host Bluetooth adapter
+passthrough. These experimental link settings are intentionally hidden from
+the Properties panel. See
+[docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
+architecture, setup and limitations.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
