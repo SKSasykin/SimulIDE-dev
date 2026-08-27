@@ -15,8 +15,9 @@
 # It is idempotent: when the binaries are up to date it does nothing and
 # returns 0, so it is safe to run on every make of the main project.
 #
-# Requirements: git, python3 (with pip for the venv), ninja, meson build tools
-# and a C toolchain. GUI libs (sdl/gtk/vnc/curses) are NOT required.
+# Requirements: git, python3 (with pip for the venv), ninja, meson build tools,
+# libgcrypt, libslirp and a C toolchain. GUI libs (sdl/gtk/vnc/curses) are NOT
+# required.
 #
 set -euo pipefail
 
@@ -80,13 +81,24 @@ require_gcrypt() {
     fi
 }
 
-# Stale-config detection: a build.ninja configured without libgcrypt lacks the
-# esp32 rsa device and would produce a broken binary. When detected we must
-# wipe the build dir and reconfigure (checked before the fast path below).
+require_slirp() {
+    if ! pkg-config --atleast-version=4.0 slirp; then
+        err "pkg-config module 'slirp' >= 4.0 not found (REQUIRED for ESP32 virtual WiFi)."
+        err "Install it, e.g.:"
+        err "  macOS:    brew install libslirp"
+        err "  Debian:   sudo apt install libslirp-dev"
+        err "  Fedora:   sudo dnf install libslirp-devel"
+        exit 1
+    fi
+}
+
+# Stale-config detection: configurations without ESP32 crypto or SLIRP produce
+# a broken ESP32 virtual network. Reconfigure before taking the fast path.
 STALE_CONFIG=false
 if [ -f "$BUILD_DIR/build.ninja" ] && \
    { ! grep -q "hw/misc/esp32_rsa.c" "$BUILD_DIR/build.ninja" || \
-     ! grep -q "hw/xtensa/esp8266.c" "$BUILD_DIR/build.ninja"; }; then
+     ! grep -q "hw/xtensa/esp8266.c" "$BUILD_DIR/build.ninja" || \
+      ! grep -q '^#define CONFIG_SLIRP' "$BUILD_DIR/config-host.h"; }; then
     STALE_CONFIG=true
 fi
 
@@ -132,24 +144,25 @@ fi
 # touched. The bootstrap only needs python + pip + distlib + meson.
 BOOT="$BUILD_DIR/venv-bootstrap"
 if [ "$STALE_CONFIG" = true ]; then
-    info "stale build config without esp32 crypto (libgcrypt) detected, reconfiguring..."
+    info "stale build config without ESP32 crypto or SLIRP detected, reconfiguring..."
     rm -rf "$BUILD_DIR"
 fi
 if [ ! -f "$BUILD_DIR/build.ninja" ]; then
     require_gcrypt
+    require_slirp
     if [ ! -x "$BOOT/bin/python3" ] || \
        ! "$BOOT/bin/python3" -m mesonbuild.mesonmain --version >/dev/null 2>&1; then
         info "creating python bootstrap venv (meson, distlib)..."
         python3 -m venv "$BOOT"
         "$BOOT/bin/python3" -m pip install --quiet meson tomli distlib
     fi
-    info "configuring (minimal: no GUI libs, slirp, vnc, ...)..."
+    info "configuring (minimal: SLIRP enabled, no GUI libs or VNC)..."
     mkdir -p "$BUILD_DIR"
     if ! ( cd "$BUILD_DIR" && \
         "$QEMU_DIR/configure" \
         --python="$BOOT/bin/python3" \
         --target-list=arm-softmmu,xtensa-softmmu,riscv32-softmmu \
-        -Dslirp=disabled -Dvnc=disabled -Dsdl=disabled \
+        -Dslirp=enabled -Dvnc=disabled -Dsdl=disabled \
         -Dgtk=disabled -Dcurses=disabled -Dvde=disabled -Dnetmap=disabled \
         -Dgcrypt=enabled ); then
         err "qemu configure failed. See build/config.log"
