@@ -142,12 +142,6 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
                            "Auto,10 MHz,20 MHz,40 MHz,80 MHz,160 MHz,240 MHz",
                            this, &QemuDevice::emuFrequency, &QemuDevice::setEmuFrequency, 0, "enum" ),
 
-                       new IntProp<QemuDevice>( "WiFiLinkPort", tr( "WiFi Link Port" ), "_port",
-                                                this, &QemuDevice::wifiLinkPort, &QemuDevice::setWifiLinkPort ),
-
-                       new IntProp<QemuDevice>( "BtLinkPort", tr( "BT Link Port" ), "_port",
-                                                this, &QemuDevice::btLinkPort, &QemuDevice::setBtLinkPort ),
-
                        new IntProp<QemuDevice>( "HostForwardPort", tr( "Host Forward Port" ), "_port",
                                                 this, &QemuDevice::hostForwardPort,
                                                 &QemuDevice::setHostForwardPort ) },
