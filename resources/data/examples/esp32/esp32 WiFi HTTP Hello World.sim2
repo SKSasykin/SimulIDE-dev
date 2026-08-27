@@ -1,0 +1,7 @@
+<circuit version="2.0.0-" rev="260827" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" anicurr="0" ansi="0" width="3200" height="2400" >
+
+<item itemtype="QemuDevice" CircId="Esp32-1" mainComp="true" Show_id="true" Show_Val="false" Pos="0,-32" rotation="0" hflip="1" vflip="1" label="ESP32" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Program="../../bin/esp32/wifi_http_hello_world.ino.merged.bin" EmuFreq="auto" HostForwardPort="8080" />
+
+<item itemtype="TextComponent" CircId="TextComponent-2" mainComp="false" Show_id="false" Show_Val="false" Pos="-112,-112" rotation="0" hflip="1" vflip="1" label="TextComponent-2" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Margin="0 _px" Border="0 _px" Color="#ffffdc" Opacity="0" Font="Ubuntu" Font_Color="#202020" Font_Size="10 _px" Fixed_Width="false" Text="ESP32 virtual WiFi HTTP server. Start simulation, then open http://127.0.0.1:8080/ — response: Hello World!" />
+
+</circuit>
