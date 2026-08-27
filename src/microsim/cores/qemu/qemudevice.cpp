@@ -28,6 +28,7 @@
 #include "iopin.h"
 #include "itemlibrary.h"
 #include "qemudevice.h"
+#include "intprop.h"
 #include "qemuspi.h"
 #include "qemutimer.h"
 #include "qemutwi.h"
@@ -135,12 +136,22 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
                       new StrProp<QemuDevice>( "Args", tr( "Extra arguments" ), "", this, &QemuDevice::extraArgs,
                                                &QemuDevice::setExtraArgs ),
 
-                      new StrProp<QemuDevice>(
-                          "EmuFreq", tr( "Emulation frequency" ),
-                          "auto,10000000,20000000,40000000,80000000,160000000,240000000;"
-                          "Auto,10 MHz,20 MHz,40 MHz,80 MHz,160 MHz,240 MHz",
-                          this, &QemuDevice::emuFrequency, &QemuDevice::setEmuFrequency, 0, "enum" ) },
-                    0 } );
+                       new StrProp<QemuDevice>(
+                           "EmuFreq", tr( "Emulation frequency" ),
+                           "auto,10000000,20000000,40000000,80000000,160000000,240000000;"
+                           "Auto,10 MHz,20 MHz,40 MHz,80 MHz,160 MHz,240 MHz",
+                           this, &QemuDevice::emuFrequency, &QemuDevice::setEmuFrequency, 0, "enum" ),
+
+                       new IntProp<QemuDevice>( "WiFiLinkPort", tr( "WiFi Link Port" ), "_port",
+                                                this, &QemuDevice::wifiLinkPort, &QemuDevice::setWifiLinkPort ),
+
+                       new IntProp<QemuDevice>( "BtLinkPort", tr( "BT Link Port" ), "_port",
+                                                this, &QemuDevice::btLinkPort, &QemuDevice::setBtLinkPort ),
+
+                       new IntProp<QemuDevice>( "HostForwardPort", tr( "Host Forward Port" ), "_port",
+                                                this, &QemuDevice::hostForwardPort,
+                                                &QemuDevice::setHostForwardPort ) },
+                     0 } );
 }
 QemuDevice::~QemuDevice() {
     initialize();
@@ -191,6 +202,20 @@ void QemuDevice::setEmuFrequency( QString f ) {
     double freq = f.toDouble( &ok );
     if ( ok && freq > 0 && m_arena )
         m_arena->ps_per_inst = 1e12 / freq;
+}
+
+void QemuDevice::setWifiLinkPort( int p ) {
+    m_wifiLinkPort = p;
+    for( QemuModule* m : m_modules )
+        if( m->getType() == "wifi" )
+            m->setHostLink( (quint16)p );
+}
+
+void QemuDevice::setBtLinkPort( int p ) {
+    m_btLinkPort = p;
+    for( QemuModule* m : m_modules )
+        if( m->getType() == "bt" )
+            m->setHostLink( (quint16)p );
 }
 
 void QemuDevice::stamp() {
@@ -250,19 +275,18 @@ void QemuDevice::stamp() {
 
                 m_qemuProcess.waitForFinished( 500 );
 
-                if ( m_qemuProcess.exitStatus() != QProcess::NormalExit ) {
-                    QString output = m_qemuProcess.readAllStandardError();
-                    if ( !output.isEmpty() ) {
-                        QStringList lines = output.split( "\n" );
-                        for ( QString line : lines )
-                            qDebug() << line.remove( "\"" );
-                    }
-
+                QString output = m_qemuProcess.readAllStandardError();
+                if ( !output.isEmpty() ) {
+                    QStringList lines = output.split( "\n" );
+                    for ( QString line : lines )
+                        qDebug() << line.remove( "\"" );
+                }
+                if ( m_qemuProcess.state() == QProcess::NotRunning ) {
                     qDebug() << m_qemuProcess.exitStatus();
                     qDebug() << m_qemuProcess.error();
                     qDebug() << m_qemuProcess.exitCode();
-                    qDebug() << m_qemuProcess.state();
                 }
+                qDebug() << m_qemuProcess.state();
                 //                    m_qemuProcess.kill();
                 return;
             }

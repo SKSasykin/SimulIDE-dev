@@ -15,6 +15,8 @@ class Esp32Adc;
 class Esp32Gpio;
 class Esp32IoMux;
 class Esp32Led;
+class QemuWifi;
+class QemuBt;
 
 class Esp32 : public QemuDevice {
 public:
@@ -42,4 +44,7 @@ protected:
     Esp32Adc* m_adc;
 
     Esp32Led* m_leds;
+
+    QemuWifi* m_wifi;
+    QemuBt* m_bt;
 };

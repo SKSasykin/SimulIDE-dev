@@ -23,6 +23,12 @@ public:
 
     virtual void runAction();
 
+    // Optional host-network link hook (overridden by network modules such as
+    // QemuWifi / QemuBt). Default: no-op so generic modules are unaffected.
+    virtual void setHostLink( quint16 port ) { (void)port; }
+
+    QString getType() const { return m_type; }
+
     inline void writeMem( uint32_t address, uint32_t value ) { ( *m_ioMem )[address] = value; }
     inline void write() { ( *m_ioMem )[m_eventAddress] = m_eventValue; }
 
@@ -38,6 +44,7 @@ protected:
     void setInterrupt( uint8_t number, uint8_t level );
 
     QString m_name;
+    QString m_type = "module";
     int m_number;
 
     uint32_t* m_frequency;

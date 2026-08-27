@@ -18,6 +18,7 @@ QT += widgets
 QT += concurrent
 QT += serialport
 QT += multimedia widgets
+QT += network
 
 SOURCES      = $$files( $$PWD/src/*.cpp, true )
 HEADERS      = $$files( $$PWD/src/*.h, true )

@@ -19,6 +19,8 @@
 #include "esp32spi.h"
 #include "esp32twi.h"
 #include "esp32usart.h"
+#include "qemubt.h"
+#include "qemuwifi.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
 #include "utils.h"
@@ -82,6 +84,17 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF, LedcVariant::Esp32, 16, 8 );
 
+    // WiFi MAC (WDEV) and BT controller ranges are shadowed by the QEMU bridge
+    // and forwarded here. These modules are passthrough stubs for now; the host
+    // backend that moves real frames through the shared rings lands in phase 3/4.
+    m_wifi = new QemuWifi( this, id + "-WiFi", 0, 0x00030000, 0x00033FFF );
+    // ETS_RWBT_INTR_SOURCE = 6 on ESP32 (BT controller / VHCI host interrupt)
+    m_bt   = new QemuBt( this, id + "-BT", 0, 0x00051000, 0x00051FFF, 6 );
+
+    // Default host-link UDP ports (overridable from the property editor).
+    setWifiLinkPort( 14567 );
+    setBtLinkPort( 14568 );
+
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
     createMatrix();
@@ -123,6 +136,10 @@ bool Esp32::createArgs() {
         QDir buildDir = fi.absoluteDir();
         QFile bootloader( buildDir.filePath( "bootloader.bin" ) );
         QFile partitions( buildDir.filePath( "partitions.bin" ) );
+        if ( !bootloader.exists() )
+            bootloader.setFileName( buildDir.filePath( "bootloader/bootloader.bin" ) );
+        if ( !partitions.exists() )
+            partitions.setFileName( buildDir.filePath( "partition_table/partition-table.bin" ) );
 
         if ( bootloader.open( QIODevice::ReadOnly ) && partitions.open( QIODevice::ReadOnly )
              && input.open( QIODevice::ReadOnly ) ) {
@@ -148,7 +165,7 @@ bool Esp32::createArgs() {
                 flash.replace( appOffset, appData.size(), appData );
 
                 QString base = fi.baseName() + "-" + QString::number( qHash( fi.absoluteFilePath() ), 16 );
-                QString mergedPath = QDir::tempPath() + "/simulide-esp32-" + base + "-merged.bin";
+                QString mergedPath = buildDir.filePath( ".simulide-esp32-" + base + "-merged.bin" );
                 QFile merged( mergedPath );
                 if ( merged.open( QIODevice::WriteOnly ) && merged.write( flash ) == flash.size() ) {
                     merged.close();
@@ -173,7 +190,7 @@ bool Esp32::createArgs() {
 
     if ( size < 4194304 ) {
         QString base = fi.baseName() + "-" + QString::number( qHash( fi.absoluteFilePath() ), 16 );
-        QString padPath = QDir::tempPath() + "/simulide-esp32-" + base + "-flash.bin";
+        QString padPath = fi.absoluteDir().filePath( ".simulide-esp32-" + base + "-flash.bin" );
         QFile pad( padPath );
         if ( pad.exists() )
             pad.remove();
@@ -235,6 +252,14 @@ bool Esp32::createArgs() {
     // icount TCG throughput).
     m_arguments << "-icount";
     m_arguments << "shift=4,align=off,sleep=on";
+
+    // Give the virtual WiFi NIC DHCP/NAT through the host. Port forwarding is
+    // opt-in so unrelated simulations cannot fail when a host port is busy.
+    QString nic = "user,model=esp32.slc";
+    if ( m_hostForwardPort > 0 )
+        nic += QString( ",hostfwd=tcp::%1-:80" ).arg( m_hostForwardPort );
+    m_arguments << "-nic";
+    m_arguments << nic;
 
     //m_arguments << "-kernel";  // Does not work
     //m_arguments <<  firmware+".elf" ;

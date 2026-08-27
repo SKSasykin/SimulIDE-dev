@@ -19,6 +19,8 @@
 #include "esp32spi.h"
 #include "esp32twi.h"
 #include "esp32usart.h"
+#include "qemubt.h"
+#include "qemuwifi.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
 #include "utils.h"
@@ -82,6 +84,16 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00019000, 0x00019FFF, LedcVariant::Esp32s3, 8, 4 );
 
+    // BT controller range is shadowed by the QEMU bridge and forwarded here.
+    // Passthrough stub for now; the VHCI host backend lands in phase 4.
+    // ETS_RWBT_INTR_SOURCE = 7 on ESP32-S3 (enum is sequential from 0)
+    m_bt = new QemuBt( this, id + "-BT", 0, 0x00011000, 0x00011FFF, 7 );
+
+    m_wifi = new QemuWifi( this, id + "-WiFi", 0, 0x00033000, 0x00035FFF );
+
+    // Default host-link UDP port (overridable from the property editor).
+    setBtLinkPort( 14569 );
+
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 
     createMatrix();
@@ -118,7 +130,7 @@ bool Esp32s3::createArgs() {
 
     if ( size < 4194304 ) {
         QString base = QFileInfo( m_firmPath ).baseName();
-        QString padPath = QDir::tempPath() + "/simulide-esp32s3-" + base + "-flash.bin";
+        QString padPath = fi.absoluteDir().filePath( ".simulide-esp32s3-" + base + "-flash.bin" );
         QFile pad( padPath );
         if ( pad.exists() )
             pad.remove();
@@ -172,6 +184,12 @@ bool Esp32s3::createArgs() {
 
     m_arguments << "-icount";
     m_arguments << "shift=4,align=off,sleep=off";
+
+    QString nic = "user,model=esp32.slc";
+    if ( m_hostForwardPort > 0 )
+        nic += QString( ",hostfwd=tcp::%1-:80" ).arg( m_hostForwardPort );
+    m_arguments << "-nic";
+    m_arguments << nic;
 
     return true;
 }

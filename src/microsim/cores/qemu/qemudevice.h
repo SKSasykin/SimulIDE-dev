@@ -9,6 +9,31 @@
 
 #include "chip.h"
 
+// -------------------------------------------------
+// -- WiFi / BT packet rings (SimulIDE host <=> QEMU guest)
+//    Producer/consumer single-writer rings. The guest (QEMU) and the
+//    SimulIDE host backend each own one side of every ring:
+//      wifi_tx : guest -> host   (frames to transmit on the air / network)
+//      wifi_rx : host  -> guest  (frames received, delivered to the driver)
+//      bt_tx   : guest -> host   (HCI/ACL/iso out)
+//      bt_rx   : host  -> guest  (HCI/ACL/iso in)
+//    head is written by the producer, tail by the consumer.
+
+#define QEMU_WIFI_RING_FRAMES 64
+#define QEMU_WIFI_FRAME_MAX   1536
+
+typedef struct qemuWifiFrame {
+    uint32_t len;
+    uint8_t  data[QEMU_WIFI_FRAME_MAX];
+} qemuWifiFrame_t;
+
+typedef struct qemuWifiRing {
+    volatile uint32_t     head;
+    volatile uint32_t     tail;
+    volatile uint64_t     seq;
+    qemuWifiFrame_t       frames[QEMU_WIFI_RING_FRAMES];
+} qemuWifiRing_t;
+
 typedef struct qemuArena {
     uint64_t simuTime; // in ps
     uint64_t qemuTime; // in ps
@@ -21,6 +46,11 @@ typedef struct qemuArena {
     uint64_t running;
     int64_t loop_timeout_ns;
     double ps_per_inst;
+
+    qemuWifiRing_t wifi_rx;
+    qemuWifiRing_t wifi_tx;
+    qemuWifiRing_t bt_rx;
+    qemuWifiRing_t bt_tx;
 
 } qemuArena_t;
 
@@ -35,6 +65,8 @@ enum simuAction {
     SIM_USART,
     SIM_TIMER,
     SIM_GPIO_IN,
+    SIM_WIFI = 12,
+    SIM_BT = 13,
     SIM_EVENT = 1 << 7
 };
 
@@ -77,6 +109,14 @@ public:
 
     void addModule( QemuModule* m ) { m_modules.append( m ); }
 
+    // Host-link UDP ports for the WiFi / BT network backends.
+    int  wifiLinkPort() { return m_wifiLinkPort; }
+    void setWifiLinkPort( int p );
+    int  btLinkPort() { return m_btLinkPort; }
+    void setBtLinkPort( int p );
+    int  hostForwardPort() { return m_hostForwardPort; }
+    void setHostForwardPort( int p ) { m_hostForwardPort = p; }
+
     static QemuDevice* self() { return m_pSelf; }
     static Component* construct( QString type, QString id );
     static LibraryItem* libraryItem();
@@ -110,6 +150,10 @@ protected:
     uint64_t m_lastEvent;
 
     uint32_t m_ioMemStart;
+
+    int m_wifiLinkPort = 0;
+    int m_btLinkPort = 0;
+    int m_hostForwardPort = 0;
 
     int m_gpioSize;
     std::vector<IoPin*> m_ioPin;
