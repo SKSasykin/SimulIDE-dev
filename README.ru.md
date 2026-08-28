@@ -146,7 +146,7 @@ Bluetooth Classic и BLE пока **не поддерживаются end-to-end
 виртуальный радиоэфир, scanning, соединения, GATT и проброс Bluetooth-адаптера
 хоста. Экспериментальные настройки канала намеренно скрыты из панели свойств.
 Полная архитектура, настройка и ограничения описаны в
-[docs/esp-wireless-support.md](docs/esp-wireless-support.md).
+[docs/esp-wireless-support.ru.md](docs/esp-wireless-support.ru.md).
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,
@@ -187,7 +187,7 @@ ESP8266 управляется отдельным RTC-регистром. Эле
 при сбросе, а GPIO32 классического ESP32 корректно отображается в бит 0
 `GPIO_IN1`. Полная матрица GPIO, карты регистров, электрические формулы,
 результаты проверок и ограничения приведены в
-[docs/esp-gpio-pulls.md](docs/esp-gpio-pulls.md).
+[docs/esp-gpio-pulls.ru.md](docs/esp-gpio-pulls.ru.md).
 
 ### Поддержка I2C и SPI для ESP
 
@@ -215,7 +215,7 @@ GPIO).
 арбитраж и полное поведение таймингов и ошибок. Текущая реализация
 ориентирована на опрашиваемые master-драйверы. Полная таблица и ссылки на
 официальную документацию Espressif — в
-[docs/esp-i2c-spi-support.md](docs/esp-i2c-spi-support.md).
+[docs/esp-i2c-spi-support.ru.md](docs/esp-i2c-spi-support.ru.md).
 
 ### Поддержка АЦП для ESP
 
@@ -255,7 +255,7 @@ datasheet соответствиями «канал → GPIO» и эффекти
 Известные ограничения: не моделируются аппаратная ошибка (errata)
 ESP32-C3 ADC2_CH0, конкуренция ESP32 ADC2 с Wi-Fi и измерение внутреннего
 напряжения питания ESP8266. Полные подробности и ссылки на официальную
-документацию Espressif — в [docs/esp-adc-support.md](docs/esp-adc-support.md).
+документацию Espressif — в [docs/esp-adc-support.ru.md](docs/esp-adc-support.ru.md).
 
 ### Поддержка PWM (LEDC) для ESP
 
@@ -288,4 +288,4 @@ XTAL/RTC8M/REF_TICK (моделируются только APB-часы). У ESP
 аппаратного PWM-периферийного модуля, поэтому программный PWM ядра
 Arduino (`analogWrite` через таймер FRC1) не эмулируется. Полная матрица
 и ссылки на официальную документацию Espressif — в
-[docs/esp-pwm-support.md](docs/esp-pwm-support.md).
+[docs/esp-pwm-support.ru.md](docs/esp-pwm-support.ru.md).
