@@ -1,0 +1,6 @@
+#pragma once
+
+#include "esp_err.h"
+#include "esp_netif.h"
+
+esp_err_t virtual_wifi_start(esp_netif_t **out_netif);
