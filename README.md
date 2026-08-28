@@ -173,6 +173,27 @@ example firmware is used instead, so an empty board still boots and blinks:
 `data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3. ESP8266 uses the
 bundled `data/bin/esp8266/blink.bin` firmware.
 
+### ESP GPIO internal pull resistors
+
+GPIO pull-up and pull-down configuration is forwarded from guest firmware to
+the SimulIDE electrical solver. Pulls are modeled as nominal 45 kOhm analog
+conductances, not forced digital levels, so external circuitry can override
+them.
+
+| Device | Pull-capable GPIOs | Exceptions |
+| --- | --- | --- |
+| ESP8266EX | Pull-up on GPIO0-15; wake pull-down on GPIO0-15; `INPUT_PULLDOWN_16` on GPIO16 | GPIO16 has no internal pull-up; ordinary Arduino `INPUT_PULLDOWN` is unavailable on GPIO0-15 |
+| ESP32 | GPIO0-19, GPIO21-23, GPIO25-27, GPIO32-33 | GPIO34-39 have no integrated pulls |
+| ESP32-S3 | GPIO0-21, GPIO26-48 | Some pads may be reserved by flash, PSRAM, USB or strapping |
+| ESP32-C3 | GPIO0-21 | Some pads may be reserved by flash, USB or strapping |
+
+Classic ESP32 RTC pads use their RTC_IO RUE/RDE fields; other ESP32-family
+pads use IO_MUX `FUN_PU`/`FUN_PD`. ESP8266 GPIO16 uses its separate RTC
+register. The model clears electrical pulls on reset and correctly handles
+classic GPIO32 as bit 0 of `GPIO_IN1`. See
+[docs/esp-gpio-pulls.md](docs/esp-gpio-pulls.md) for the complete GPIO matrix,
+register maps, electrical equations, validation results and limitations.
+
 ### ESP I2C and SPI support
 
 General-purpose I2C and SPI controllers supported per device (memory SPI
