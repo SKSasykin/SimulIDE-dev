@@ -12,6 +12,8 @@
 class LibraryItem;
 class Esp8266Adc;
 class Esp8266Gpio;
+class Esp8266IoMux;
+class Esp8266Rtc;
 class IoPin;
 
 class Esp8266 : public QemuDevice {
@@ -33,6 +35,8 @@ class Esp8266 : public QemuDevice {
         uint32_t m_apbFreq;
 
         Esp8266Gpio* m_gpio;
+        Esp8266IoMux* m_iomux;
+        Esp8266Rtc* m_rtc;
         Esp8266Adc* m_adc;
         IoPin* m_adcPin;
 };

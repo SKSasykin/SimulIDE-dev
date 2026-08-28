@@ -28,6 +28,10 @@ class Esp8266Gpio : public QemuModule, public eElement
 
         uint32_t readPort();
 
+        Esp32Pin* getPad( int gpio ) {
+            return gpio >= 0 && gpio < (int)m_espPad.size() ? m_espPad[gpio] : nullptr;
+        }
+
     protected:
         void writeRegister() override;
         void readRegister() override;

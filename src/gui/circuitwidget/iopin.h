@@ -73,6 +73,7 @@ public:
 
     void setStateZ( bool z );
     virtual void setPullup( double p );
+    virtual void setPulldown( double p );
 
     void setInverted( bool invert ) override;
 

@@ -182,7 +182,7 @@ Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
 {
     //m_id     = id;
 
-    m_pullAdmit = 1e5; // 10k
+    m_pullResistance = 4.5e4; // Nominal ESP weak pull resistance.
 
     double vdd = 3.3; //m_port->getMcu()->vdd();
     m_outHighV = vdd;
@@ -191,6 +191,11 @@ Esp32Pin::Esp32Pin( int i, QString id, QemuDevice* mcu, IoPin* dummyPin )
 
     m_pullUp = 0;
     m_pullDown = 0;
+    m_iomuxPullUp = false;
+    m_iomuxPullDown = false;
+    m_rtcPullUp = false;
+    m_rtcPullDown = false;
+    m_rtcPullControl = false;
 
     m_pinMask = 1 << i;
 
@@ -242,8 +247,12 @@ void Esp32Pin::stamp() {
     //m_analog = false;
     //m_pull = false;
 
-    m_pullUp = 0;
-    m_pullDown = 0;
+    setInternalPullup( false );
+    setInternalPulldown( false );
+    if ( m_rtcPullControl ) {
+        setRtcPullup( false );
+        setRtcPulldown( false );
+    }
     m_inputEn = 0;
     setPinMode( input );
 
@@ -502,8 +511,6 @@ void Esp32Pin::refreshMatrixOutput() {
 }
 
 void Esp32Pin::writeIoMuxReg( uint16_t value ) {
-    uint64_t puld = ( value >> 7 ) & 1;
-
     // Sleep bits 0-6
     // PD bit 7
     // PU bit 8
@@ -511,17 +518,11 @@ void Esp32Pin::writeIoMuxReg( uint16_t value ) {
     // Drive bits 10-11
     // function bits 12-14
 
-    if ( m_pullDown != puld ) {
-        m_pullDown = puld;
-        /// TODO: iplement IoPin::setPulldown
-    }
+    bool puld = ( value >> 7 ) & 1;
+    setInternalPulldown( puld );
 
     uint8_t pulu = ( value >> 8 ) & 1;
-    if ( m_pullUp != pulu ) {
-        m_pullUp = pulu;
-        double pullup = pulu ? m_pullAdmit : 0;
-        IoPin::setPullup( pullup );
-    }
+    setInternalPullup( pulu );
 
     m_inputEn = ( value >> 9 ) & 1;
 
@@ -529,6 +530,54 @@ void Esp32Pin::writeIoMuxReg( uint16_t value ) {
     if ( m_iomuxIndex == func )
         return;
     selectIoMuxFunc( func );
+}
+
+void Esp32Pin::setInternalPullup( bool enabled ) {
+    if ( m_iomuxPullUp == enabled )
+        return;
+    m_iomuxPullUp = enabled;
+    updateInternalPullup();
+}
+
+void Esp32Pin::setInternalPulldown( bool enabled ) {
+    if ( m_iomuxPullDown == enabled )
+        return;
+    m_iomuxPullDown = enabled;
+    updateInternalPulldown();
+}
+
+void Esp32Pin::setRtcPullup( bool enabled ) {
+    bool sourceChanged = !m_rtcPullControl;
+    m_rtcPullControl = true;
+    if ( !sourceChanged && m_rtcPullUp == enabled )
+        return;
+    m_rtcPullUp = enabled;
+    updateInternalPullup();
+}
+
+void Esp32Pin::setRtcPulldown( bool enabled ) {
+    bool sourceChanged = !m_rtcPullControl;
+    m_rtcPullControl = true;
+    if ( !sourceChanged && m_rtcPullDown == enabled )
+        return;
+    m_rtcPullDown = enabled;
+    updateInternalPulldown();
+}
+
+void Esp32Pin::updateInternalPullup() {
+    bool enabled = m_rtcPullControl ? m_rtcPullUp : m_iomuxPullUp;
+    if ( m_pullUp == enabled )
+        return;
+    m_pullUp = enabled;
+    IoPin::setPullup( enabled ? m_pullResistance : 0 );
+}
+
+void Esp32Pin::updateInternalPulldown() {
+    bool enabled = m_rtcPullControl ? m_rtcPullDown : m_iomuxPullDown;
+    if ( m_pullDown == enabled )
+        return;
+    m_pullDown = enabled;
+    IoPin::setPulldown( enabled ? m_pullResistance : 0 );
 }
 
 void Esp32Pin::writePinReg( uint32_t value ) { }

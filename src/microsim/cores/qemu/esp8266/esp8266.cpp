@@ -18,6 +18,8 @@
 #include "esp32usart.h"
 #include "esp8266adc.h"
 #include "esp8266gpio.h"
+#include "esp8266iomux.h"
+#include "esp8266rtc.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
 #include "utils.h"
@@ -44,6 +46,8 @@ Esp8266::Esp8266( QString type, QString id, QString device )
     m_ioMemStart = IOMEM_BASE;
 
     m_gpio = new Esp8266Gpio( this, id+"-GPIO", 0, &m_apbFreq, 0x00000300, 0x000003FF, 17 );
+    m_rtc = new Esp8266Rtc( this, id+"-RTC", 0, &m_apbFreq, 0x00000700, 0x000007FF, m_gpio );
+    m_iomux = new Esp8266IoMux( this, id+"-IOMUX", 0, &m_apbFreq, 0x00000800, 0x000008FF, m_gpio );
 
     QString package = "./data/esp8266/esp8266.package";
     if( MainWindow::self() )

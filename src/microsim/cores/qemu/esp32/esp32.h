@@ -14,6 +14,7 @@ class LibraryItem;
 class Esp32Adc;
 class Esp32Gpio;
 class Esp32IoMux;
+class Esp32RtcIo;
 class Esp32Led;
 class QemuWifi;
 class QemuBt;
@@ -40,6 +41,7 @@ protected:
 
     Esp32Gpio* m_gpio;
     Esp32IoMux* m_iomux;
+    Esp32RtcIo* m_rtcIo;
 
     Esp32Adc* m_adc;
 

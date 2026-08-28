@@ -16,7 +16,7 @@ class Esp32Gpio : public QemuModule, public eElement {
 
 public:
     Esp32Gpio( QemuDevice* mcu, QString name, int n, uint32_t* clk = nullptr, uint64_t memStart = 0,
-               uint64_t memEnd = 0, int nPins = 40, int in1Base = 33, uint16_t pinBase = 0x88,
+               uint64_t memEnd = 0, int nPins = 40, int in1Base = 32, uint16_t pinBase = 0x88,
                uint16_t matrixInBase = 0x130, uint16_t matrixOutBase = 0x530 );
     ~Esp32Gpio();
 

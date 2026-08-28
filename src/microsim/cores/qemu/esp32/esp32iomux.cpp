@@ -15,7 +15,7 @@ Esp32IoMux::Esp32IoMux( QemuDevice* mcu, QString name, int n, uint32_t* clk, uin
 Esp32IoMux::~Esp32IoMux() { }
 
 void Esp32IoMux::reset() {
-    for ( int i = 0; i < 49; ++i )
+    for ( int i = 0; i < 50; ++i )
         m_iomuxReg[i] = 0;
 }
 
@@ -24,7 +24,7 @@ void Esp32IoMux::readRegister() {
     uint16_t val = 0;
 
     uint32_t index = offset / 4;
-    if ( index < 49 )
+    if ( index < 50 )
         val = m_iomuxReg[index];
 
     m_arena->regData = val;
@@ -40,7 +40,7 @@ void Esp32IoMux::writeRegister() {
         return;
 
     uint32_t index = offset / 4;
-    if ( index >= 49 )
+    if ( index >= 50 )
         return;
     if ( m_iomuxReg[index] == m_eventValue )
         return;

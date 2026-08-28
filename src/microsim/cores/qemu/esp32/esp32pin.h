@@ -122,6 +122,10 @@ public:
     //void setAnalog( bool a );
 
     void writeIoMuxReg( uint16_t value );
+    void setInternalPullup( bool enabled );
+    void setInternalPulldown( bool enabled );
+    void setRtcPullup( bool enabled );
+    void setRtcPulldown( bool enabled );
 
     void setMatrixFunc( uint16_t val, funcPin func );
     void setMatrixOutput( uint16_t val, funcPin func );
@@ -142,17 +146,24 @@ protected:
 
     void setPinState( bool high );
     void refreshMatrixOutput();
+    void updateInternalPullup();
+    void updateInternalPulldown();
     QString m_pinLabel;
 
     //bool m_analog;
     //bool m_alternate;
 
-    double m_pullAdmit;
+    double m_pullResistance;
 
     uint64_t m_pinMask;
     uint8_t m_pullUp;
     uint8_t m_pullDown;
     uint8_t m_inputEn;
+    bool m_iomuxPullUp;
+    bool m_iomuxPullDown;
+    bool m_rtcPullUp;
+    bool m_rtcPullDown;
+    bool m_rtcPullControl;
 
     uint8_t m_iomuxIndex;
     uint8_t m_matrixMuxIndex;
