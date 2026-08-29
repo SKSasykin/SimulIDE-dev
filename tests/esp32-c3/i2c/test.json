@@ -1,0 +1,13 @@
+{
+  "description": "single modern ESP32-C3 polling I2C master",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32c3.cpp", "contains": ["m_i2cN = 1", "0x00013000"]},
+    {"name": "modern I2C adapter", "path": "src/microsim/cores/qemu/esp32/esp32twi.cpp", "contains": ["m_commandCount = m_modern ? 8 : 16", "Esp32Twi::runCommand"]},
+    {"name": "QEMU controller", "path": "third_party/qemu-simulide/hw/i2c/esp32_i2c.c", "contains": ["esp32_i2c_do_transaction"]},
+    {"name": "negative source contract: busy and slave-mode starts are ignored", "path": "src/microsim/cores/qemu/esp32/esp32twi.cpp", "ordered": ["if ( m_busy || m_mode != TWI_MASTER )", "return;", "m_busy = true;"], "within_lines": 4},
+    {"name": "negative source contract: TX FIFO overflow and RX underflow are bounded", "path": "src/microsim/cores/qemu/esp32/esp32twi.cpp", "contains": ["if ( m_txFifo.size() < 32 )", "m_interruptRaw |= 1 << 11;", "if ( m_rxFifo.empty() )", "m_interruptRaw |= 1 << 12;"]},
+    {"name": "negative source contract: ACK-checked NACK terminates the transaction", "path": "src/microsim/cores/qemu/esp32/esp32twi.cpp", "ordered": ["TWI_MTX_ADR_NACK", "m_interruptRaw |= 1 << 10;", "if ( m_ackCheck )", "finishTransaction( 1 << 10 );", "return;"], "within_lines": 6},
+    {"name": "negative source contract: C3 command lists stop after eight slots", "path": "src/microsim/cores/qemu/esp32/esp32twi.cpp", "ordered": ["m_commandCount = m_modern ? 8 : 16;", "while ( m_busy && m_commandIndex < m_commandCount )"], "within_lines": 122},
+    {"name": "negative source contract: DMA and complete timing behavior are unsupported", "path": "docs/esp-i2c-spi-support.md", "contains": ["Not implemented yet: slave operation for both I2C and SPI, DMA, SPI guest interrupt delivery, SPI command/address/dummy phases, dual/quad/octal transfers, arbitration, and complete timing/error behavior."]}
+  ]
+}

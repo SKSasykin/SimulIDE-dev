@@ -3,10 +3,6 @@ resources/qm/*.*
 .DS_Store
 .engram/
 
-# Test artifacts (keep only the directory, see .gitkeep)
-tests/*
-!tests/.gitkeep
-
 # Temporary work dir (moved from macOS per-user temp)
 tmp/
 

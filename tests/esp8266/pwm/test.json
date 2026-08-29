@@ -1,0 +1,11 @@
+{
+  "description": "FRC1 countdown timer used by self-contained software PWM",
+  "checks": [
+    {"name": "timer model", "path": "third_party/qemu-simulide/hw/timer/esp8266_frc1.c", "contains": ["FRC1_MASK", "esp8266_frc1_arm", "FRC1_INT_CLEAR", "QEMU_CLOCK_VIRTUAL"]},
+    {"name": "machine wiring", "path": "third_party/qemu-simulide/hw/xtensa/esp8266.c", "contains": ["TYPE_ESP8266_FRC1", "IRQ 9"]},
+    {"name": "negative source contract: FRC1 load is masked to 23 bits", "path": "third_party/qemu-simulide/hw/timer/esp8266_frc1.c", "ordered": ["case FRC1_LOAD:", "s->load = value & FRC1_MASK;", "esp8266_frc1_arm(s, s->load);"], "within_lines": 4},
+    {"name": "negative source contract: zero FRC1 count does not schedule timer", "path": "third_party/qemu-simulide/hw/timer/esp8266_frc1.c", "ordered": ["timer_del(&s->timer);", "if (s->enabled && s->count_base)", "timer_mod(&s->timer"], "within_lines": 4},
+    {"name": "negative source contract: unknown FRC1 writes are ignored", "path": "third_party/qemu-simulide/hw/timer/esp8266_frc1.c", "ordered": ["case FRC1_INT_CLEAR:", "qemu_irq_lower(s->irq);", "break;", "default:", "break;"], "within_lines": 6},
+    {"name": "negative source contract: stock analogWrite remains unsupported", "path": "docs/esp-pwm-support.md", "ordered": ["ESP8266 has no hardware PWM peripheral.", "stock Arduino `analogWrite()` is", "still unsupported because the machine has no ESP8266 boot ROM", "`NmiTimSetFunc`/NMI14 dispatch infrastructure."], "within_lines": 4}
+  ]
+}

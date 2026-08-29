@@ -165,9 +165,14 @@ DESTDIR = $$BUILD_DIR/executables
 
 # Re-run qmake at the end of every build so BUILD_STAMP is recomputed at make time
 # and the linker generates simulide-<yyMMdd.HHmm>.app with the fresh name directly.
+# Run ESP emulation and IDE integration tests after every normal build.
+# Use `SIMULIDE_SKIP_TESTS=1 make` for an intentional debug build without tests.
 QMAKE_EXTRA_TARGETS += stampApp
 stampApp.target = all
 stampApp.commands = @touch $$BUILD_DIR/SimulIDE_Build.pro
+macx|linux {
+    stampApp.commands = bash $$PWD/tests/run-tests.sh && touch $$BUILD_DIR/SimulIDE_Build.pro
+}
 
 runLrelease.commands = \
     lrelease $$PWD/resources/translations/*.ts; \

@@ -1,0 +1,12 @@
+{
+  "description": "A0/TOUT SAR bridge and 10-bit conversion adapter",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["new Esp8266Adc", "0x00000D00", "id == \"A0\" || id == \"TOUT\""]},
+    {"name": "conversion model", "path": "src/microsim/cores/qemu/esp8266/esp8266adc.cpp", "contains": ["1023", "m_pin", "SAR_RESULT_COUNT"]},
+    {"name": "MMIO bridge", "path": "third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c", "contains": ["0x60000D00", "0x0D00"]},
+    {"name": "negative source contract: null ADC pin samples zero volts", "path": "src/microsim/cores/qemu/esp8266/esp8266adc.cpp", "contains": ["double voltage = m_pin ? m_pin->getVoltage() : 0.0;"]},
+    {"name": "negative source contract: voltage below zero is clamped", "path": "src/microsim/cores/qemu/esp8266/esp8266adc.cpp", "ordered": ["double voltage = m_pin ? m_pin->getVoltage() : 0.0;", "if( voltage < 0.0 )", "voltage = 0.0;"], "within_lines": 2},
+    {"name": "negative source contract: voltage above one volt is clamped", "path": "src/microsim/cores/qemu/esp8266/esp8266adc.cpp", "ordered": ["double voltage = m_pin ? m_pin->getVoltage() : 0.0;", "if( voltage > 1.0 )", "voltage = 1.0;"], "within_lines": 3},
+    {"name": "negative source contract: conversion requires SAR_START rising edge", "path": "src/microsim/cores/qemu/esp8266/esp8266adc.cpp", "ordered": ["uint32_t previous = ( *m_ioMem )[m_eventAddress];", "( *m_ioMem )[m_eventAddress] = m_eventValue;", "!( previous & SAR_START ) && ( m_eventValue & SAR_START )", "convert();"], "within_lines": 5}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "IO_MUX GPIO0-15 and RTC GPIO16 pull decoding",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["new Esp8266Rtc", "new Esp8266IoMux", "0x00000700", "0x00000800"]},
+    {"name": "IO_MUX pulls", "path": "src/microsim/cores/qemu/esp8266/esp8266iomux.cpp", "contains": ["setInternalPullup", "setInternalPulldown", "1u << 7", "1u << 6"]},
+    {"name": "GPIO16 pull", "path": "src/microsim/cores/qemu/esp8266/esp8266rtc.cpp", "contains": ["setInternalPulldown", "offset != 0xA0", "1u << 3"]},
+    {"name": "negative source contract: out-of-range IO_MUX write is ignored", "path": "src/microsim/cores/qemu/esp8266/esp8266iomux.cpp", "ordered": ["uint64_t offset = m_eventAddress - m_memStart;", "if ( offset >= 0x100 )", "return;", "m_regs[offset / 4] = m_eventValue;"], "within_lines": 4},
+    {"name": "negative source contract: RTC pull writes affect GPIO16 only", "path": "src/microsim/cores/qemu/esp8266/esp8266rtc.cpp", "ordered": ["if ( offset != 0xA0 )", "return;", "Esp32Pin* pin = m_gpio->getPad( 16 );", "pin->setInternalPulldown( m_eventValue & (1u << 3) );"], "within_lines": 5},
+    {"name": "negative source contract: reset clears stale GPIO16 pull-down", "path": "src/microsim/cores/qemu/esp8266/esp8266rtc.cpp", "ordered": ["void Esp8266Rtc::reset()", "Esp32Pin* pin = m_gpio->getPad( 16 );", "if ( pin )", "pin->setInternalPulldown( false );"], "within_lines": 6}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "ADC1/ADC2 SENS conversion bridge",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "contains": ["new Esp32Adc", "0x00048800"]},
+    {"name": "ADC variant", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "contains": ["Esp32AdcEsp32", "SENS_SAR_START_FORCE_REG", "bits = 9"]},
+    {"name": "MMIO bridge", "path": "third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c", "contains": ["0x00048800"]},
+    {"name": "negative source contract: null pad reads zero before voltage clamps", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "ordered": ["Esp32Pin* pin = m_gpio ? m_gpio->getPad( gpio ) : nullptr;", "double volt = pin ? pin->getVoltage() : 0.0;", "if ( volt < 0.0 ) volt = 0.0;", "if ( volt > vfs ) volt = vfs;"], "within_lines": 10},
+    {"name": "negative source contract: no enabled ADC channel publishes zero", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "ordered": ["uint16_t raw = 0;", "if ( !( enPad & ( 1 << ( 19 + ch ) ) ) )", "continue;", "raw = getRaw(", "break;", "regVal | raw | SENS_MEAS_DONE_SAR"], "within_lines": 14},
+    {"name": "negative source contract: ADC2 and WiFi contention is documented absent", "path": "docs/esp-adc-support.md", "contains": ["- Contention between ESP32 ADC2 and Wi-Fi is not modeled."]}
+  ]
+}

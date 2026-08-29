@@ -1,0 +1,13 @@
+{
+  "description": "ESP32-C3 GPIO0-21 IO_MUX electrical pulls",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32c3.cpp", "contains": ["new Esp32IoMux", "0x00009000", "22, 22"]},
+    {"name": "IO_MUX decoding", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "contains": ["setInternalPullup", "setInternalPulldown", "writeIoMuxReg"]},
+    {"name": "electrical pull", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "contains": ["IoPin::setPullup", "IoPin::setPulldown"]},
+    {"name": "negative source contract: GPIO22 is outside the C3 package pull range", "path": "docs/esp-gpio-pulls.md", "contains": ["| ESP32-C3 | GPIO0-21 | Yes | Yes |"]},
+    {"name": "negative source contract: IO_MUX cache rejects index 50", "path": "src/microsim/cores/qemu/esp32/esp32iomux.cpp", "ordered": ["uint32_t index = offset / 4;", "if ( index >= 50 )", "return;"], "within_lines": 3},
+    {"name": "negative source contract: IO_MUX function values above five are rejected", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "ordered": ["if ( func > 5 )", "Selected func ERROR", "return;"], "within_lines": 4},
+    {"name": "negative source contract: reset clears both internal pull directions", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "ordered": ["setInternalPullup( false );", "setInternalPulldown( false );", "m_inputEn = 0;", "setPinMode( input );"], "within_lines": 8},
+    {"name": "negative source contract: flash ownership is not electrically enforced", "path": "docs/esp-gpio-pulls.md", "ordered": ["Flash/PSRAM ownership and contention are not electrically connected to the", "simulation even when doing so would stop execution on a physical module."], "within_lines": 3}
+  ]
+}

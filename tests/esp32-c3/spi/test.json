@@ -1,0 +1,13 @@
+{
+  "description": "single ESP32-C3 FSPI polling master",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32c3.cpp", "contains": ["m_spiN = 1", "id + \"-FSPI\"", "0x00024000"]},
+    {"name": "SPI adapter", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["m_modern", "Esp32Spi::startUserTransaction"]},
+    {"name": "QEMU controller", "path": "third_party/qemu-simulide/hw/ssi/esp32c3_spi.c", "contains": ["esp32c3_spi_begin_transaction", "esp32c3_spi_perform_transaction"]},
+    {"name": "negative source contract: active transaction rejects a second start", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["if ( m_transactionActive )", "return;"], "within_lines": 2},
+    {"name": "negative source contract: unrouted C3 endpoints abort and clear USR", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["bool endpointsRouted =", "!endpointsRouted", "writeMem( m_memStart, readMem( m_memStart ) & ~( 1 << ( m_modern ? 24 : 18 ) ) );", "return;"], "within_lines": 7},
+    {"name": "negative source contract: transfer data is capped at 64 bytes", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["m_dataBytes = std::min<uint32_t>( 64, ( bits + 7 ) / 8 );"]},
+    {"name": "negative source contract: modern zero length encodes one bit", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["bits = ( readMem( m_memStart + 0x1C ) & 0x3FFFF ) + 1;"]},
+    {"name": "negative source contract: command address dummy and multi-IO phases are unsupported", "path": "docs/esp-i2c-spi-support.md", "contains": ["SPI command/address/dummy phases, dual/quad/octal transfers"]}
+  ]
+}

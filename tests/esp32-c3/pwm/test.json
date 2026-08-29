@@ -1,0 +1,15 @@
+{
+  "description": "6-channel, 4-timer ESP32-C3 LEDC",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32c3.cpp", "contains": ["new Esp32Led", "LedcVariant::Esp32c3, 6, 4", "0x00019000"]},
+    {"name": "LEDC adapter", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "contains": ["m_variant != LedcVariant::Esp32", "m_nChannels", "m_nTimers"]},
+    {"name": "MMIO bridge", "path": "third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c", "contains": ["0x00019000"]},
+    {"name": "negative source contract: channel 6 and the channel-timer gap are rejected", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( offset >= (uint64_t)m_nChannels * 0x14 )", "return -1;"], "within_lines": 2},
+    {"name": "negative source contract: timer 4 is outside the modern timer window", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( offset >= 0x0A0 && offset < 0x0C0 )", "return ( offset - 0x0A0 ) / 8;", "return -1;"], "within_lines": 3},
+    {"name": "negative source contract: duty at or above full scale saturates high", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( high >= ticks )", "setOutput( true );", "return;"], "within_lines": 4},
+    {"name": "negative source contract: paused reset or zero-divider timer stops", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( pause || rst || div == 0 )", "m_timers[t]->setPeriod( 0 );"], "within_lines": 2},
+    {"name": "negative source contract: low-speed updates require PARA_UP strobes", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "contains": ["m_eventValue & ( 1 << 4 )", "m_eventValue & ( 1u << updateBit )", "uint32_t updateBit = ( m_variant == LedcVariant::Esp32 ) ? 26 : 25;"]},
+    {"name": "negative source contract: C3 timer resolution field is four bits", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "contains": ["dutyRes = val & 0xF;           // [3:0]"]},
+    {"name": "negative source contract: C3 lacks the S3 per-timer REF_TICK selector", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["tickSel = m_variant == LedcVariant::Esp32s3", "else if ( tickSel )", "clk = 1000000;"], "within_lines": 24}
+  ]
+}

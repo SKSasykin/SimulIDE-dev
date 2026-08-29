@@ -1,0 +1,12 @@
+{
+  "description": "ESP8266 virtual SLC NIC launch contract",
+  "checks": [
+    {"name": "NIC launch", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["user,model=esp32.slc", "hostfwd=tcp::%1-:80"]},
+    {"name": "SLC backend", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "contains": ["TYPE_ESP32_SLC", "NetClientState"]},
+    {"name": "negative source contract: host forwarding requires positive port", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "ordered": ["QString nic = \"user,model=esp32.slc\";", "if ( m_hostForwardPort > 0 )", "hostfwd=tcp::%1-:80"], "within_lines": 3},
+    {"name": "negative source contract: unaligned SLC read is rejected", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "ordered": ["if (addr & 0x3)", "unaligned read addr", "return 0;"], "within_lines": 4},
+    {"name": "negative source contract: out-of-range SLC read is rejected", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "ordered": ["if (addr >= ESP32_SLC_SIZE)", "out-of-range read addr", "return 0;"], "within_lines": 4},
+    {"name": "negative source contract: stock WiFi firmware does not gain networking", "path": "docs/esp-wireless-support.md", "ordered": ["does not emulate an 802.11 radio", "an arbitrary stock binary using `WiFi.begin()`", "will not automatically gain networking", "present."], "within_lines": 5},
+    {"name": "negative source contract: ESP8266 has no bundled guest demo", "path": "docs/esp-wireless-support.md", "contains": ["| ESP8266EX | Virtual SLC NIC available | No guest demo yet |"]}
+  ]
+}

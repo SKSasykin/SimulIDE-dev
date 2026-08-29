@@ -1,0 +1,13 @@
+{
+  "description": "HSPI and VSPI polling masters",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "contains": ["m_spiN = 2", "id + \"-HSPI\"", "id + \"-VSPI\"", "0x00064000", "0x00065000"]},
+    {"name": "SPI adapter", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["Esp32Spi::startUserTransaction", "Esp32Spi::endTransaction", "Esp32Spi::configureClock"]},
+    {"name": "QEMU controller", "path": "third_party/qemu-simulide/hw/ssi/esp32_spi.c", "contains": ["esp32_spi_read", "esp32_spi_write"]},
+    {"name": "negative source contract: active transaction ignores duplicate start", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["void Esp32Spi::startUserTransaction()", "if ( m_transactionActive )", "return;"], "within_lines": 4},
+    {"name": "negative source contract: unrouted endpoints clear CMD.USR and abort", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["bool endpointsRouted = m_ckOutput.routed() && m_moOutput.routed() && m_miInput.routed();", "endpointsRouted = endpointsRouted && m_ssOutput.routed();", ": !endpointsRouted )", "writeMem( m_memStart, readMem( m_memStart ) & ~( 1 <<", "return;"], "within_lines": 8},
+    {"name": "negative source contract: transfer is capped at 64 bytes", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["m_dataBytes = std::min<uint32_t>( 64, ( bits + 7 ) / 8 );", "if ( !m_dataBytes )"], "within_lines": 3},
+    {"name": "negative source contract: transaction with no data phase clears CMD.USR", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["if ( !m_dataBytes )", "writeMem( m_memStart, readMem( m_memStart ) & ~( 1 <<", "return;"], "within_lines": 4},
+    {"name": "negative source contract: unsupported slave DMA phases and wide modes are documented", "path": "docs/esp-i2c-spi-support.md", "contains": ["Not implemented yet: slave operation for both I2C and SPI, DMA", "SPI command/address/dummy phases, dual/quad/octal transfers", "polling-mode master drivers."]}
+  ]
+}

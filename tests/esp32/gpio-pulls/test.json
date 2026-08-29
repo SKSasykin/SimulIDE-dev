@@ -1,0 +1,13 @@
+{
+  "description": "classic IO_MUX and RTC_IO electrical pulls",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "contains": ["new Esp32RtcIo", "new Esp32IoMux", "0x00048400"]},
+    {"name": "electrical pull", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "contains": ["m_pullResistance", "IoPin::setPullup", "IoPin::setPulldown"]},
+    {"name": "RTC descriptors", "path": "src/microsim/cores/qemu/esp32/esp32rtcio.cpp", "contains": ["rtcPullPads", "setRtcPullup", "setRtcPulldown"]},
+    {"name": "negative source contract: invalid IO mux offsets are ignored", "path": "src/microsim/cores/qemu/esp32/esp32iomux.cpp", "ordered": ["int pin = getMuxGpio( offset );", "if ( pin < 0 )", "return;", "if ( index >= 50 )", "return;"], "within_lines": 8},
+    {"name": "negative source contract: invalid GPIO pads cannot receive mux writes", "path": "src/microsim/cores/qemu/esp32/esp32gpio.cpp", "ordered": ["if ( pin >= (uint8_t)m_espPad.size() )", "return;", "Esp32Pin* espPin = m_espPad[pin];", "if ( espPin )", "espPin->writeIoMuxReg( value );"], "within_lines": 7},
+    {"name": "negative source contract: invalid IO mux functions preserve the prior function", "path": "src/microsim/cores/qemu/esp32/esp32pin.cpp", "ordered": ["if ( func > 5 )", "Selected func ERROR", "return;", "disconnectIoMuxFunc();"], "within_lines": 8},
+    {"name": "negative source contract: reset disconnects matrix routes and invalid pads", "path": "src/microsim/cores/qemu/esp32/esp32gpio.cpp", "ordered": ["void Esp32Gpio::reset()", "func.inputSignal->clearMatrixRoute();", "*func.pinPointer = m_dummyPin;", "m_matrixInputPads[i] = nullptr;", "pin->resetRoutes();"], "within_lines": 23},
+    {"name": "negative source contract: flash ownership and FUN_IE enforcement are documented absent", "path": "docs/esp-gpio-pulls.md", "contains": ["- Flash/PSRAM ownership and contention are not electrically connected to the", "- IO_MUX input-enable is stored but GPIO input reads do not yet enforce its", "disabled state."]}
+  ]
+}

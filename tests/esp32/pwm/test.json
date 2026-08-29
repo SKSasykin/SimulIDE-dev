@@ -1,0 +1,15 @@
+{
+  "description": "16-channel, 8-timer classic LEDC",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "contains": ["new Esp32Led", "LedcVariant::Esp32, 16, 8", "0x00059000"]},
+    {"name": "LEDC adapter", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "contains": ["LedcVariant::Esp32", "m_nChannels", "m_nTimers", "m_leds"]},
+    {"name": "MMIO bridge", "path": "third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c", "contains": ["0x00059000"]},
+    {"name": "negative source contract: invalid channel and timer offsets are rejected", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "contains": ["if ( offset >= (uint64_t)m_nChannels * 0x14 )\n        return -1;", "if ( offset >= 0x0A0 && offset < 0x0C0 )\n        return ( offset - 0x0A0 ) / 8;\n    return -1;"]},
+    {"name": "negative source contract: zero and over-full duty saturate without edges", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( high == 0 )", "setOutput( false );", "return;", "if ( high >= ticks )", "setOutput( true );", "return;"], "within_lines": 10},
+    {"name": "negative source contract: stopped reset or divider-zero timer cancels output period", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["if ( pause || rst || div == 0 )", "m_timers[t]->setPeriod( 0 );"], "within_lines": 3},
+    {"name": "negative source contract: low-speed updates require and clear PARA_UP", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["uint32_t updateBit = ( m_variant == LedcVariant::Esp32 ) ? 26 : 25;", "if ( !isLowSpeedTimer( t ) || ( m_eventValue & ( 1u << updateBit ) ) )", "commitTimer( t );", "ledTimer->m_rawConf &= ~( 1u << updateBit );"], "within_lines": 59},
+    {"name": "negative source contract: zero fade parameters stop fade and clear start", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["pwm->m_fadeActive = pwm->m_fadeScale && pwm->m_fadeRemaining;", "if ( !pwm->m_fadeActive )", "pwm->m_activeConf1 &= ~( 1u << 31 );", "pwm->m_rawConf1 &= ~( 1u << 31 );"], "within_lines": 6},
+    {"name": "negative source contract: fade decrement saturates at zero and completion stops", "path": "src/microsim/cores/qemu/esp32/esp32led.cpp", "ordered": ["m_duty = step > m_duty ? 0 : m_duty - step;", "if ( --m_fadeRemaining == 0 )", "m_fadeActive = false;", "m_owner->fadeEnded( m_channel );"], "within_lines": 9},
+    {"name": "negative source contract: documented hardware resolution exceeds family model bounds", "path": "docs/esp-pwm-support.md", "contains": ["`duty_res` selects the counter full scale `2^duty_res` (ESP32 field 5 bits,", "with a 20-bit counter; ESP32-S3/C3 field 4 bits -> up to 14 bit)."]}
+  ]
+}

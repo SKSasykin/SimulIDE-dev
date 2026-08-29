@@ -1,0 +1,11 @@
+{
+  "description": "fixed-pin polling HSPI master",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["id+\"-HSPI\"", "0x00000100", "m_espPad[13]", "m_espPad[12]", "m_espPad[14]", "m_espPad[15]"]},
+    {"name": "SPI adapter", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["Esp32Spi::", "m_esp8266"]},
+    {"name": "negative source contract: active SPI transaction rejects reentry", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["if ( m_transactionActive )", "return;", "if ( m_mode != SPI_MASTER )"], "within_lines": 4},
+    {"name": "negative source contract: ESP8266 transfer requires fixed endpoints", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["if ( m_SS )", "m_esp8266 ? ( !m_dataInPin || !m_dataOutPin || !m_clkPin )", "writeMem( m_memStart", "return;"], "within_lines": 7},
+    {"name": "negative source contract: SPI payload is capped at 64 bytes", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "contains": ["m_dataBytes = std::min<uint32_t>( 64, ( bits + 7 ) / 8 );"]},
+    {"name": "negative source contract: unsupported SPI modes remain documented", "path": "docs/esp-i2c-spi-support.md", "ordered": ["Not implemented yet: slave operation for both I2C and SPI", "DMA, SPI guest interrupt delivery", "dual/quad/octal transfers", "current implementation targets polling-mode master drivers."], "within_lines": 1}
+  ]
+}

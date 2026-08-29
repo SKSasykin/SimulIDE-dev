@@ -1,0 +1,10 @@
+{
+  "description": "GPIO path required by ESP8266 software I2C",
+  "checks": [
+    {"name": "GPIO machine wiring", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["new Esp8266Gpio", "0x00000300"]},
+    {"name": "bidirectional GPIO", "path": "src/microsim/cores/qemu/esp8266/esp8266gpio.cpp", "contains": ["setOutState", "getInpState"]},
+    {"name": "documented software path", "path": "docs/esp-i2c-spi-support.md", "contains": ["software I2C", "continues to use GPIO"]},
+    {"name": "negative source contract: ESP8266 documents no hardware I2C controller", "path": "docs/esp-i2c-spi-support.md", "ordered": ["Software GPIO implementation", "no hardware I2C controller", "GPIO bit-banged I2C"], "within_lines": 1},
+    {"name": "negative source contract: no fictitious I2C controller replaces GPIO", "path": "docs/esp-i2c-spi-support.md", "ordered": ["ESP8266 does not expose a fictitious hardware I2C controller", "software I2C", "continues to use GPIO."], "within_lines": 2}
+  ]
+}

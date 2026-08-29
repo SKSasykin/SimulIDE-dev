@@ -1,0 +1,16 @@
+{
+  "description": "SLC DMA NIC, libslirp and host forwarding",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "contains": ["new QemuWifi", "user,model=esp32.slc", "hostfwd=tcp::%1-:80"]},
+    {"name": "host adapter", "path": "src/microsim/cores/qemu/qemuwifi.cpp", "contains": ["QemuWifi::pumpTx", "QemuWifi::processRx"]},
+    {"name": "SLC backend", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "contains": ["TYPE_ESP32_SLC", "NetClientState"]},
+    {"name": "negative source contract: zero host-forward port adds no forwarding rule", "path": "src/microsim/cores/qemu/esp32/esp32.cpp", "ordered": ["QString nic = \"user,model=esp32.slc\";", "if ( m_hostForwardPort > 0 )", "nic += QString( \",hostfwd=tcp::%1-:80\" )", "m_arguments << \"-nic\";"], "within_lines": 6},
+    {"name": "negative source contract: disabled host forwarding is documented as default", "path": "docs/esp-wireless-support.md", "contains": ["- `0` disables forwarding and is the default.", "Normal ESP examples leave forwarding disabled, do not reserve port 8080"]},
+    {"name": "negative source contract: SLC TX descriptor walk is bounded by chain and frame limits", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "ordered": ["for (int i = 0; cur && i < 256 && flen < QEMU_WIFI_FRAME_MAX; i++)", "if (n > (uint32_t)(QEMU_WIFI_FRAME_MAX - flen))", "n = QEMU_WIFI_FRAME_MAX - flen;", "w0 &= ~SLC_DESC_OWNER;", "if (eof)", "break;"], "within_lines": 26},
+    {"name": "negative source contract: SLC RX rejects missing and guest-owned-invalid descriptors", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "ordered": ["if (!cur)", "return false;", "if (!(w0 & SLC_DESC_OWNER))", "return false;", "uint32_t n = MIN(len, desc_size);"], "within_lines": 13},
+    {"name": "negative source contract: shared WiFi rings bound fullness and frame length", "path": "src/microsim/cores/qemu/qemuwifi.h", "contains": ["% QEMU_WIFI_RING_FRAMES", "== m_arena->wifi_rx.head", "if( len > QEMU_WIFI_FRAME_MAX ) len = QEMU_WIFI_FRAME_MAX;", "if( m_arena->wifi_tx.head == m_arena->wifi_tx.tail ) return false;"]},
+    {"name": "negative source contract: SLC MMIO rejects unaligned and out-of-range access", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "contains": ["if (addr & 0x3) {\n        qemu_log_mask(LOG_GUEST_ERROR, \"%s: unaligned read", "if (addr >= ESP32_SLC_SIZE) {\n        qemu_log_mask(LOG_GUEST_ERROR, \"%s: out-of-range read", "if (addr & 0x3) {\n        qemu_log_mask(LOG_GUEST_ERROR, \"%s: unaligned write", "if (addr >= ESP32_SLC_SIZE) {\n        qemu_log_mask(LOG_GUEST_ERROR, \"%s: out-of-range write"]},
+    {"name": "negative source contract: stock WiFi and RF behavior are documented unsupported", "path": "docs/esp-wireless-support.md", "contains": ["does not emulate an 802.11 radio, access points, channels", "an arbitrary stock binary using `WiFi.begin()` or the native Espressif WiFi", "driver will not automatically gain networking"]},
+    {"name": "negative source contract: slirp rejects malformed and conflicting host forwarding", "path": "third_party/qemu-simulide/net/slirp.c", "contains": ["fail_reason = \"Bad protocol name\";", "fail_reason = \"Bad host port\";", "fail_reason = \"Bad guest port\";", "Could not set up host forwarding rule", "Invalid host forwarding rule"]}
+  ]
+}

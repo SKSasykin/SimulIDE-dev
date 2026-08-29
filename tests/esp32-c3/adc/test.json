@@ -1,0 +1,12 @@
+{
+  "description": "ESP32-C3 ADC1/ADC2 APB_SARADC conversion bridge",
+  "checks": [
+    {"name": "machine wiring", "path": "src/microsim/cores/qemu/esp32/esp32c3.cpp", "contains": ["new Esp32Adc", "0x00040000", "Esp32AdcC3"]},
+    {"name": "modern ADC model", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "contains": ["Esp32AdcC3", "C3_ONETIME_SAMPLE_REG", "convertC3"]},
+    {"name": "MMIO bridge", "path": "third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c", "contains": ["0x00040000"]},
+    {"name": "negative source contract: invalid C3 channel returns zero and still signals DONE", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "ordered": ["uint16_t raw = 0;", "if ( channel < nChans )", "raw = getRaw( chanGpio[channel], atten );", "= raw;", "uint32_t doneBit =", "C3_INT_RAW_REG] |= doneBit;"], "within_lines": 13},
+    {"name": "negative source contract: out-of-range voltage clamps to ADC rails", "path": "src/microsim/cores/qemu/esp32/esp32adc.cpp", "ordered": ["if ( volt < 0.0 ) volt = 0.0;", "if ( volt > vfs ) volt = vfs;", "if ( volt >= vfs - 1e-9 ) return maxRaw;"], "within_lines": 3},
+    {"name": "negative source contract: C3 conversion width is fixed at 12 bits", "path": "src/microsim/cores/qemu/esp32/esp32adc.h", "contains": ["uint16_t getRaw( int gpio, int atten, int bits = 12 );"]},
+    {"name": "negative source contract: C3 ADC2 silicon erratum remains unmodeled", "path": "docs/esp-adc-support.md", "contains": ["The ESP32-C3 ADC2_CH0 silicon errata is not modeled."]}
+  ]
+}
