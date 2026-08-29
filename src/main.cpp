@@ -9,6 +9,8 @@
 #include <QTranslator>
 #include <QtGui>
 
+#include <cstdlib>
+
 #include "batchtest.h"
 #include "circuitwidget.h"
 #include "editorwindow.h"
@@ -20,7 +22,7 @@ void myMessageOutput( QtMsgType type, const QMessageLogContext& context, const Q
     const char* function = context.function ? context.function : "";
     switch ( type ) {
     case QtDebugMsg:
-        if ( CircuitWidget::self() )
+        if ( !QCoreApplication::closingDown() && CircuitWidget::self() )
             CircuitWidget::self()->simDebugMessage( msg );
         fprintf( stderr, "%s \n", localMsg.constData() );
         break;
@@ -97,7 +99,44 @@ int main( int argc, char* argv[] ) {
                 break;
             }
             arg = QString::fromStdString( argv[i] );
-            QTimer::singleShot( 500, [arg]() { BatchTest::doBatchTest( arg ); } );
+            int timeoutMs = 30000;
+            if ( i + 1 < argc ) {
+                bool ok = false;
+                int value = QString::fromStdString( argv[i + 1] ).toInt( &ok );
+                if ( ok && value > 0 ) {
+                    timeoutMs = value;
+                    ++i;
+                }
+            }
+            QTimer::singleShot( 500, [arg, timeoutMs]() { BatchTest::doBatchTest( arg, timeoutMs ); } );
+            break;
+        } else if ( arg == "-smoke-test" ) {
+            if ( ++i >= argc ) {
+                qCritical() << "TEST ERROR: missing circuit argument for" << arg;
+                return 2;
+            }
+            QString file = QString::fromStdString( argv[i] );
+            if ( !QFile::exists( file ) || !( file.endsWith( ".sim1" ) || file.endsWith( ".sim2" ) ) ) {
+                qCritical() << "TEST ERROR: invalid circuit:" << file;
+                return 2;
+            }
+            int durationMs = 2000;
+            if ( i + 1 < argc ) {
+                bool ok = false;
+                int value = QString::fromStdString( argv[i + 1] ).toInt( &ok );
+                if ( ok && value > 0 )
+                    durationMs = value;
+            }
+            QTimer::singleShot( 500, [file, durationMs]() {
+                qDebug() << "TEST RUN: smoke" << file;
+                CircuitWidget::self()->loadCirc( file );
+                CircuitWidget::self()->powerCircOn();
+                QTimer::singleShot( durationMs, []() {
+                    CircuitWidget::self()->powerCircOff();
+                    qDebug() << "TEST PASS: smoke run completed";
+                    QCoreApplication::exit( 0 );
+                } );
+            } );
             break;
         } else {
             QString file = "file://";
@@ -122,5 +161,12 @@ int main( int argc, char* argv[] ) {
         }
     }
 
-    return app.exec();
+    int exitCode = app.exec();
+    if ( qEnvironmentVariableIsSet( "SIMULIDE_TEST_MODE" ) ) {
+        fflush( stdout );
+        fflush( stderr );
+        std::_Exit( exitCode );
+    }
+    qInstallMessageHandler( nullptr );
+    return exitCode;
 }

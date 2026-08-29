@@ -85,12 +85,12 @@ MainWindow::MainWindow() : QMainWindow() {
     m_circuitW->newCircuit();
     readSettings();
 
-    if ( m_autoUpdt ) {
+    if ( m_autoUpdt && !qEnvironmentVariableIsSet( "SIMULIDE_TEST_MODE" ) ) {
         QTimer::singleShot( 5000, CircuitWidget::self(), [=]() -> void { m_installer->checkForUpdates(); } );
     }
 
     QString backPath = getConfigPath( "backup.sim2" );
-    if ( QFile::exists( backPath ) ) {
+    if ( QFile::exists( backPath ) && !qEnvironmentVariableIsSet( "SIMULIDE_TEST_MODE" ) ) {
         QMessageBox msgBox;
         msgBox.setText( tr( "Looks like SimulIDE crashed..." ) + "\n\n"
                         + tr( "There is an auto-saved copy of the Circuit\n" )

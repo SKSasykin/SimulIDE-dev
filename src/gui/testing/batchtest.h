@@ -11,7 +11,7 @@ class Component;
 
 class BatchTest {
 public:
-    static void doBatchTest( QString folder );
+    static void doBatchTest( QString folder, int timeoutMs = 30000 );
 
     static bool isRunning() { return m_running; }
     static void addTestUnit( Component* c );
@@ -22,8 +22,12 @@ public:
 private:
     static void prepareTest( QDir dir );
     static void runNextCircuit();
+    static void failCurrentTest( QString reason, int testId );
+    static void finishBatch( int exitCode );
 
     static bool m_running;
+    static int m_testId;
+    static int m_timeoutMs;
 
     static QString m_currentFile;
 

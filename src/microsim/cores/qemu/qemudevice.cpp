@@ -180,6 +180,7 @@ void QemuDevice::initialize() {
     m_qemuProcess.waitForFinished( 500 );
     if ( m_qemuProcess.state() != QProcess::NotRunning ) {
         m_qemuProcess.kill();
+        m_qemuProcess.waitForFinished( 1000 );
         qDebug() << "QemuDevice: Qemu proccess killed";
     } else
         qDebug() << "QemuDevice: Qemu proccess finished";

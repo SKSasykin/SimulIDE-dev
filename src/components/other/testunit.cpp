@@ -92,7 +92,7 @@ void TestUnit::updateStep() {
 
     CircuitWidget::self()->powerCircOff();
     bool testOk = m_truthTable->checkThruth( &m_samples );
-    if ( !BatchTest::isRunning() )
+    if ( BatchTest::isRunning() )
         BatchTest::testCompleted( this, testOk );
 }
 
