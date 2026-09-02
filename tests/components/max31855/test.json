@@ -18,7 +18,7 @@
         "void Max31855::stamp()",
         "SpiModule::setMode( SPI_SLAVE )"
       ],
-      "within_lines": 5
+      "within_lines": 9
     },
     {
       "name": "14-bit signed thermocouple temp at 0.25C LSB into bits 18..31",

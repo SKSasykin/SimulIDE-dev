@@ -30,6 +30,9 @@ public:
     double temp() { return m_temp; }
     void setTemp( double t );
 
+    bool grounded() { return m_grounded; }
+    void setGrounded( bool g );
+
     double tempInc() { return m_tempInc; }
     void setTempInc( double inc ) { m_tempInc = inc; }
 
@@ -60,6 +63,7 @@ protected:
     double m_tempInc;
     double m_internalTemp;
 
+    bool m_grounded;
     bool m_oc;
     bool m_scg;
     bool m_scv;

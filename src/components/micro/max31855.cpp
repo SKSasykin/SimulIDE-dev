@@ -39,26 +39,27 @@ Max31855::Max31855( QString type, QString id )
     m_area = QRect( -18, -24, 36, 52 );
 
     m_pinCS.setLabelText( "CS" );
-    m_pinDI.setLabelText( "DI" );
     m_pinCK.setLabelText( "CK" );
     m_pinDO.setLabelText( "DO" );
 
     m_pinCS.setInputHighV( 2.31 );
     m_pinCS.setInputLowV( 0.99 );
-    m_pinDI.setInputHighV( 2.31 );
-    m_pinDI.setInputLowV( 0.99 );
     m_pinCK.setInputHighV( 2.31 );
     m_pinCK.setInputLowV( 0.99 );
     m_pinDO.setOutHighV( 3.3 );
 
-    m_pin.resize( 4 );
-    m_pin = { &m_pinCS, &m_pinDI, &m_pinCK, &m_pinDO };
-    for ( int i = 0; i < 4; i++ )
+    // DI (m_pinDI) is kept only as an internal MOSI input for SpiModule; it is
+    // not part of the connectable model and reads low when left open.
+    m_pinDI.setEnabled( false );
+    m_pinDI.setVisible( false );
+
+    m_pin.resize( 3 );
+    m_pin = { &m_pinCS, &m_pinCK, &m_pinDO };
+    for ( int i = 0; i < 3; i++ )
         m_pin[i]->setLabelColor( QColor( 250, 250, 200 ) );
 
     m_gnd.setLabelColor( QColor( 250, 250, 200 ) );
     m_gnd.setLabelText( "Gnd" );
-    m_gnd.setUnused( true );
 
     // SpiModule:
     m_MOSI = &m_pinDI;
@@ -71,6 +72,7 @@ Max31855::Max31855( QString type, QString id )
     m_temp = 22;
     m_tempInc = 0.5;
     m_internalTemp = 25;
+    m_grounded = false;
     m_oc = false;
     m_scg = false;
     m_scv = false;
@@ -109,6 +111,8 @@ Max31855::Max31855( QString type, QString id )
                                       &Max31855::setTempInc ),
               new DoubProp<Max31855>( "IntTemp", tr( "Internal Temp." ), "°C", this, &Max31855::internalTemp,
                                       &Max31855::setInternalTemp ),
+              new BoolProp<Max31855>( "Grounded", tr( "Grounded" ), "", this, &Max31855::grounded,
+                                      &Max31855::setGrounded, propNoCopy ),
                   },
                   0 } );
 
@@ -128,6 +132,11 @@ Max31855::~Max31855() { }
 void Max31855::stamp() {
     m_byteIndex = 0;
     buildData();
+    m_gnd.setUnused( m_grounded );
+    m_gnd.setEnabled( !m_grounded );
+    m_gnd.setVisible( !m_grounded );
+    if ( m_grounded )
+        m_gnd.removeConnector();
     SpiModule::setMode( SPI_SLAVE );
 }
 
@@ -182,6 +191,18 @@ void Max31855::setTemp( double t ) {
     if ( m_temp < -200 )
         m_temp = -200;
     buildData();
+    update();
+}
+
+void Max31855::setGrounded( bool g ) {
+    if ( g == m_grounded )
+        return;
+    m_grounded = g;
+    m_gnd.setUnused( g );
+    m_gnd.setEnabled( !g );
+    m_gnd.setVisible( !g );
+    if ( g )
+        m_gnd.removeConnector();
     update();
 }
 
