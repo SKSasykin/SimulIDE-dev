@@ -31,7 +31,7 @@ run_smoke() {
     local log="$RESULT_DIR/${name//\//-}.log"
 
     HOME="$RESULT_DIR" SIMULIDE_TEST_MODE=1 QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}" \
-        "$EXECUTABLE" -nogui -smoke-test "$ROOT_DIR/$circuit" "$duration_ms" >"$log" 2>&1 &
+        "$EXECUTABLE" -silent -nogui -smoke-test "$ROOT_DIR/$circuit" "$duration_ms" >"$log" 2>&1 &
     local pid=$!
     (
         sleep $((duration_ms / 1000 + 15))
@@ -57,7 +57,7 @@ run_http() {
     local response=""
 
     HOME="$RESULT_DIR" SIMULIDE_TEST_MODE=1 QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}" \
-        "$EXECUTABLE" -nogui -smoke-test "$ROOT_DIR/$circuit" 15000 >"$log" 2>&1 &
+        "$EXECUTABLE" -silent -nogui -smoke-test "$ROOT_DIR/$circuit" 15000 >"$log" 2>&1 &
     local pid=$!
     (
         sleep 30

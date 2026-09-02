@@ -92,6 +92,8 @@ int main( int argc, char* argv[] ) {
 
         if ( arg == "-nogui" ) {
             window.hideGui();
+        } else if ( arg == "-silent" ) {
+            window.hide();
         } else if ( arg == "-test" ) {
             i++;
             if ( i >= argc ) {
