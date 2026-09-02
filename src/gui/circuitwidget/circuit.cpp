@@ -693,6 +693,11 @@ void Circuit::clearCircuit() // Remove everything ( Clear Circuit )
     if ( m_simulator->isRunning() )
         CircuitWidget::self()->powerCircOff();
 
+    QList<Connector*> conns = m_connList;
+    for ( Connector* conn : conns ) {
+        removeConnector( conn );
+        delete conn;
+    }
     for ( Component* comp : m_compList ) {
         comp->remove();
         if ( comp->scene() )
@@ -704,6 +709,9 @@ void Circuit::clearCircuit() // Remove everything ( Clear Circuit )
             removeItem( node );
         delete node;
     }
+    m_connList.clear();
+    m_compList.clear();
+    m_nodeList.clear();
     SubCircuit::clearLocalData(); // Clear Data for Subcircuits in Circuit folder
     m_deleting = false;
 }
