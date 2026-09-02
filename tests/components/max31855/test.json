@@ -1,0 +1,160 @@
+{
+  "description": "MAX31855 SPI thermocouple component: 32-bit data-word encoding, fault flags and byte ordering",
+  "checks": [
+    {
+      "name": "component is an SPI slave module",
+      "path": "src/components/micro/max31855.h",
+      "contains": [
+        "class Max31855 : public Component, public SpiModule",
+        "void stamp() override",
+        "void endTransaction() override",
+        "void ssChanged( bool enable ) override"
+      ]
+    },
+    {
+      "name": "slave mode configured on stamp",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "void Max31855::stamp()",
+        "SpiModule::setMode( SPI_SLAVE )"
+      ],
+      "within_lines": 5
+    },
+    {
+      "name": "14-bit signed thermocouple temp at 0.25C LSB into bits 18..31",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "int16_t tc = (int16_t) lround( m_temp * 4 );",
+        "word |= ( (uint32_t) tc & 0x3FFF ) << 18;"
+      ],
+      "within_lines": 2
+    },
+    {
+      "name": "12-bit signed internal temp at 0.0625C LSB into bits 4..15",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "int16_t it = (int16_t) lround( m_internalTemp * 16 );",
+        "word |= ( (uint32_t) it & 0x0FFF ) << 4;"
+      ],
+      "within_lines": 2
+    },
+    {
+      "name": "fault bits map to FAULT/SCV/SCG/OC flags",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "if ( m_scv )",
+        "word |= 1 << 2;",
+        "if ( m_scg )",
+        "word |= 1 << 1;",
+        "if ( m_oc )",
+        "word |= 1 << 0;"
+      ],
+      "within_lines": 6
+    },
+    {
+      "name": "any fault sets the FAULT bit",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "if ( m_oc || m_scg || m_scv )",
+        "word |= 1 << 16;"
+      ],
+      "within_lines": 2
+    },
+    {
+      "name": "32-bit word split MSB-first into four send bytes",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "m_sendData[0] = word >> 24;",
+        "m_sendData[1] = word >> 16;",
+        "m_sendData[2] = word >> 8;",
+        "m_sendData[3] = word;"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "chip-select activation starts a fresh 32-bit transfer",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "if ( enable )",
+        "m_byteIndex = 0;",
+        "buildData();",
+        "m_srReg = m_sendData[0];"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "each 8-bit transaction advances the byte index and reloads the shift register",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "void Max31855::endTransaction()",
+        "SpiModule::endTransaction();",
+        "m_byteIndex = ( m_byteIndex + 1 ) & 0x3;",
+        "m_srReg = m_sendData[m_byteIndex];"
+      ],
+      "within_lines": 5
+    },
+    {
+      "name": "datasheet: DO (MISO) is serial data out, CS is active-low slave select, CK is the serial clock",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "m_MOSI = &m_pinDI;",
+        "m_MISO = &m_pinDO;",
+        "m_SS = &m_pinCS;",
+        "m_clkPin = &m_pinCK;"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "datasheet: chip-select gating is enabled",
+      "path": "src/components/micro/max31855.cpp",
+      "contains": [
+        "m_useSS = true"
+      ]
+    },
+    {
+      "name": "datasheet: fault flag setters immediately rebuild the 32-bit word",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "void Max31855::setOc( bool b )",
+        "buildData();",
+        "update();"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "datasheet: fields occupy exact bit positions (TC D18..D31, FAULT D16, internal D4..D15, SCV D2, SCG D1, OC D0); reserved D17 and D3 stay cleared",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "uint32_t word = 0;",
+        "word |= ( (uint32_t) tc & 0x3FFF ) << 18;",
+        "word |= ( (uint32_t) it & 0x0FFF ) << 4;",
+        "word |= 1 << 16;",
+        "word |= 1 << 2;",
+        "word |= 1 << 1;",
+        "word |= 1 << 0;"
+      ],
+      "within_lines": 18
+    },
+    {
+      "name": "negative source contract: thermocouple temp is clamped to datasheet range",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "void Max31855::setTemp( double t )",
+        "m_temp = t;",
+        "m_temp > 1000",
+        "m_temp < -200"
+      ],
+      "within_lines": 7
+    },
+    {
+      "name": "negative source contract: internal temp is clamped to -40..125",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "void Max31855::setInternalTemp( double t )",
+        "m_internalTemp > 125",
+        "m_internalTemp < -40"
+      ],
+      "within_lines": 9
+    }
+  ]
+}

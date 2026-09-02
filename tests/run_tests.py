@@ -10,6 +10,10 @@ TESTS_DIR = Path(__file__).resolve().parent
 ROOT_DIR = TESTS_DIR.parent
 MCUS = ("esp8266", "esp32", "esp32-s3", "esp32-c3")
 DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi")
+# Per-component source contracts, outside the ESP MCU tree.
+COMPONENT_CONTRACTS = (
+    "components/max31855/test.json",
+)
 TOP_LEVEL_KEYS = {"description", "checks"}
 CHECK_KEYS = {"name", "path", "contains", "ordered", "within_lines"}
 
@@ -229,6 +233,15 @@ def main():
                     passed += 1
                 else:
                     failed += 1
+        for relative in COMPONENT_CONTRACTS:
+            manifest = (TESTS_DIR / relative).resolve()
+            if not manifest.is_file():
+                print(f"FAIL {relative}: missing test.json")
+                failed += 1
+            elif run_contract(manifest):
+                passed += 1
+            else:
+                failed += 1
 
     if not args.contracts_only and not args.mcu and not args.direction:
         print("== SimulIDE integration tests ==")
