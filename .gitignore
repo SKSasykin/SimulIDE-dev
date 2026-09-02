@@ -3,6 +3,10 @@ resources/qm/*.*
 .DS_Store
 .engram/
 
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+
 # Temporary work dir (moved from macOS per-user temp)
 tmp/
 
