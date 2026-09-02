@@ -80,6 +80,31 @@ Circuit::Circuit( int width, int height, CircuitView* parent ) : QGraphicsScene(
 }
 
 Circuit::~Circuit() {
+    // Delete remaining scene items explicitly while all maps are still alive.
+    // The QGraphicsScene base destructor would otherwise run QGraphicsScene::clear()
+    // AFTER the member maps (m_pinMap, m_compMap, ...) have already been destroyed,
+    // causing Pin::~Pin and Connector::~Connector to dereference freed maps.
+    // Plain deletes are used (no connector bookkeeping) since the whole circuit is
+    // being torn down: deleting a component/connector removes it from the scene and
+    // its Pin/Connector destructors only touch the still-valid maps above.
+    while ( !m_connList.isEmpty() ) {
+        Connector* conn = m_connList.takeFirst();
+        conn->remLines();
+        delete conn;
+    }
+    while ( !m_compList.isEmpty() ) {
+        Component* comp = m_compList.takeFirst();
+        if ( comp->scene() )
+            removeItem( comp );
+        delete comp;
+    }
+    while ( !m_nodeList.isEmpty() ) {
+        Node* node = m_nodeList.takeFirst();
+        if ( node->scene() )
+            removeItem( node );
+        delete node;
+    }
+
     delete m_simulator;
 
     m_bckpTimer.stop();
