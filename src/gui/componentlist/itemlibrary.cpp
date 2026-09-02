@@ -76,6 +76,7 @@
 #include "lm555.h"
 #include "logicanalizer.h"
 #include "magnitudecomp.h"
+#include "max31855.h"
 #include "max72xx_matrix.h"
 #include "mcu.h"
 #include "memory.h"
@@ -265,6 +266,7 @@ void ItemLibrary::loadItems() {
     addItem( Dht22::libraryItem() );
     addItem( DS1621::libraryItem() );
     addItem( Ds18b20::libraryItem() );
+    addItem( Max31855::libraryItem() );
 
     addItem( new LibraryItem( QObject::tr( "Peripherals" ), "Micro", "perif.png", "Peripherals", nullptr ) );
     addItem( SdCard::libraryItem() );
