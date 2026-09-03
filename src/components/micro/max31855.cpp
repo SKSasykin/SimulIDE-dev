@@ -39,7 +39,7 @@ Max31855::Max31855( QString type, QString id )
     m_area = QRect( -18, -24, 36, 52 );
 
     m_pinCS.setLabelText( "CS" );
-    m_pinCK.setLabelText( "CK" );
+    m_pinCK.setLabelText( "CLK" );
     m_pinDO.setLabelText( "DO" );
 
     m_pinCS.setInputHighV( 2.31 );
