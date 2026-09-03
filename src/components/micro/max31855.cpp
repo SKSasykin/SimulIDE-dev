@@ -149,6 +149,10 @@ void Max31855::ssChanged( bool enable ) {
         m_byteIndex = 0;
         buildData();
         m_srReg = m_sendData[0];
+        // Push the fresh MSB to MISO immediately: the base class drove the
+        // stale bit at CS fall, and a mode-0 master samples it on the first
+        // rising edge before any shift happens (first RX byte read as 0x00).
+        driveData( ( m_srReg & m_outBit ) > 0 );
     }
 }
 

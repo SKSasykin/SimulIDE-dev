@@ -1,0 +1,17 @@
+<circuit version="2.0.0-" rev="260902" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" anicurr="0" ansi="0" width="3200" height="2400" >
+
+<item itemtype="Subcircuit" CircId="devkitC-1" mainComp="false" Show_id="true" Show_Val="false" Pos="0,0" rotation="0" hflip="1" vflip="1" label="devkitC" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0">
+<mainCompProps MainCompId="Esp32-2" Program="../../../bin/esp32/max31855.ino.merged.bin" EmuFreq="auto" HostForwardPort="0 _port" />
+</item>
+
+<item itemtype="MAX31855" CircId="Max31855-1" mainComp="false" Show_id="false" Show_Val="false" Pos="196,20" rotation="0" hflip="1" vflip="1" label="MAX31855" idLabPos="-24.2976,-44.7231" labelrot="0" valLabPos="-16,20" valLabRot="0" Temp="30 °C" TempInc="0.5 °C" IntTemp="25 °C" Grounded="true" OC="false" SCG="false" SCV="false" />
+
+<item itemtype="TextComponent" CircId="TextComponent-7" mainComp="false" Show_id="false" Show_Val="false" Pos="-96,-112" rotation="0" hflip="1" vflip="1" label="TextComponent-7" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Margin="0 _px" Border="0 _px" Color="#ffffdc" Opacity="0" Font="Ubuntu" Font_Color="#202020" Font_Size="10 _px" Fixed_Width="false" Text="ESP32 devkitC board + MAX31855: SPI2 HSPI — SCK&#x3DGPIO18, MISO&#x3DGPIO19, CS&#x3DGPIO5. Open Serial Monitor (USART1) to see temperature log every 1s. Adjust MAX31855 Temp with Up/Down buttons or fault switches." />
+
+<item itemtype="Connector" uid="Connector-11" startpinid="devkitC-1-G05" endpinid="Max31855-1-PinCS" pointList="88,96,180,96,180,56" />
+
+<item itemtype="Connector" uid="Connector-12" startpinid="devkitC-1-G18" endpinid="Max31855-1-PinCK" pointList="88,88,196,88,196,56" />
+
+<item itemtype="Connector" uid="Connector-13" startpinid="devkitC-1-G19" endpinid="Max31855-1-PinDO" pointList="88,80,204,80,204,56" />
+
+</circuit>
