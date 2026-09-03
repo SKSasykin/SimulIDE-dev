@@ -83,6 +83,15 @@
       "within_lines": 4
     },
     {
+      "name": "mode-0 preload advances from D31 to D30 before the first falling edge",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "driveData( ( m_srReg & m_outBit ) > 0 );",
+        "m_srReg <<= 1;"
+      ],
+      "within_lines": 2
+    },
+    {
       "name": "each 8-bit transaction advances the byte index and reloads the shift register",
       "path": "src/components/micro/max31855.cpp",
       "ordered": [
