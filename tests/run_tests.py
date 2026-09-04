@@ -14,6 +14,7 @@ DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi")
 COMPONENT_CONTRACTS = (
     "components/max31855/test.json",
 )
+SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
 TOP_LEVEL_KEYS = {"description", "checks"}
 CHECK_KEYS = {"name", "path", "contains", "ordered", "within_lines"}
 
@@ -146,6 +147,91 @@ def find_ordered(source, fragments, within_lines=None):
     return False, "ordered fragments were not found in the required order"
 
 
+def spi_clock_divider(value, modern):
+    if value & 0x80000000:
+        return 1
+    pre = (value >> 18) & (0xF if modern else 0x1FFF)
+    n = (value >> 12) & 0x3F
+    return (pre + 1) * (n + 1)
+
+
+def spi_clock_register(pre, n):
+    return ((pre - 1) << 18) | ((n - 1) << 12)
+
+
+def cpp_function_body(source, signature):
+    start = source.index(signature)
+    opening = source.index("{", start)
+    depth = 1
+    cursor = opening + 1
+    while depth:
+        if source[cursor] == "{":
+            depth += 1
+        elif source[cursor] == "}":
+            depth -= 1
+        cursor += 1
+    return source[opening + 1 : cursor - 1]
+
+
+def run_spi_clock_regression(root_dir=ROOT_DIR):
+    failures = []
+    try:
+        source = (root_dir / SPI_SOURCE).read_text(encoding="utf-8")
+        configure = cpp_function_body(source, "void Esp32Spi::configureClock()")
+        start = cpp_function_body(source, "void Esp32Spi::startUserTransaction()")
+    except (OSError, ValueError, IndexError) as error:
+        print(f"FAIL spi clock regression path={SPI_SOURCE!r}: {error}")
+        return False
+
+    if "m_modern ? 0x0C : 0x18" not in configure:
+        failures.append("variant SPI_CLOCK offsets are missing")
+    if "readMem( m_memStart + clockOffset )" not in configure:
+        failures.append("configureClock does not read the saved SPI_CLOCK register")
+    if "m_eventValue" in configure:
+        failures.append("configureClock still uses the current event value")
+    if "configureClock();" not in start:
+        failures.append("transaction start no longer reapplies the saved clock")
+
+    variants = (
+        ("ESP32", False, 1 << 18),
+        ("ESP8266", False, 1 << 18),
+        ("ESP32-S3", True, 1 << 24),
+        ("ESP32-C3", True, 1 << 24),
+    )
+    for variant, modern, command in variants:
+        clock_value = spi_clock_register(5, 16)
+        configured = spi_clock_divider(clock_value, modern)
+        if configured != 80 or spi_clock_divider(command, modern) == configured:
+            failures.append(f"{variant} SPI_CLOCK/SPI_CMD regression setup is invalid")
+
+    frequencies = (
+        (500_000, 5, 16, 80, 1_000_000),
+        (10_000, 125, 32, 4_000, 50_000_000),
+        (1_000, 625, 64, 40_000, 500_000_000),
+        (100, 6_250, 64, 400_000, 5_000_000_000),
+    )
+    for requested, pre, n, expected_divider, expected_half_period in frequencies:
+        divider = spi_clock_divider(spi_clock_register(pre, n), False)
+        half_period = divider * 1_000_000_000_000 // 40_000_000 // 2
+        if divider != expected_divider or half_period != expected_half_period:
+            failures.append(f"legacy {requested} Hz clock period is incorrect")
+
+    legacy_max = spi_clock_divider(spi_clock_register(8_192, 64), False)
+    modern_max = spi_clock_divider(spi_clock_register(16, 64), True)
+    if legacy_max != 524_288 or 80_000_000 / legacy_max <= 100:
+        failures.append("legacy 100 Hz hardware limit is incorrect")
+    if modern_max != 1_024 or 80_000_000 / modern_max != 78_125:
+        failures.append("modern minimum SPI clock is incorrect")
+
+    if failures:
+        print("FAIL spi clock frequency regression")
+        for failure in failures:
+            print(f"  {failure}")
+        return False
+    print("PASS spi clock frequency regression: saved divider and frequency changes")
+    return True
+
+
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
     relative = manifest_path.relative_to(tests_dir)
     try:
@@ -239,6 +325,11 @@ def main():
                 print(f"FAIL {relative}: missing test.json")
                 failed += 1
             elif run_contract(manifest):
+                passed += 1
+            else:
+                failed += 1
+        if args.direction in (None, "spi"):
+            if run_spi_clock_regression():
                 passed += 1
             else:
                 failed += 1

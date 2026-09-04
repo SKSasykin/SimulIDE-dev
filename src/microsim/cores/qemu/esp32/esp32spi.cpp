@@ -116,7 +116,8 @@ void Esp32Spi::endTransaction() {
 }
 
 void Esp32Spi::configureClock() {
-    uint32_t value = m_eventValue;
+    uint32_t clockOffset = m_modern ? 0x0C : 0x18;
+    uint32_t value = readMem( m_memStart + clockOffset );
     uint32_t divider = 1;
     if ( !( value & 0x80000000 ) ) {
         uint32_t pre = ( value >> 18 ) & ( m_modern ? 0xF : 0x1FFF );

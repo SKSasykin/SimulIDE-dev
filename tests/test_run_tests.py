@@ -86,6 +86,19 @@ class OrderedMatcherTests(unittest.TestCase):
         )
 
 
+class SpiClockTests(unittest.TestCase):
+    def test_frequency_dividers_and_limits(self):
+        value = run_tests.spi_clock_register(625, 64)
+        self.assertEqual(run_tests.spi_clock_divider(value, False), 40_000)
+        self.assertEqual(
+            run_tests.spi_clock_divider(run_tests.spi_clock_register(16, 64), True),
+            1_024,
+        )
+
+    def test_common_runner_executes_spi_regression(self):
+        self.assertTrue(run_tests.run_spi_clock_regression())
+
+
 class CommandLineTests(unittest.TestCase):
     def test_invalid_mcu_and_direction_exit_with_usage_error(self):
         script = str(Path(run_tests.__file__))
