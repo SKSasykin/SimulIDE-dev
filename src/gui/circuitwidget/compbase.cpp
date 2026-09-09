@@ -33,8 +33,10 @@ void CompBase::loadProperties( QVector<propStr_t> properties ) // Set properties
 void CompBase::remPropGroup( QString name ) {
     for ( int i = 0; i < m_propGroups.size(); ++i ) {
         if ( m_propGroups.at( i ).name == name ) {
-            for ( ComProperty* p : m_propGroups.at( i ).propList )
+            for ( ComProperty* p : m_propGroups.at( i ).propList ) {
                 m_propMap.remove( p->name() );
+                delete p;
+            }
             m_propGroups.removeAt( i );
             break;
         }

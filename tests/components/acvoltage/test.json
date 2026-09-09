@@ -1,0 +1,128 @@
+{
+  "description": "Ground-referenced fixed and rail AC sine sources use RMS voltage and safe self-scheduled events",
+  "checks": [
+    {
+      "name": "shared implementation registers fixed and rail variants",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "AcVoltage::fixedLibraryItem()",
+        "\"Fixed AC Voltage\"",
+        "AcVoltage::railLibraryItem()",
+        "\"AC Rail\""
+      ]
+    },
+    {
+      "name": "properties use RMS volts and frequency in hertz",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "\"Voltage_RMS\", tr( \"Voltage RMS\" ), \"V\"",
+        "\"Freq\", tr( \"Frequency\" ), \"Hz\"",
+        "setPropStr( \"Voltage_RMS\", \"220 V\" );",
+        "setPropStr( \"Freq\", \"50 Hz\" );"
+      ]
+    },
+    {
+      "name": "sine output converts RMS voltage to peak voltage",
+      "path": "src/components/sources/acvoltage.cpp",
+      "ordered": [
+        "const double peakVoltage = m_voltageRms * std::sqrt( 2.0 );",
+        "m_outpin->setVoltage( peakVoltage * std::sin( 2 * pi * time / m_psPerCycleDbl ) );"
+      ],
+      "within_lines": 3
+    },
+    {
+      "name": "nonpositive frequency is handled before period division",
+      "path": "src/components/sources/acvoltage.cpp",
+      "ordered": [
+        "if ( m_freq > 0 ) {",
+        "m_psPerCycleDbl = psPerSecond / m_freq;",
+        "} else {",
+        "m_psPerCycleDbl = 0;"
+      ],
+      "within_lines": 13
+    },
+    {
+      "name": "frequency is limited to one hundred samples at picosecond resolution",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "constexpr double maxFrequency = psPerSecond / samplesPerCycle;",
+        "m_freq = std::max( 0.0, std::min( frequency, maxFrequency ) );"
+      ]
+    },
+    {
+      "name": "waveform uses smooth self-scheduled updates with at least one hundred samples per cycle",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "constexpr double maxEventStep = 1e6;",
+        "constexpr int samplesPerCycle = 100;",
+        "m_eventStep = std::max( std::min( m_psPerCycleDbl / samplesPerCycle, maxEventStep ), 1.0 );",
+        "Simulator::self()->addEvent( nextEvent, this );"
+      ]
+    },
+    {
+      "name": "property edits preserve an existing simulator pause",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "const bool wasPaused = Simulator::self()->isPaused();",
+        "const bool resume = simulationActive && !wasPaused;",
+        "if ( resume )\n        Simulator::self()->resumeSim();"
+      ]
+    },
+    {
+      "name": "queued events are cancelled before registration and on destruction",
+      "path": "src/components/sources/acvoltage.cpp",
+      "contains": [
+        "AcVoltage::~AcVoltage()",
+        "Simulator::self()->cancelEvents( this );",
+        "if ( m_isRunning && m_eventStepInt > 0 )\n        Simulator::self()->addEvent( m_eventStepInt, this );"
+      ]
+    },
+    {
+      "name": "inactive source is held at zero volts",
+      "path": "src/components/sources/acvoltage.cpp",
+      "ordered": [
+        "if ( !m_isRunning || m_freq <= 0 || m_psPerCycleDbl <= 0 ) {",
+        "m_outpin->setVoltage( 0 );",
+        "return;"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "AC rail is forced active after property loading",
+      "path": "src/components/sources/acvoltage.cpp",
+      "ordered": [
+        "void AcVoltage::setup() {",
+        "if ( m_isRail ) {",
+        "m_alwaysOn = true;",
+        "setRunning( true );"
+      ],
+      "within_lines": 8
+    },
+    {
+      "name": "component variants are listed beside their DC counterparts",
+      "path": "src/gui/componentlist/itemlibrary.cpp",
+      "contains": [
+        "#include \"acvoltage.h\"",
+        "addItem( AcVoltage::fixedLibraryItem() );",
+        "addItem( AcVoltage::railLibraryItem() );"
+      ]
+    },
+    {
+      "name": "distinct AC source icons are embedded",
+      "path": "src/application.qrc",
+      "contains": [
+        "<file alias=\"acvoltage.svg\">../src/icons/components/acvoltage.svg</file>",
+        "<file alias=\"acrail.svg\">../src/icons/components/acrail.svg</file>"
+      ]
+    },
+    {
+      "name": "help documents RMS conversion and ground reference",
+      "path": "resources/data/help/acrail.txt",
+      "contains": [
+        "referenced to the simulator ground",
+        "Peak voltage is Voltage RMS * sqrt(2)",
+        "Frequency: (50 Hz)"
+      ]
+    }
+  ]
+}

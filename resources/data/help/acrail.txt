@@ -1,0 +1,13 @@
+Ground-referenced sine-wave voltage rail.
+
+AC Rail is always active and has one output referenced to the simulator ground.
+The configured voltage is RMS. Peak voltage is Voltage RMS * sqrt(2).
+
+Property: (default value)
+
+- Voltage RMS: (220 V)
+   Effective (RMS) output voltage.
+
+- Frequency: (50 Hz)
+   Sine-wave frequency.
+   Maximum value is 10 GHz.

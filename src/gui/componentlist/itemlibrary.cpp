@@ -8,6 +8,7 @@
 
 //BEGIN Item includes
 #include "adc.h"
+#include "acvoltage.h"
 #include "aip31068_i2c.h"
 #include "ampmeter.h"
 #include "audio_out.h"
@@ -160,6 +161,7 @@ void ItemLibrary::loadItems() {
     // Sources
     addItem( new LibraryItem( QObject::tr( "Sources" ), "", "", "Sources", nullptr ) );
     addItem( FixedVolt::libraryItem() );
+    addItem( AcVoltage::fixedLibraryItem() );
     addItem( Clock::libraryItem() );
     addItem( WaveGen::libraryItem() );
     addItem( VoltSource::libraryItem() );
@@ -167,6 +169,7 @@ void ItemLibrary::loadItems() {
     addItem( Csource::libraryItem() );
     addItem( Battery::libraryItem() );
     addItem( Rail::libraryItem() );
+    addItem( AcVoltage::railLibraryItem() );
     addItem( Ground::libraryItem() );
     // Switches
     addItem( new LibraryItem( QObject::tr( "Switches" ), "", "", "Switches", nullptr ) );

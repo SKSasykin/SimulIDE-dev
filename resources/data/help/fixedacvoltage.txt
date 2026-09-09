@@ -1,0 +1,16 @@
+Switchable ground-referenced sine-wave voltage source.
+
+Turn On/Off with the left button. When off, the output is held at 0 V.
+The configured voltage is RMS. Peak voltage is Voltage RMS * sqrt(2).
+
+Property: (default value)
+
+- Voltage RMS: (220 V)
+   Effective (RMS) output voltage.
+
+- Frequency: (50 Hz)
+   Sine-wave frequency.
+   Maximum value is 10 GHz.
+
+- Small size: (false)
+   Use the compact component body.

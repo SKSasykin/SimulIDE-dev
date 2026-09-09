@@ -12,6 +12,7 @@ MCUS = ("esp8266", "esp32", "esp32-s3", "esp32-c3")
 DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi")
 # Per-component source contracts, outside the ESP MCU tree.
 COMPONENT_CONTRACTS = (
+    "components/acvoltage/test.json",
     "components/heater/test.json",
     "components/max31855/test.json",
 )
