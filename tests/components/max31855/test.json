@@ -18,16 +18,17 @@
         "void Max31855::stamp()",
         "SpiModule::setMode( SPI_SLAVE )"
       ],
-      "within_lines": 9
+      "within_lines": 13
     },
     {
       "name": "14-bit signed thermocouple temp at 0.25C LSB into bits 18..31",
       "path": "src/components/micro/max31855.cpp",
       "ordered": [
-        "int16_t tc = (int16_t) lround( m_temp * 4 );",
+        "const double temperature = m_externalThermocouple ? m_externalTemp : m_temp;",
+        "int16_t tc = (int16_t) lround( temperature * 4 );",
         "word |= ( (uint32_t) tc & 0x3FFF ) << 18;"
       ],
-      "within_lines": 2
+      "within_lines": 3
     },
     {
       "name": "12-bit signed internal temp at 0.0625C LSB into bits 4..15",
@@ -46,7 +47,7 @@
         "word |= 1 << 2;",
         "if ( m_scg )",
         "word |= 1 << 1;",
-        "if ( m_oc )",
+        "if ( openCircuit )",
         "word |= 1 << 0;"
       ],
       "within_lines": 6
@@ -55,10 +56,11 @@
       "name": "any fault sets the FAULT bit",
       "path": "src/components/micro/max31855.cpp",
       "ordered": [
-        "if ( m_oc || m_scg || m_scv )",
+        "const bool openCircuit = m_oc || ( m_externalThermocouple",
+        "if ( openCircuit || m_scg || m_scv )",
         "word |= 1 << 16;"
       ],
-      "within_lines": 2
+      "within_lines": 4
     },
     {
       "name": "32-bit word split MSB-first into four send bytes",
@@ -80,7 +82,7 @@
         "buildData();",
         "m_srReg = m_sendData[0];"
       ],
-      "within_lines": 4
+      "within_lines": 6
     },
     {
       "name": "mode-0 preload advances from D31 to D30 before the first falling edge",
@@ -142,7 +144,97 @@
         "word |= 1 << 1;",
         "word |= 1 << 0;"
       ],
-      "within_lines": 18
+      "within_lines": 20
+    },
+    {
+      "name": "external thermocouple inputs are placed on top and hidden by default",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "m_tcPlus( 90, QPoint( -8, -32 ), id + \"-PinTCPlus\"",
+        "m_tcMinus( 90, QPoint( 8, -32 ), id + \"-PinTCMinus\"",
+        "m_tcPlus.setLabelText( \"+\" );",
+        "m_tcPlus.setLabelOffset( QPointF( -4, -8 ) );",
+        "m_tcMinus.setLabelText( \"-\" );",
+        "m_tcMinus.setLabelOffset( QPointF( -4, -8 ) );",
+        "m_tcPlus.setLabelColor( Qt::black );",
+        "m_tcMinus.setLabelColor( Qt::black );",
+        "m_externalThermocouple = false;"
+      ],
+      "within_lines": 56
+    },
+    {
+      "name": "external thermocouple property controls both connectable input pins",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "new BoolProp<Max31855>( \"ExternalTC\", tr( \"External thermocouple\" )",
+        "void Max31855::setExternalThermocouple( bool external )",
+        "m_tcPlus.setUnused( !external );",
+        "m_tcPlus.setVisible( external );",
+        "m_tcMinus.setUnused( !external );",
+        "m_tcMinus.setVisible( external );",
+        "m_tcPlus.removeConnector();",
+        "m_tcMinus.removeConnector();"
+      ],
+      "within_lines": 140
+    },
+    {
+      "name": "external thermocouple mode hides manual temperature controls",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "m_upButtonProxy = Circuit::self()->addWidget( u_button );",
+        "m_downButtonProxy = Circuit::self()->addWidget( d_button );",
+        "void Max31855::setExternalThermocouple( bool external )",
+        "m_upButtonProxy->setVisible( !external );",
+        "m_downButtonProxy->setVisible( !external );"
+      ],
+      "within_lines": 165
+    },
+    {
+      "name": "external thermocouple mode extends the body to the top pin leads",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "QRect bodyRect( -18, -14, 36, 42 );",
+        "if ( m_externalThermocouple )",
+        "bodyRect.setTop( -24 );",
+        "p->drawRoundedRect( bodyRect, 1, 1 );"
+      ],
+      "within_lines": 4
+    },
+    {
+      "name": "external type-K voltage is converted with cold-junction compensation",
+      "path": "src/components/micro/max31855.cpp",
+      "ordered": [
+        "double Max31855::readThermocoupleTemp()",
+        "m_internalTemp + ( m_tcPlus.getVoltage() - m_tcMinus.getVoltage() ) / 41e-6",
+        "temperature > 1000",
+        "temperature < -200"
+      ],
+      "within_lines": 7
+    },
+    {
+      "name": "external thermocouple input changes refresh data and disconnected leads assert OC",
+      "path": "src/components/micro/max31855.cpp",
+      "contains": [
+        "m_tcPlus.changeCallBack( this, m_externalThermocouple );",
+        "m_tcMinus.changeCallBack( this, m_externalThermocouple );",
+        "!m_tcPlus.isConnected() || !m_tcMinus.isConnected()",
+        "updateExternalTemp();",
+        "Simulator::self()->addToUpdateList( this );",
+        "m_guiDirty = true;",
+        "if ( m_externalThermocouple ) {"
+      ]
+    },
+    {
+      "name": "component help documents SPI and manual/external thermocouple modes",
+      "path": "resources/data/help/max31855.txt",
+      "contains": [
+        "32-bit result is shifted",
+        "out MSB first in SPI mode 0",
+        "In manual mode",
+        "Enable External thermocouple",
+        "41 uV/C plus Internal Temp. cold-junction compensation",
+        "OC and FAULT bits are asserted"
+      ]
     },
     {
       "name": "negative source contract: thermocouple temp is clamped to datasheet range",

@@ -12,6 +12,7 @@
 #include "spimodule.h"
 
 class LibraryItem;
+class QGraphicsProxyWidget;
 
 class Max31855 : public Component, public SpiModule {
 public:
@@ -32,6 +33,9 @@ public:
 
     bool grounded() { return m_grounded; }
     void setGrounded( bool g );
+
+    bool externalThermocouple() { return m_externalThermocouple; }
+    void setExternalThermocouple( bool external );
 
     double tempInc() { return m_tempInc; }
     void setTempInc( double inc ) { m_tempInc = inc; }
@@ -58,12 +62,17 @@ public slots:
 
 protected:
     void buildData();
+    double readThermocoupleTemp();
+    void updateExternalTemp();
 
     double m_temp;
+    double m_externalTemp;
     double m_tempInc;
     double m_internalTemp;
 
     bool m_grounded;
+    bool m_externalThermocouple;
+    bool m_guiDirty;
     bool m_oc;
     bool m_scg;
     bool m_scv;
@@ -73,10 +82,15 @@ protected:
 
     QFont m_font;
 
+    QGraphicsProxyWidget* m_upButtonProxy;
+    QGraphicsProxyWidget* m_downButtonProxy;
+
     IoPin m_pinCS;
     IoPin m_pinDI;
     IoPin m_pinCK;
     IoPin m_pinDO;
+    IoPin m_tcPlus;
+    IoPin m_tcMinus;
 
     Pin m_gnd;
 };

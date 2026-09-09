@@ -1,0 +1,21 @@
+MAX31855 Thermocouple Converter
+
+The component emulates the MAX31855 read-only SPI interface. Connect CS, CLK,
+and DO to the SPI master. CS is active low, and the 32-bit result is shifted
+out MSB first in SPI mode 0.
+
+In manual mode, Thermocouple Temp. defines the measured temperature. The
+up/down controls change it by Temp. increment. Internal Temp. defines the cold
+junction temperature included in the output frame.
+
+Enable External thermocouple to expose the + and - inputs. In this mode the
+manual temperature controls are hidden, and the measured temperature is
+calculated from the differential input voltage using a type-K sensitivity of
+41 uV/C plus Internal Temp. cold-junction compensation. Both inputs must be
+connected; otherwise the OC and FAULT bits are asserted.
+
+Grounded hides the GND pin and connects it internally. When Grounded is off,
+the visible GND pin can be connected manually.
+
+The Faults properties can force the datasheet OC, SCG, and SCV flags. Any
+active fault also sets the common FAULT bit.
