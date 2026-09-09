@@ -115,6 +115,14 @@
       ]
     },
     {
+      "name": "temperature plot opens from the context menu while double click keeps default properties behavior",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "menu->addAction( tr( \"Open temperature plot\" )",
+        "&QAction::triggered, [=]() { openPlot(); }"
+      ]
+    },
+    {
       "name": "component is registered with icon and help resource",
       "path": "src/gui/componentlist/itemlibrary.cpp",
       "contains": [

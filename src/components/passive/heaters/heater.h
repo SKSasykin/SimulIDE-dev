@@ -147,7 +147,6 @@ public:
     void contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) override;
 
 protected:
-    void mouseDoubleClickEvent( QGraphicsSceneMouseEvent* event ) override;
     void paint( QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget ) override;
 
 private:

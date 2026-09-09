@@ -842,14 +842,6 @@ void Heater::openPlot() {
     m_dialog->activateWindow();
 }
 
-void Heater::mouseDoubleClickEvent( QGraphicsSceneMouseEvent* event ) {
-    if ( event->button() == Qt::LeftButton ) {
-        event->accept();
-        openPlot();
-    } else
-        Component::mouseDoubleClickEvent( event );
-}
-
 void Heater::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) {
     QAction* plotAction = menu->addAction( tr( "Open temperature plot" ) );
     QObject::connect( plotAction, &QAction::triggered, [=]() { openPlot(); } );
