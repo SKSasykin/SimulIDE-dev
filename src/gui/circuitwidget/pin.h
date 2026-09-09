@@ -68,6 +68,7 @@ public:
     QString getLabelText() { return m_labelText; }
     virtual void setLabelText( QString label, bool over = true );
     void setLabelPos();
+    void setLabelOffset( QPointF offset );
     void setLabelColor( QColor color );
     void setFontSize( int size );
     int labelSizeX() { return m_labelWidth; }
@@ -127,6 +128,7 @@ protected:
     double m_opCount;
 
     QString m_labelText;
+    QPointF m_labelOffset;
 
     QColor m_color[8];
     QRectF m_area;

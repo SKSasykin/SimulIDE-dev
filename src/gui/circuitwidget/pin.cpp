@@ -37,6 +37,7 @@ Pin::Pin( int angle, const QPoint pos, QString id, int index, Component* parent,
     m_conPin = nullptr;
     m_angle = angle;
     m_space = 0;
+    m_labelOffset = QPointF( 0, 0 );
     m_Hflip = 1;
     m_Vflip = 1;
     m_overScore = -1;
@@ -253,6 +254,11 @@ void Pin::setSpace( double s ) {
     setLabelPos();
 }
 
+void Pin::setLabelOffset( QPointF offset ) {
+    m_labelOffset = offset;
+    setLabelPos();
+}
+
 void Pin::setLabelPos() {
     if ( m_labelText.isEmpty() )
         return;
@@ -311,7 +317,7 @@ void Pin::setLabelPos() {
         else
             ylabelpos -= offset;
     }
-    m_label.setPos( xlabelpos, ylabelpos );
+    m_label.setPos( xlabelpos + m_labelOffset.x(), ylabelpos + m_labelOffset.y() );
     m_label.setTransform( QTransform::fromScale( m_Hflip, m_Vflip ) );
     update();
 }
