@@ -1,0 +1,142 @@
+{
+  "description": "Dual heater and thermocouple component: isolated electrical branches, physical thermal response and navigable history plot",
+  "checks": [
+    {
+      "name": "component owns two heaters and one floating thermocouple resistance",
+      "path": "src/components/passive/heaters/heater.h",
+      "contains": [
+        "class Heater : public Component, public eElement",
+        "eResistor m_heater1;",
+        "eResistor m_heater2;",
+        "eResistor m_tcOutput;"
+      ]
+    },
+    {
+      "name": "all six external terminals are connected to independent two-terminal branches",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "ordered": [
+        "m_heater1.setEpin( 0, &m_h1Plus );",
+        "m_heater1.setEpin( 1, &m_h1Minus );",
+        "m_heater2.setEpin( 0, &m_h2Plus );",
+        "m_heater2.setEpin( 1, &m_h2Minus );",
+        "m_tcOutput.setEpin( 0, &m_tcPlus );",
+        "m_tcOutput.setEpin( 1, &m_tcMinus );"
+      ],
+      "within_lines": 7
+    },
+    {
+      "name": "rated power and voltage derive heater resistance",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "m_resistance1 = m_ratedVoltage1 * m_ratedVoltage1 / m_ratedPower1;",
+        "m_resistance2 = m_ratedVoltage2 * m_ratedVoltage2 / m_ratedPower2;",
+        "m_ratedPower1 = m_ratedVoltage1 * m_ratedVoltage1 / m_resistance1;",
+        "m_ratedPower2 = m_ratedVoltage2 * m_ratedVoltage2 / m_resistance2;"
+      ]
+    },
+    {
+      "name": "actual branch current prevents open terminals from producing heat",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "ordered": [
+        "const double voltage1 = m_h1Plus.getVoltage() - m_h1Minus.getVoltage();",
+        "const double voltage2 = m_h2Plus.getVoltage() - m_h2Minus.getVoltage();",
+        "m_lastPower1 = std::abs( voltage1 * m_heater1.current() );",
+        "m_lastPower2 = std::abs( voltage2 * m_heater2.current() );"
+      ],
+      "within_lines": 5
+    },
+    {
+      "name": "heater resistance rises with body temperature and reduces voltage-fed power",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "m_wireTemperatureCoefficient = 0.0004;",
+        "1 + m_wireTemperatureCoefficient * ( m_bodyTemp - 20 )",
+        "m_heater1.setResistance( hotResistance1 );",
+        "m_heater2.setResistance( hotResistance2 );"
+      ]
+    },
+    {
+      "name": "thermal capacity comes from aluminum density heat capacity and body volume",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "m_density = 2700;",
+        "m_specificHeat = 897;",
+        "m_thermalConductivity = 205;",
+        "m_length * m_width * m_height * m_density * m_specificHeat"
+      ]
+    },
+    {
+      "name": "heat loss combines air convection and linearized surface radiation",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "ordered": [
+        "const double area = 2 * ( m_length * m_width + m_length * m_height + m_width * m_height );",
+        "const double radiation = m_emissivity * stefanBoltzmann * area * ( bodyK + ambientK )",
+        "return std::max( m_airCoefficient * area + radiation, 0.0 );"
+      ],
+      "within_lines": 8
+    },
+    {
+      "name": "body and sensor states use stable exponential updates with diffusion lag",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "const double bodyDecay = std::exp( -bodyRate * dt );",
+        "const double sensorDecay = std::exp( -sensorRate * dt );",
+        "m_sensorDistance * m_sensorDistance / ( pi * pi * diffusivity )"
+      ]
+    },
+    {
+      "name": "every thermal advance marks the GUI for refresh",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "ordered": [
+        "m_sensorTemp = std::max( -273.14, std::min( m_sensorTemp, 5000.0 ) );\n        m_guiDirty = true;",
+        "m_sensorTemp = std::max( -273.14, std::min( m_sensorTemp, 5000.0 ) );\n    m_guiDirty = true;"
+      ],
+      "within_lines": 28
+    },
+    {
+      "name": "thermocouple output is a floating equal-and-opposite Norton source",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "ordered": [
+        "const double voltage = m_tcSensitivity * ( m_sensorTemp - m_ambientTemp );",
+        "const double current = voltage / m_tcResistance;",
+        "m_tcPlus.stampCurrent( current );",
+        "m_tcMinus.stampCurrent( -current );"
+      ],
+      "within_lines": 5
+    },
+    {
+      "name": "plot exposes editable time window follow mode and horizontal history navigation",
+      "path": "src/components/passive/heaters/heater.cpp",
+      "contains": [
+        "m_windowBox->setSuffix( \" s\" );",
+        "m_followBox = new QCheckBox( tr( \"Follow latest\" ), this );",
+        "m_scrollBar = new QScrollBar( Qt::Horizontal, this );",
+        "m_plot->setViewEnd"
+      ]
+    },
+    {
+      "name": "component is registered with icon and help resource",
+      "path": "src/gui/componentlist/itemlibrary.cpp",
+      "contains": [
+        "#include \"heater.h\"",
+        "addItem( Heater::libraryItem() );"
+      ]
+    },
+    {
+      "name": "component icon is embedded in the application resources",
+      "path": "src/application.qrc",
+      "contains": [
+        "<file alias=\"heater.svg\">../src/icons/components/heater.svg</file>"
+      ]
+    },
+    {
+      "name": "component help describes the thermal model and plot controls",
+      "path": "resources/data/help/heater.txt",
+      "contains": [
+        "C*dT/dt=P-G*(T-Tambient)",
+        "Follow latest",
+        "horizontal scrollbar"
+      ]
+    }
+  ]
+}

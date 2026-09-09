@@ -1,0 +1,27 @@
+Dual Heater
+
+This component models two electrically isolated heating elements embedded in one
+metal body and a thermocouple located between them. All six terminals are
+independent: H1+/H1-, TC+/TC-, and H2+/H2-.
+
+The heater branches are resistors. Their actual heat is calculated from the
+instantaneous terminal voltage, so AC, DC, phase control, and PWM supplies are
+supported. Rated power, rated voltage, and resistance are linked by R=V^2/P.
+Changing power or voltage recalculates resistance; changing resistance
+recalculates rated power. Resistance is specified at 20 °C and rises with body
+temperature according to the configurable wire temperature coefficient.
+
+The body temperature follows C*dT/dt=P-G*(T-Tambient). Thermal capacity is
+calculated from body dimensions and the selected material. Heat loss combines
+air convection over the body surface and thermal radiation. Aluminum and air
+are the initial material and environment choices.
+
+Thermocouple lag is calculated from the heater-to-sensor distance and material
+thermal diffusivity. The TC terminals provide a floating voltage equal to the
+configured sensitivity multiplied by the sensor-to-ambient temperature
+difference.
+
+Double-click the component, or use Open temperature plot in its context menu,
+to inspect body and thermocouple temperatures. The plot window duration is
+editable, Follow latest keeps the view at the current simulation time, and the
+horizontal scrollbar navigates retained history.

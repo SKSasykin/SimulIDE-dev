@@ -55,6 +55,7 @@
 #include "ground.h"
 #include "hd44780.h"
 #include "header.h"
+#include "heater.h"
 #include "i2cram.h"
 #include "i2ctoparallel.h"
 #include "ili9341.h"
@@ -188,6 +189,9 @@ void ItemLibrary::loadItems() {
     addItem( Thermistor::libraryItem() );
     addItem( RTD::libraryItem() );
     addItem( Strain::libraryItem() );
+
+    addItem( new LibraryItem( QObject::tr( "Heaters" ), "Passive", "heater.svg", "Heaters", nullptr ) );
+    addItem( Heater::libraryItem() );
 
     addItem( new LibraryItem( QObject::tr( "Reactive" ), "Passive", "reactive.png", "Reactive", nullptr ) );
     addItem( Capacitor::libraryItem() );

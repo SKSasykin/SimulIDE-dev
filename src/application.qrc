@@ -195,6 +195,7 @@
         <file alias="wavegen.png">../src/icons/components/wavegen.png</file>
         <file alias="oscope.png">../src/icons/components/oscope.png</file>
         <file alias="lanalizer.png">../src/icons/components/lanalizer.png</file>
+        <file alias="heater.svg">../src/icons/components/heater.svg</file>
         <file alias="toggleswitch.png">../src/icons/components/toggleswitch.png</file>
         <file alias="audio_out.png">../src/icons/components/audio_out.png</file>
         <file alias="lamp.png">../src/icons/components/lamp.png</file>

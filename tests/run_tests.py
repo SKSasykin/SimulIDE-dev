@@ -12,6 +12,7 @@ MCUS = ("esp8266", "esp32", "esp32-s3", "esp32-c3")
 DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi")
 # Per-component source contracts, outside the ESP MCU tree.
 COMPONENT_CONTRACTS = (
+    "components/heater/test.json",
     "components/max31855/test.json",
 )
 SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
@@ -291,7 +292,7 @@ def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run ESP emulation contracts and SimulIDE integration tests."
+        description="Run emulation/component contracts and SimulIDE integration tests."
     )
     parser.add_argument("mcu", nargs="?", choices=MCUS)
     parser.add_argument("direction", nargs="?", choices=DIRECTIONS)

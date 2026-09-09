@@ -41,6 +41,7 @@ INCLUDEPATH += $$PWD/src \
     $$PWD/src/components/outputs/leds \
     $$PWD/src/components/outputs/motors \
     $$PWD/src/components/passive \
+    $$PWD/src/components/passive/heaters \
     $$PWD/src/components/passive/reactive \
     $$PWD/src/components/passive/resistors \
     $$PWD/src/components/passive/resist_sensors \
