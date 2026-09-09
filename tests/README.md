@@ -1,8 +1,10 @@
-# ESP emulation tests
+# Emulation and component tests
 
 The suite mirrors the documented implementation areas for every supported ESP
-family. Emulator contracts live in `tests/<mcu>/<direction>/test.json`; IDE
-end-to-end boot tests live in `tests/ide/`.
+family and selected simulator components. Emulator contracts live in
+`tests/<mcu>/<direction>/test.json`, component contracts live in
+`tests/components/<component>/test.json`, and IDE end-to-end boot tests live in
+`tests/ide/`.
 
 Run everything:
 
@@ -26,6 +28,10 @@ contracts for invalid offsets, disabled or missing routes, FIFO boundaries,
 clamping, error paths and explicitly unsupported behavior. These checks prove
 that the guards and limitations remain in the source; they do not claim to have
 injected invalid peripheral transactions at runtime.
+
+Component contracts verify electrical models, property integration, protocol
+encoding and UI state transitions directly in their implementation sources.
+MCU and direction filters limit the ESP matrix; component contracts still run.
 
 Before the contracts run, the runner executes self-tests for malformed JSON,
 invalid schemas, unsafe paths, ordered guard matching and invalid CLI filters.
