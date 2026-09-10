@@ -10,9 +10,16 @@
 #include "esp32pin.h"
 #include "qemuusart.h"
 
+enum Esp32UartVariant {
+    Esp32Uart,
+    Esp32s3Uart,
+    Esp32c3Uart,
+};
+
 class Esp32Usart : public QemuUsart {
 public:
-    Esp32Usart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd );
+    Esp32Usart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
+                Esp32UartVariant variant = Esp32Uart, int interrupt = -1 );
     ~Esp32Usart();
 
     void reset() override;
@@ -36,24 +43,28 @@ private:
     void readRegister() override;
 
     void writeCR0();
-    //void writeCR1();
+    void writeCR1();
 
-    //void updateIrq();
+    void updateIrq();
 
-    uint32_t m_divider;
+    uint32_t m_divider = 0;
 
-    uint8_t m_apbClock;
+    uint8_t m_apbClock = 1;
     Esp32OutputSignal m_txOutput;
     Esp32InputSignal m_rxInput;
-    //uint8_t m_rxFullThrhd;
-    //uint8_t m_txEmptyThrhd;
+    Esp32UartVariant m_variant;
+    int m_interrupt;
+    uint16_t m_rxFullThrhd = 0;
+    uint16_t m_txEmptyThrhd = 0;
 
-    //uint8_t m_irqLevel;
+    bool m_irqLevel = false;
+    bool m_txActive = false;
 
-    //uint32_t m_intRaw;
-    //uint32_t m_intEn;
-    //uint32_t m_intSt;
+    uint32_t m_intRaw = 0;
+    uint32_t m_intEn = 0;
+    uint32_t m_intSt = 0;
 
     QQueue<uint8_t> m_txFifo;
+    QQueue<uint8_t> m_txPending;
     QQueue<uint8_t> m_rxFifo;
 };

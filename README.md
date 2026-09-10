@@ -121,6 +121,29 @@ Supported Espressif controllers: ESP32, ESP32-S3, ESP32-C3 and ESP8266.
 
 ![ESP32 DevKit running in SimulIDE](docs/esp32-devkit.png)
 
+### ESP UART support
+
+The ESP32, ESP32-S3 and ESP32-C3 UART models provide 128-byte TX/RX FIFOs,
+bit-timed serial transmission and the `INT_RAW`, `INT_ST`, `INT_ENA`,
+`INT_CLR`, `STATUS`, `CONF0` and `CONF1` behavior used by ESP-IDF and Arduino.
+This includes the per-chip `TXFIFO_EMPTY` threshold layout, `TX_DONE`, RX-full
+and RX-overflow conditions, FIFO reset and the correct interrupt-matrix source
+for each UART.
+
+UART interrupt level transitions cross the SimulIDE-QEMU boundary through a
+dedicated shared-memory event ring. They are delivered independently of MMIO
+read replies, so a transmitter waiting for FIFO space cannot lose its wakeup
+when register polling and an IRQ occur together. The hardware-visible TX FIFO
+remains limited to 128 bytes; writes already accepted by the synchronous bridge
+are retained in order until FIFO space becomes available, while the active
+shift-register byte is tracked separately. This supports continuous buffered
+output substantially larger than the FIFO without changing byte order or wire
+timing.
+
+ESP8266 keeps polling UART operation. Its current QEMU bridge has no UART
+interrupt-matrix target, so UART interrupt delivery is not exposed for that
+device.
+
 ### ESP virtual WiFi and Bluetooth support
 
 | Device | Virtual WiFi backend | Bundled HTTP example | Bluetooth |

@@ -231,6 +231,8 @@ void QemuDevice::stamp() {
     m_arena->loop_timeout_ns = 0;
     m_arena->running = 0;
     m_arena->ps_per_inst = 0;
+    m_arena->irq.head = 0;
+    m_arena->irq.tail = 0;
 
     if ( m_rstPin )
         m_rstPin->changeCallBack( this );

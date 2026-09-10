@@ -51,8 +51,17 @@ void QemuModule::readRegister() {
 }
 
 void QemuModule::setInterrupt( uint8_t number, uint8_t level ) {
-    m_arena->irqNumber = number;
-    m_arena->irqLevel = level ? 1 : 0;
-    m_arena->qemuAction = SIM_INTERRUPT;
+    volatile qemuIrqRing_t* ring = &m_arena->irq;
+    uint32_t head = ring->head;
+    uint32_t next = ( head + 1 ) % QEMU_IRQ_RING_EVENTS;
+    if ( next == ring->tail ) {
+        qWarning() << "QemuModule::setInterrupt IRQ queue full";
+        return;
+    }
+
+    ring->events[head].number = number;
+    ring->events[head].level = level ? 1 : 0;
+    __sync_synchronize();
+    ring->head = next;
     //qDebug() << "QemuModule::setInterrupt" << m_name << number << level;
 }

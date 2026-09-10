@@ -3,8 +3,6 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
-#include <QDebug>
-
 #include "esp32usart.h"
 #include "iopin.h"
 #include "qemudevice.h"
@@ -12,23 +10,34 @@
 #include "usartrx.h"
 #include "usarttx.h"
 
-#define ETS_UART0_INTR_SOURCE 34 /**< interrupt of UART0, level*/
-//#define ETS_UART1_INTR_SOURCE 35/**< interrupt of UART1, level*/
-//#define ETS_UART2_INTR_SOURCE 36/**< interrupt of UART2, level*/
+#define UART_FIFO_LENGTH 128
+#define RXFIFO_FULL_INT ( 1u << 0 )
+#define TXFIFO_EMPTY_INT ( 1u << 1 )
+#define RXFIFO_OVF_INT ( 1u << 4 )
+#define TX_DONE_INT ( 1u << 14 )
 
-#define TXFIFO_EMPTY_INT ( 1 << 1 ); //
-#define TX_DONE_INT ( 1 << 14 ); //
-
-Esp32Usart::Esp32Usart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
-    : QemuUsart( mcu, name, n, clk, memStart, memEnd ) {
+Esp32Usart::Esp32Usart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd,
+                        Esp32UartVariant variant, int interrupt )
+    : QemuUsart( mcu, name, n, clk, memStart, memEnd ), m_variant( variant ), m_interrupt( interrupt ) {
     //m_prescList = {2,4,8,16,32,64,128,256};
 }
 Esp32Usart::~Esp32Usart() { }
 
 void Esp32Usart::reset() {
+    if ( m_irqLevel && m_interrupt >= 0 )
+        setInterrupt( m_interrupt, 0 );
+
     m_txFifo.clear();
+    m_txPending.clear();
     m_rxFifo.clear();
 
+    m_rxFullThrhd = 0;
+    m_txEmptyThrhd = 0;
+    m_intRaw = 0;
+    m_intEn = 0;
+    m_intSt = 0;
+    m_irqLevel = false;
+    m_txActive = false;
     m_divider = 0;
     m_baudRate = 115200;
 
@@ -65,25 +74,33 @@ void Esp32Usart::writeRegister() {
 
     switch ( offset ) {
     case 0x00: { // UART_FIFO:
-        // Buffer all bytes; start transmission only when the Tx is idle (FIFO was empty).
-        // A real ESP32 TX FIFO is 128 bytes; bytes written while transmitting are queued
-        // and drained one per frame in frameSent(). Sending immediately would drop every
-        // byte after the first in a guest burst (boot log, printf strings).
-        m_txFifo.enqueue( data );
-        if ( m_txFifo.size() == 1 ) {
+        // The FIFO count excludes the byte already loaded into the shift register.
+        // The shared-memory bridge cannot stall an APB write. Keep writes that arrive
+        // while the hardware FIFO is full pending until the serializer frees a slot.
+        if ( m_txPending.size() || m_txFifo.size() >= UART_FIFO_LENGTH )
+            m_txPending.enqueue( data & 0xFF );
+        else
+            m_txFifo.enqueue( data & 0xFF );
+        if ( !m_txActive ) {
             // Re-arm the sender: UartTR::initialize() disables it (m_enabled=false) after
             // reset(), and the qemu usart has no matrix/connection path to enable it for
             // C3/S3/8266. The sender must transmit whenever the guest pushes a byte.
             m_sender->enable( true );
-            UsartModule::sendByte( m_txFifo.head() );
+            m_txActive = true;
+            UsartModule::sendByte( m_txFifo.dequeue() );
+            if ( m_txPending.size() )
+                m_txFifo.enqueue( m_txPending.dequeue() );
         }
     } break;
-        //case 0x04: break;                                // UART_INT_RAW: RO
-        //case 0x08: break;                                // UART_INT_ST:  RO
-        //case 0x0C: m_intEn = data;     break;            // UART_INT_ENA:
-        //case 0x10: m_intRaw &= ~data;  break;            // UART_INT_CLR:
-
-        ///if (value & R_UART_INT_CLR_RXFIFO_TOUT_MASK) s->rxfifo_tout = false;
+    case 0x04: // UART_INT_RAW: RO
+    case 0x08: // UART_INT_ST: RO
+        break;
+    case 0x0C: // UART_INT_ENA
+        m_intEn = data;
+        break;
+    case 0x10: // UART_INT_CLR
+        m_intRaw &= ~data;
+        break;
 
     case 0x14: { // UART_CLKDIV:
         uint32_t clkFra = (data & 0x00F00000) >> 20;
@@ -112,13 +129,18 @@ void Esp32Usart::writeRegister() {
     //    break;
     //case 0x1C:                break;          // UART_STATUS: RO
     case 0x20:
+        writeMem( m_eventAddress, data );
         writeCR0();
         break; // UART_CONF0:
-    //case 0x24: writeCR1();  break;          // UART_CONF1:
+    case 0x24:
+        writeMem( m_eventAddress, data );
+        writeCR1();
+        break; // UART_CONF1:
     default:
+        write();
         break;
     }
-    //updateIrq();
+    updateIrq();
 }
 
 void Esp32Usart::readRegister() {
@@ -131,18 +153,17 @@ void Esp32Usart::readRegister() {
             value = m_rxFifo.dequeue();
         break;
 
-        //case 0x04: value = m_intRaw;  break; // UART_INT_RAW: RO
-        //case 0x08: value = m_intSt;   break; // UART_INT_ST:  RO
-        //case 0x0C: value = m_intEn;   break; // UART_INT_ENA:
-        //case 0x10:                    break; // UART_INT_CLR:
+        case 0x04: value = m_intRaw;  break; // UART_INT_RAW: RO
+        case 0x08: value = m_intSt;   break; // UART_INT_ST:  RO
+        case 0x0C: value = m_intEn;   break; // UART_INT_ENA
+        case 0x10:                    break; // UART_INT_CLR: WO
         ////case 0x14:                    break; // UART_CLKDIV:
         ////case 0x18:                    break; // UART_AUTOBAUD:
         case 0x1C:                           // UART_STATUS: RO
         {
             value  = m_rxFifo.size() & 0xFF;
             value |= ( m_txFifo.size() << 16 ) & 0xFF0000;
-            if ( m_txFifo.isEmpty() ) value |= 1 << 9;  // TX_IDLE
-            //qDebug() << "Esp32Usart::readRegister UART_STATUS txfifo" << m_txFifo.size();
+            if ( m_txFifo.isEmpty() && !m_txActive ) value |= 1 << 9;  // TX_IDLE
         } break;
         ////case 0x20:                    break; // UART_CONF0:
         ////case 0x24:                    break; // UART_CONF1:
@@ -171,6 +192,7 @@ void Esp32Usart::readRegister() {
         value = read();
         break;
     }
+    updateIrq();
     m_arena->regData = value;
     m_arena->qemuAction = SIM_READ;
     //qDebug() << "\nEsp32Usart::readRegister"<<QString::number( offset )<<value ;
@@ -206,60 +228,75 @@ void Esp32Usart::writeCR0() {
     }
     //qDebug() << "writeCR0"<< data << 5 + dataBits << m_stopBits;
     uint8_t txFifoRst = data & 1 << 18;
-    if ( txFifoRst )
+    if ( txFifoRst ) {
         m_txFifo.clear();
+        m_txPending.clear();
+        m_intRaw &= ~( TXFIFO_EMPTY_INT | TX_DONE_INT );
+    }
 
     uint8_t rxFifoRst = data & 1 << 17;
-    if ( rxFifoRst )
+    if ( rxFifoRst ) {
         m_rxFifo.clear();
+        m_intRaw &= ~( RXFIFO_FULL_INT | RXFIFO_OVF_INT );
+    }
 
     //m_apbClock = (data & 1<<27) ? 1 : 0;
 }
 
-//void Esp32Usart::writeCR1()
-//{
-//    uint32_t data = m_eventValue;
-//
-//    m_rxFullThrhd  = data & 0b01111111;
-//    m_txEmptyThrhd = (data >> 8) & 0b01111111;
-//
-//    /// //On the ESP32, rx_tout_thres is in units of (bit_time * 8).
-//    /// //Note this is different on later chips.
-//    /// s->rx_tout_thres = 8 * FIELD_EX32(s->reg[R_UART_CONF1], UART_CONF1, TOUT_THRD);
-//    /// s->rx_tout_ena = FIELD_EX32(s->reg[R_UART_CONF1], UART_CONF1, TOUT_EN) != 0;
-//    /// esp32_uart_set_rx_timeout(s);
-//    /// esp32_uart_update_irq(s);
-//}
+void Esp32Usart::writeCR1() {
+    uint32_t data = m_eventValue;
+    uint8_t txShift = 8;
+    uint16_t thresholdMask = 0x7F;
+
+    if ( m_variant == Esp32s3Uart ) {
+        txShift = 10;
+        thresholdMask = 0x3FF;
+    } else if ( m_variant == Esp32c3Uart ) {
+        txShift = 9;
+        thresholdMask = 0x1FF;
+    }
+    m_rxFullThrhd = data & thresholdMask;
+    m_txEmptyThrhd = ( data >> txShift ) & thresholdMask;
+}
 
 void Esp32Usart::frameSent( uint8_t data ) {
     QemuUsart::frameSent( data );
 
-    if ( m_txFifo.size() ) m_txFifo.dequeue();
-    if ( m_txFifo.size() )
-        UsartModule::sendByte( m_txFifo.head() );
+    m_txActive = false;
+    if ( m_txFifo.size() ) {
+        m_txActive = true;
+        UsartModule::sendByte( m_txFifo.dequeue() );
+        if ( m_txPending.size() )
+            m_txFifo.enqueue( m_txPending.dequeue() );
+    }
+    updateIrq();
 }
 
 void Esp32Usart::byteReceived( uint8_t data ) {
     UsartModule::byteReceived( data );
 
-    m_rxFifo.enqueue( data );
+    if ( m_rxFifo.size() < UART_FIFO_LENGTH )
+        m_rxFifo.enqueue( data );
+    else
+        m_intRaw |= RXFIFO_OVF_INT;
+    updateIrq();
 }
 
-//void Esp32Usart::updateIrq()
-//{
-//    m_intSt = m_intRaw & m_intEn;
-//
-//    uint8_t irqLevel = m_intSt ? 1 : 0;
-//
-//    //if( m_irqLevel != irqLevel ){ // Only trigger an interrupt if the IRQ level changes.
-//    //    m_irqLevel = irqLevel;
-//    //    setInterrupt( ETS_UART0_INTR_SOURCE+m_number, irqLevel );
-//    //    //qDebug() << "Esp32Usart::updateIrq"<< ETS_UART0_INTR_SOURCE+m_number<<irqLevel;
-//    //}
-//
-//    // uint32_t rxfifo_tout_raw = (s->rxfifo_tout) ? 1 : 0;
-//    // int_raw = FIELD_DP32(int_raw, UART_INT_RAW, RXFIFO_TOUT, rxfifo_tout_raw);
-//}
+void Esp32Usart::updateIrq() {
+    m_intRaw &= ~( RXFIFO_FULL_INT | TXFIFO_EMPTY_INT | TX_DONE_INT );
+    if ( m_rxFifo.size() >= m_rxFullThrhd )
+        m_intRaw |= RXFIFO_FULL_INT;
+    if ( m_txFifo.size() <= m_txEmptyThrhd )
+        m_intRaw |= TXFIFO_EMPTY_INT;
+    if ( m_txFifo.isEmpty() && m_txPending.isEmpty() && !m_txActive )
+        m_intRaw |= TX_DONE_INT;
+
+    m_intSt = m_intRaw & m_intEn;
+    bool irqLevel = m_intSt != 0;
+    if ( m_interrupt >= 0 && m_irqLevel != irqLevel )
+        setInterrupt( m_interrupt, irqLevel );
+    m_irqLevel = irqLevel;
+}
 
 void Esp32Usart::freqChanged() {
     //if( !m_divider ) return;

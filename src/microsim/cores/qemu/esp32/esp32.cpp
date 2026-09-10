@@ -78,9 +78,9 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
 
     m_usartN = 3;
     m_usarts.resize( m_usartN );
-    m_usarts[0] = new Esp32Usart( this, id + "Usart1", 0, &m_apbFreq, 0x00040000, 0x00040FFF );
-    m_usarts[1] = new Esp32Usart( this, id + "Usart2", 1, &m_apbFreq, 0x00050000, 0x00050FFF );
-    m_usarts[2] = new Esp32Usart( this, id + "Usart3", 2, &m_apbFreq, 0x0006E000, 0x0006EFFF );
+    m_usarts[0] = new Esp32Usart( this, id + "Usart1", 0, &m_apbFreq, 0x00040000, 0x00040FFF, Esp32Uart, 34 );
+    m_usarts[1] = new Esp32Usart( this, id + "Usart2", 1, &m_apbFreq, 0x00050000, 0x00050FFF, Esp32Uart, 35 );
+    m_usarts[2] = new Esp32Usart( this, id + "Usart3", 2, &m_apbFreq, 0x0006E000, 0x0006EFFF, Esp32Uart, 36 );
     for ( int i = 0; i < m_usartN; ++i )
         m_usarts[i]->setPins( { dummyP, dummyP } );
 
