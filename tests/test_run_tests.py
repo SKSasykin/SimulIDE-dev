@@ -42,9 +42,17 @@ class ManifestValidationTests(unittest.TestCase):
         self.assert_invalid(valid_manifest(contain=["x"]), "unknown check")
 
     def test_assertions_are_required_and_typed(self):
-        self.assert_invalid(valid_manifest(contains=None), "requires contains or ordered")
+        self.assert_invalid(
+            valid_manifest(contains=None), "requires contains, not_contains or ordered"
+        )
         self.assert_invalid(valid_manifest(contains="return"), "contains must")
         self.assert_invalid(valid_manifest(contains=[""]), "contains must")
+        self.assert_invalid(
+            valid_manifest(contains=None, not_contains="return"), "not_contains must"
+        )
+        self.assert_invalid(
+            valid_manifest(contains=None, not_contains=[""]), "not_contains must"
+        )
         self.assert_invalid(
             valid_manifest(contains=None, ordered=["one"]), "at least two"
         )
@@ -97,6 +105,21 @@ class SpiClockTests(unittest.TestCase):
 
     def test_common_runner_executes_spi_regression(self):
         self.assertTrue(run_tests.run_spi_clock_regression())
+
+
+class SpiEndpointTests(unittest.TestCase):
+    def test_esp32_mosi_present_and_absent(self):
+        self.assertTrue(run_tests.spi_endpoints_ready(False, True, True, True))
+        self.assertTrue(run_tests.spi_endpoints_ready(False, True, False, True))
+
+    def test_esp8266_fixed_endpoint_validation(self):
+        self.assertTrue(run_tests.spi_endpoints_ready(True, True, True, True))
+        self.assertFalse(run_tests.spi_endpoints_ready(True, True, False, True))
+        self.assertFalse(run_tests.spi_endpoints_ready(True, False, True, True))
+        self.assertFalse(run_tests.spi_endpoints_ready(True, True, True, False))
+
+    def test_common_runner_executes_spi_endpoint_regression(self):
+        self.assertTrue(run_tests.run_spi_endpoint_regression())
 
 
 class CommandLineTests(unittest.TestCase):

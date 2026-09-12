@@ -18,7 +18,7 @@ COMPONENT_CONTRACTS = (
 )
 SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
 TOP_LEVEL_KEYS = {"description", "checks"}
-CHECK_KEYS = {"name", "path", "contains", "ordered", "within_lines"}
+CHECK_KEYS = {"name", "path", "contains", "not_contains", "ordered", "within_lines"}
 
 
 class ManifestError(ValueError):
@@ -66,10 +66,11 @@ def validate_manifest(manifest):
             raise ManifestError("path must stay inside the repository", scenario, source_path)
 
         contains = check.get("contains")
+        not_contains = check.get("not_contains")
         ordered = check.get("ordered")
-        if contains is None and ordered is None:
+        if contains is None and not_contains is None and ordered is None:
             raise ManifestError(
-                "check requires contains or ordered", scenario, source_path
+                "check requires contains, not_contains or ordered", scenario, source_path
             )
         if contains is not None and (
             not isinstance(contains, list)
@@ -78,6 +79,16 @@ def validate_manifest(manifest):
         ):
             raise ManifestError(
                 "contains must be a non-empty list of non-empty strings",
+                scenario,
+                source_path,
+            )
+        if not_contains is not None and (
+            not isinstance(not_contains, list)
+            or not not_contains
+            or any(not _nonempty_string(item) for item in not_contains)
+        ):
+            raise ManifestError(
+                "not_contains must be a non-empty list of non-empty strings",
                 scenario,
                 source_path,
             )
@@ -161,6 +172,10 @@ def spi_clock_register(pre, n):
     return ((pre - 1) << 18) | ((n - 1) << 12)
 
 
+def spi_endpoints_ready(esp8266, data_in, data_out, clock):
+    return not esp8266 or (data_in and data_out and clock)
+
+
 def cpp_function_body(source, signature):
     start = source.index(signature)
     opening = source.index("{", start)
@@ -234,6 +249,47 @@ def run_spi_clock_regression(root_dir=ROOT_DIR):
     return True
 
 
+def run_spi_endpoint_regression(root_dir=ROOT_DIR):
+    try:
+        source = (root_dir / SPI_SOURCE).read_text(encoding="utf-8")
+        start = cpp_function_body(source, "void Esp32Spi::startUserTransaction()")
+    except (OSError, ValueError, IndexError) as error:
+        print(f"FAIL spi endpoint regression path={SPI_SOURCE!r}: {error}")
+        return False
+
+    expression = (
+        "bool endpointsReady = !m_esp8266 || "
+        "( m_dataInPin && m_dataOutPin && m_clkPin );"
+    )
+    failures = []
+    if expression not in start:
+        failures.append("C++ endpoint policy does not match the tested truth table")
+    if "m_moOutput.routed()" in start or "endpointsRouted" in start:
+        failures.append("ESP32-family transactions still depend on a routed MOSI output")
+
+    cases = (
+        ("ESP32 full-duplex with MOSI", False, True, True, True, True),
+        ("ESP32 receive-only without MOSI", False, True, False, True, True),
+        ("ESP32 without external pads", False, False, False, False, True),
+        ("ESP8266 fixed endpoints present", True, True, True, True, True),
+        ("ESP8266 fixed MOSI endpoint missing", True, True, False, True, False),
+        ("ESP8266 fixed MISO endpoint missing", True, False, True, True, False),
+        ("ESP8266 fixed clock endpoint missing", True, True, True, False, False),
+    )
+    for name, esp8266, data_in, data_out, clock, expected in cases:
+        actual = spi_endpoints_ready(esp8266, data_in, data_out, clock)
+        if actual != expected:
+            failures.append(f"{name}: expected {expected}, got {actual}")
+
+    if failures:
+        print("FAIL spi MOSI endpoint regression")
+        for failure in failures:
+            print(f"  {failure}")
+        return False
+    print("PASS spi MOSI endpoint regression: full-duplex and receive-only cases")
+    return True
+
+
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
     relative = manifest_path.relative_to(tests_dir)
     try:
@@ -265,6 +321,12 @@ def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
                 failures.append(
                     f"scenario={check['name']!r} path={check['path']!r}: "
                     f"missing fragment {expected!r}"
+                )
+        for forbidden in check.get("not_contains", []):
+            if forbidden in source:
+                failures.append(
+                    f"scenario={check['name']!r} path={check['path']!r}: "
+                    f"forbidden fragment present {forbidden!r}"
                 )
         if "ordered" in check:
             found, detail = find_ordered(
@@ -332,6 +394,10 @@ def main():
                 failed += 1
         if args.direction in (None, "spi"):
             if run_spi_clock_regression():
+                passed += 1
+            else:
+                failed += 1
+            if run_spi_endpoint_regression():
                 passed += 1
             else:
                 failed += 1

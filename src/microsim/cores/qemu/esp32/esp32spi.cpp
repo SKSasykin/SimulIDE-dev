@@ -149,11 +149,10 @@ void Esp32Spi::startUserTransaction() {
         return;
     if ( m_mode != SPI_MASTER )
         setMode( SPI_MASTER );
-    bool endpointsRouted = m_ckOutput.routed() && m_moOutput.routed() && m_miInput.routed();
-    if ( m_SS )
-        endpointsRouted = endpointsRouted && m_ssOutput.routed();
-    if ( m_mode != SPI_MASTER || ( m_esp8266 ? ( !m_dataInPin || !m_dataOutPin || !m_clkPin )
-                                                  : !endpointsRouted ) ) {
+    // GPIO Matrix routes are optional: receive-only devices can omit MOSI,
+    // and disconnected pads must not stall the hardware controller.
+    bool endpointsReady = !m_esp8266 || ( m_dataInPin && m_dataOutPin && m_clkPin );
+    if ( m_mode != SPI_MASTER || !endpointsReady ) {
         writeMem( m_memStart, readMem( m_memStart ) & ~( 1 << ( m_modern ? 24 : 18 ) ) );
         return;
     }

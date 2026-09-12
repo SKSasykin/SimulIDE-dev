@@ -24,7 +24,7 @@ Run one family, one area, or only one layer:
 
 The contract layer checks that each machine still wires the documented module,
 register window and QEMU bridge/backend together. It also checks negative source
-contracts for invalid offsets, disabled or missing routes, FIFO boundaries,
+contracts for invalid offsets, forbidden regressions, disabled or missing routes, FIFO boundaries,
 clamping, error paths and explicitly unsupported behavior. These checks prove
 that the guards and limitations remain in the source; they do not claim to have
 injected invalid peripheral transactions at runtime.
