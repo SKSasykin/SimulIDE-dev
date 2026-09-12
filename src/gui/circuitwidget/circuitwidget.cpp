@@ -317,7 +317,7 @@ void CircuitWidget::openExampleFile() {
 
     QString file = action->data().toString();
     if ( QFileInfo::exists( file ) )
-        loadCirc( file );
+        loadCirc( file, false );
     else
         QMessageBox::warning( this, "CircuitWidget::openExampleFile",
                               tr( "\nCan't find example file:\n" ) + file );
@@ -330,7 +330,7 @@ void CircuitWidget::openCirc() {
     loadCirc( fileName );
 }
 
-void CircuitWidget::loadCirc( QString path ) {
+void CircuitWidget::loadCirc( QString path, bool addToRecent ) {
     if ( path.isEmpty() || !( path.endsWith( ".sim2" ) || path.endsWith( ".sim1" ) ) )
         return;
 
@@ -348,7 +348,8 @@ void CircuitWidget::loadCirc( QString path ) {
     QSettings* settings = MainWindow::self()->settings();
     settings->setValue( "lastCircDir", m_lastCircDir );
 
-    updateRecentFiles();
+    if ( addToRecent )
+        updateRecentFiles();
 
     m_infoWidget->setCircTime( 0 );
 }
@@ -528,7 +529,8 @@ void CircuitWidget::updateRecentFiles() {
     QSettings* settings = MainWindow::self()->settings();
     QStringList files = settings->value( "recentCircList" ).toStringList();
     files.removeAll( m_curCirc );
-    files.prepend( m_curCirc );
+    if ( !isExampleFile( m_curCirc ) )
+        files.prepend( m_curCirc );
     while ( files.size() > MaxRecentFiles )
         files.removeLast();
 
@@ -539,6 +541,12 @@ void CircuitWidget::updateRecentFiles() {
 void CircuitWidget::updateRecentFileActions() {
     QSettings* settings = MainWindow::self()->settings();
     QStringList files = settings->value( "recentCircList" ).toStringList();
+
+    for ( int i = files.size() - 1; i >= 0; --i ) {
+        if ( isExampleFile( files[i] ) )
+            files.removeAt( i );
+    }
+    settings->setValue( "recentCircList", files );
 
     int numRecentFiles = qMin( files.size(), (int) MaxRecentFiles );
 
@@ -565,6 +573,11 @@ QString CircuitWidget::examplesDirPath() const {
             return path;
     }
     return paths.first();
+}
+
+bool CircuitWidget::isExampleFile( const QString& filePath ) const {
+    const QString path = QDir::fromNativeSeparators( QFileInfo( filePath ).absoluteFilePath() );
+    return path.contains( "/data/examples/", Qt::CaseInsensitive );
 }
 
 void CircuitWidget::updateExampleActions() {

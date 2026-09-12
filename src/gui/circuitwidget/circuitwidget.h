@@ -54,7 +54,7 @@ public slots:
     void openRecentFile();
     void openExampleFile();
     void openCirc();
-    void loadCirc( QString path );
+    void loadCirc( QString path, bool addToRecent = true );
     void saveCirc( QString file );
     void saveCirc();
     void saveCircAs();
@@ -71,6 +71,7 @@ private:
     void createActions();
     void createToolBars();
     QString examplesDirPath() const;
+    bool isExampleFile( const QString& filePath ) const;
     void updateExampleActions();
     bool addExamplesToMenu( QMenu* menu, const QDir& dir );
 
