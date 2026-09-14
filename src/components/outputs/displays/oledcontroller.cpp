@@ -20,6 +20,8 @@ OledController::OledController( QString type, QString id ) : Component( type, id
     m_graphical = true;
 
     m_rotate = false;
+    m_displayDirty = true;
+    m_busUpdated = false;
 
     m_pin.resize( 2 );
     m_pin[0] = m_clkPin = new IoPin( 270, QPoint( -48, 48 ), id + "-PinSck", 0, this, openCo );
@@ -51,6 +53,9 @@ void OledController::stamp() {
 }
 
 void OledController::updateStep() {
+    if ( m_displayDirty && !m_busUpdated )
+        renderDisplay();
+    m_busUpdated = false;
     update();
     if ( !m_scrollSingle && !m_scroll )
         return;
@@ -88,6 +93,7 @@ void OledController::updateStep() {
             m_DDRAM[maxX][dy] = start;
         }
     }
+    m_displayDirty = true;
     if ( !m_scrollV )
         return;
 
@@ -148,6 +154,8 @@ void OledController::reset() {
     m_remap = false;
 
     m_addrMode = PAGE_ADDR_MODE;
+    m_displayDirty = true;
+    m_busUpdated = false;
 }
 
 void OledController::startWrite() {
@@ -175,6 +183,8 @@ void OledController::readByte() {
 
     if ( !m_readBytes )
         m_start = m_Co; // If Co bit then next byte should be Control Byte
+    m_displayDirty = true;
+    m_busUpdated = true;
 }
 
 void OledController::writeData() {
@@ -207,6 +217,7 @@ void OledController::clearDDRAM() {
     for ( int col = 0; col < m_width; col++ )
         for ( int row = 0; row < m_rows; row++ )
             m_DDRAM[col][row] = 0;
+    m_displayDirty = true;
 }
 
 void OledController::setColorStr( QString color ) {
@@ -221,6 +232,7 @@ void OledController::setColorStr( QString color ) {
 
     if ( m_showVal && ( m_showProperty == "Color" ) )
         setValLabelText( color );
+    m_displayDirty = true;
 }
 
 void OledController::setWidth( int w ) {
@@ -231,6 +243,7 @@ void OledController::setWidth( int w ) {
     if ( m_width == w )
         return;
     m_width = w;
+    m_displayDirty = true;
     updateSize();
 }
 
@@ -250,6 +263,7 @@ void OledController::setHeight( int h ) {
     m_lineMask = ( h > 64 ) ? 0x7F : 0x3F;
     m_rowMask = ( h > 64 ) ? 0x0F : 0x07;
     m_height = h;
+    m_displayDirty = true;
     updateSize();
 }
 
@@ -263,6 +277,7 @@ void OledController::setSize( int w, int h ) {
     setHeight( h );
 
     m_DDRAM.resize( m_width, std::vector<uint8_t>( m_rows, 0 ) );
+    m_displayDirty = true;
 }
 
 void OledController::updateSize() {
@@ -276,6 +291,62 @@ void OledController::updateSize() {
     Circuit::self()->update();
 }
 
+void OledController::renderDisplay() {
+    m_displayImage = QImage( m_width, m_height, QImage::Format_RGB32 );
+    m_displayImage.fill( Qt::black );
+
+    QRgb foreground = m_foreground.rgb();
+    for ( int col = 0; col < m_width; col++ ) {
+        for ( int row = 0; row < m_rows; row++ ) {
+            int ramY = row * 8;
+            if ( m_ramOffset ) {
+                ramY += m_ramOffset;
+                if ( ramY >= m_height )
+                    ramY -= m_height;
+            }
+            if ( ramY > m_mr )
+                continue;
+
+            uint8_t rowByte = ramY / 8;
+            uint8_t byte0 = m_DDRAM[col][rowByte];
+            if ( m_dispInv )
+                byte0 = ~byte0;
+
+            uint8_t startBit = ramY % 8;
+            uint8_t byte1 = 0;
+            if ( startBit ) {
+                rowByte = ( rowByte + 1 ) % m_rows;
+                byte1 = m_DDRAM[col][rowByte];
+                if ( m_dispInv )
+                    byte1 = ~byte1;
+            }
+            int dy = row * 8;
+            if ( m_dispOffset ) {
+                dy += m_dispOffset;
+                if ( dy >= m_height )
+                    dy -= m_height;
+            }
+
+            for ( int bit = startBit; bit < startBit + 8; bit++ ) {
+                uint8_t pixel = bit < 8 ? byte0 & 1 << bit : byte1 & 1 << ( bit - 8 );
+                if ( pixel ) {
+                    int screenY = m_scanInv ? m_height - 1 - dy : dy;
+                    int screenX = m_remap ? m_width - 1 - col : col;
+                    if ( m_rotate ) {
+                        screenY = m_height - 1 - screenY;
+                        screenX = m_width - 1 - screenX;
+                    }
+                    reinterpret_cast<QRgb*>( m_displayImage.scanLine( screenY ) )[screenX] = foreground;
+                }
+                dy++;
+                if ( dy >= m_height )
+                    dy -= m_height;
+            }
+        }
+    }
+    m_displayDirty = false;
+}
+
 void OledController::paint( QPainter* p, const QStyleOptionGraphicsItem*, QWidget* ) {
     QPen pen( Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin );
     p->setPen( pen );
@@ -287,67 +358,7 @@ void OledController::paint( QPainter* p, const QStyleOptionGraphicsItem*, QWidge
         p->fillRect( -64, -m_height / 2 - 10, m_width, m_height, Qt::black );
     else if ( m_dispFull )
         p->fillRect( -64, -m_height / 2 - 10, m_width, m_height, m_foreground );
-    else {
-        QImage img( m_width * 3, m_height * 3, QImage::Format_RGB32 );
-        QPainter painter;
-        painter.begin( &img );
-        painter.fillRect( 0, 0, m_width * 3, m_height * 3, Qt::black );
-
-        for ( int col = 0; col < m_width; col++ ) {
-            for ( int row = 0; row < m_rows; row++ ) {
-                int ramY = row * 8;
-                if ( m_ramOffset ) {
-                    ramY += m_ramOffset;
-                    if ( ramY >= m_height )
-                        ramY -= m_height;
-                }
-                if ( ramY > m_mr )
-                    continue;
-
-                uint8_t rowByte = ramY / 8;
-                uint8_t byte0 = m_DDRAM[col][rowByte];
-                if ( m_dispInv )
-                    byte0 = ~byte0; // Display Inverted
-
-                uint8_t startBit = ramY % 8;
-                uint8_t byte1 = 0;
-                if ( startBit ) { // bits spread 2 bytes
-                    rowByte++;
-                    byte1 = m_DDRAM[col][rowByte];
-                    if ( m_dispInv )
-                        byte1 = ~byte1; // Display Inverted
-                }
-                int dy = row * 8;
-                if ( m_dispOffset ) {
-                    dy += m_dispOffset;
-                    if ( dy >= m_height )
-                        dy -= m_height;
-                }
-
-                for ( int bit = startBit; bit < startBit + 8; bit++ ) {
-                    uint8_t pixel;
-                    if ( bit < 8 )
-                        pixel = byte0 & 1 << bit;
-                    else
-                        pixel = byte1 & 1 << ( bit - startBit );
-
-                    if ( pixel ) {
-                        int screenY = m_scanInv ? m_height - 1 - dy : dy;
-                        int screenX = m_remap ? m_width - 1 - col : col;
-                        if ( m_rotate ) {
-                            screenY = m_height - 1 - screenY;
-                            screenX = m_width - 1 - screenX;
-                        }
-                        painter.fillRect( screenX * 3, screenY * 3, 3, 3, m_foreground );
-                    }
-                    dy++;
-                    if ( dy >= m_height )
-                        dy -= m_height;
-                }
-            }
-        }
-        painter.end();
-        p->drawImage( QRectF( -64, -m_height / 2 - 10, m_width, m_height ), img );
-    }
+    else
+        p->drawImage( QRectF( -64, -m_height / 2 - 10, m_width, m_height ), m_displayImage );
     Component::paintSelected( p );
 }

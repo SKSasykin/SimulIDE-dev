@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <QImage>
+
 #include <vector>
 
 #include "component.h"
@@ -32,7 +34,10 @@ public:
     void setHeight( int h );
 
     bool imgRotated() { return m_rotate; }
-    void setImgRotated( bool r ) { m_rotate = r; }
+    void setImgRotated( bool r ) {
+        m_rotate = r;
+        m_displayDirty = true;
+    }
 
     virtual void initialize() override;
     virtual void stamp() override;
@@ -49,11 +54,15 @@ protected:
     virtual void writeData();
     void reset();
     void clearDDRAM();
+    void renderDisplay();
     void setSize( int w, int h );
     void updateSize();
 
     QString m_dColor;
     QColor m_foreground;
+    QImage m_displayImage;
+    bool m_displayDirty;
+    bool m_busUpdated;
 
     IoPin* m_pinSda;
 
