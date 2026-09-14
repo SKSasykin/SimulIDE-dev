@@ -57,6 +57,7 @@ public:
     }
     virtual void setOutState( bool high );
     virtual void toggleOutState( uint64_t time = 0 ) { scheduleState( !m_outState, time ); }
+    void cancelScheduledState();
 
     double getVoltage() override;
     inline void setVoltage( double volt ) {

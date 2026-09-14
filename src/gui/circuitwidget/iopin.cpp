@@ -141,6 +141,12 @@ void IoPin::scheduleState( bool state, uint64_t time ) {
         IoPin::setOutState( m_nextState );
 }
 
+void IoPin::cancelScheduledState() {
+    Simulator::self()->cancelEvents( this );
+    m_step = 0;
+    m_nextState = m_outState;
+}
+
 void IoPin::setPinMode( pinMode_t mode ) {
     if ( m_pinMode == mode )
         return;

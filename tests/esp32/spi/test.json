@@ -10,6 +10,9 @@
     {"name": "negative source contract: ESP32 transfer must not abort on an unrouted MOSI", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "not_contains": ["m_moOutput.routed()", "endpointsRouted"]},
     {"name": "negative source contract: transfer is capped at 64 bytes", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["m_dataBytes = std::min<uint32_t>( 64, ( bits + 7 ) / 8 );", "if ( !m_dataBytes )"], "within_lines": 3},
     {"name": "negative source contract: transaction with no data phase clears CMD.USR", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["if ( !m_dataBytes )", "writeMem( m_memStart, readMem( m_memStart ) & ~( 1 <<", "return;"], "within_lines": 4},
+    {"name": "controller reset clears only its MMIO window", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["void Esp32Spi::reset()", "abortTransaction();", "SpiModule::initialize();", "address = m_memStart; address <= m_memEnd", "writeMem( address, 0 );"], "within_lines": 10},
+    {"name": "SPI_SLAVE sync reset aborts a classic transfer", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["m_eventValue & ( 1u << 31 )", "1u << 31", "abortTransaction();", "return;"], "within_lines": 5},
+    {"name": "aborted transfer clears command and scheduled work", "path": "src/microsim/cores/qemu/esp32/esp32spi.cpp", "ordered": ["void Esp32Spi::abortTransaction()", "cancelEvents( this )", "m_transactionActive = false", "writeMem( m_memStart, 0 )", "m_ssOutput.resetState( true )"], "within_lines": 30},
     {"name": "negative source contract: unsupported slave DMA phases and wide modes are documented", "path": "docs/esp-i2c-spi-support.md", "contains": ["Not implemented yet: slave operation for both I2C and SPI, DMA", "SPI command/address/dummy phases, dual/quad/octal transfers", "polling-mode master drivers."]}
   ]
 }

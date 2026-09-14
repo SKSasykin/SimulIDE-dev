@@ -38,6 +38,7 @@ private:
 
     void configureClock();
     void configureMode();
+    void abortTransaction();
     void startUserTransaction();
     void loadByte();
     void updateOutputEnables();

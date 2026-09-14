@@ -21,17 +21,25 @@ Esp32Spi::Esp32Spi( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_
 Esp32Spi::~Esp32Spi() { }
 
 void Esp32Spi::reset() {
-    Simulator::self()->cancelEvents( this );
-    m_transactionActive = false;
-    m_dataIndex = 0;
-    m_dataBytes = 0;
-    m_data.fill( 0 );
+    abortTransaction();
     setMode( SPI_OFF );
+    SpiModule::initialize();
+    for ( uint64_t address = m_memStart; address <= m_memEnd; ++address )
+        writeMem( address, 0 );
+    m_data.fill( 0 );
     m_ckOutput.resetState( false );
     m_miOutput.resetState( true );
     m_moOutput.resetState( true );
     m_ssOutput.resetState( true );
     m_clock = false;
+    if ( m_esp8266 ) {
+        if ( m_clkPin )
+            m_clkPin->setOutState( false );
+        if ( m_MOSI )
+            m_MOSI->setOutState( true );
+        if ( m_SS )
+            m_SS->setOutState( true );
+    }
     updateOutputEnables();
 }
 
@@ -66,6 +74,11 @@ void Esp32Spi::writeRegister() {
         configureMode();
     else if ( offset == ( m_modern ? 0xE0 : ( m_esp8266 ? 0x30 : 0x38 ) ) ) {
         setMode( m_eventValue & ( 1 << ( m_modern ? 26 : 30 ) ) ? SPI_SLAVE : SPI_MASTER );
+        if ( !m_modern && ( m_eventValue & ( 1u << 31 ) ) ) {
+            writeMem( m_eventAddress, readMem( m_eventAddress ) & ~( ( 1u << 31 ) | ( 1 << 4 ) ) );
+            abortTransaction();
+            return;
+        }
         if ( !m_modern && ( m_eventValue & ( 1 << 4 ) ) )
             writeMem( m_eventAddress, readMem( m_eventAddress ) & ~( 1 << 4 ) );
     } else if ( m_modern && offset == 0x38 && ( m_eventValue & ( 1 << 12 ) ) ) {
@@ -142,6 +155,45 @@ void Esp32Spi::configureMode() {
     m_lsbFirst = control & ( m_modern ? ( 3 << 25 ) : ( 1 << 26 ) );
     driveClock( idleHigh );
     m_clock = idleHigh;
+}
+
+void Esp32Spi::abortTransaction() {
+    Simulator::self()->cancelEvents( this );
+    m_transactionActive = false;
+    m_dataIndex = 0;
+    m_dataBytes = 0;
+    m_srReg = 0;
+    m_txReg = 0;
+    m_bitCount = 0;
+    m_toggleSck = false;
+    m_enabled = false;
+
+    writeMem( m_memStart, 0 );
+    uint32_t doneAddress = m_memStart + ( m_modern ? 0x3C : ( m_esp8266 ? 0x30 : 0x38 ) );
+    writeMem( doneAddress, readMem( doneAddress ) & ~( 1 << ( m_modern ? 12 : 4 ) ) );
+
+    uint32_t misc = readMem( m_memStart + ( m_modern ? 0x20 : ( m_esp8266 ? 0x2C : 0x34 ) ) );
+    bool idleHigh = misc & ( 1 << 29 );
+    m_ckOutput.resetState( idleHigh );
+    m_miOutput.resetState( true );
+    m_moOutput.resetState( true );
+    m_ssOutput.resetState( true );
+    if ( m_esp8266 ) {
+        if ( m_clkPin ) {
+            m_clkPin->cancelScheduledState();
+            m_clkPin->setOutState( idleHigh );
+        }
+        if ( m_MOSI ) {
+            m_MOSI->cancelScheduledState();
+            m_MOSI->setOutState( true );
+        }
+        if ( m_SS ) {
+            m_SS->cancelScheduledState();
+            m_SS->setOutState( true );
+        }
+    }
+    m_clock = idleHigh;
+    m_clkState = idleHigh ? Clock_High : Clock_Low;
 }
 
 void Esp32Spi::startUserTransaction() {

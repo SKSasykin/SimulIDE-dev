@@ -122,6 +122,23 @@ class SpiEndpointTests(unittest.TestCase):
         self.assertTrue(run_tests.run_spi_endpoint_regression())
 
 
+class SpiResetTests(unittest.TestCase):
+    def test_full_reset_is_scoped_to_controller_window(self):
+        registers = {9: 0xAA, 10: 1 << 18, 11: 0xFFFFFFFF, 12: 0x55}
+        reset = run_tests.spi_reset_registers(registers, 10, 11, full=True)
+        self.assertEqual(reset, {9: 0xAA, 10: 0, 11: 0, 12: 0x55})
+
+    def test_sync_reset_clears_command_and_done_only(self):
+        base = 0x64000
+        registers = {base: 1 << 18, base + 0x38: (1 << 9) | (1 << 4)}
+        reset = run_tests.spi_reset_registers(registers, base, base + 0xFFF)
+        self.assertEqual(reset[base], 0)
+        self.assertEqual(reset[base + 0x38], 1 << 9)
+
+    def test_common_runner_executes_spi_reset_regression(self):
+        self.assertTrue(run_tests.run_spi_reset_regression())
+
+
 class CommandLineTests(unittest.TestCase):
     def test_invalid_mcu_and_direction_exit_with_usage_error(self):
         script = str(Path(run_tests.__file__))

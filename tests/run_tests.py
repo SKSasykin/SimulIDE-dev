@@ -176,6 +176,20 @@ def spi_endpoints_ready(esp8266, data_in, data_out, clock):
     return not esp8266 or (data_in and data_out and clock)
 
 
+def spi_reset_registers(registers, mem_start, mem_end, modern=False, esp8266=False, full=False):
+    reset = dict(registers)
+    if full:
+        for address in range(mem_start, mem_end + 1):
+            reset[address] = 0
+        return reset
+
+    reset[mem_start] = 0
+    done_offset = 0x3C if modern else (0x30 if esp8266 else 0x38)
+    done_bit = 12 if modern else 4
+    reset[mem_start + done_offset] = reset.get(mem_start + done_offset, 0) & ~(1 << done_bit)
+    return reset
+
+
 def cpp_function_body(source, signature):
     start = source.index(signature)
     opening = source.index("{", start)
@@ -290,6 +304,62 @@ def run_spi_endpoint_regression(root_dir=ROOT_DIR):
     return True
 
 
+def run_spi_reset_regression(root_dir=ROOT_DIR):
+    try:
+        source = (root_dir / SPI_SOURCE).read_text(encoding="utf-8")
+        reset = cpp_function_body(source, "void Esp32Spi::reset()")
+        abort = cpp_function_body(source, "void Esp32Spi::abortTransaction()")
+        write = cpp_function_body(source, "void Esp32Spi::writeRegister()")
+    except (OSError, ValueError, IndexError) as error:
+        print(f"FAIL spi reset regression path={SPI_SOURCE!r}: {error}")
+        return False
+
+    failures = []
+    if "abortTransaction();" not in reset or "SpiModule::initialize();" not in reset:
+        failures.append("full reset does not reset transfer and base SPI state")
+    if "address = m_memStart; address <= m_memEnd" not in reset:
+        failures.append("full reset does not clear exactly the controller MMIO window")
+    for fragment in (
+        "Simulator::self()->cancelEvents( this );",
+        "writeMem( m_memStart, 0 );",
+        "m_transactionActive = false;",
+        "m_ssOutput.resetState( true );",
+    ):
+        if fragment not in abort:
+            failures.append(f"abort is missing {fragment}")
+    if "m_eventValue & ( 1u << 31 )" not in write or "abortTransaction();" not in write:
+        failures.append("classic SPI_SLAVE.SYNC_RESET is not handled")
+
+    start = 0x64000
+    end = 0x64FFF
+    registers = {start - 1: 0xA5A5A5A5, start: 1 << 18, start + 0x38: 0x210, end + 1: 0x5A5A5A5A}
+    stopped = spi_reset_registers(registers, start, end, full=True)
+    if stopped[start] != 0 or stopped[start + 0x38] != 0:
+        failures.append("stop/start leaves classic CMD or SLAVE state behind")
+    if stopped[start - 1] != registers[start - 1] or stopped[end + 1] != registers[end + 1]:
+        failures.append("full reset modifies memory outside its controller window")
+
+    slave_config = (1 << 9) | (1 << 4)
+    synced = spi_reset_registers({start: 1 << 18, start + 0x38: slave_config}, start, end)
+    if synced[start] != 0 or synced[start + 0x38] != (1 << 9):
+        failures.append("SYNC_RESET does not clear CMD/done while preserving configuration")
+
+    completed = {start: 0, start + 0x38: slave_config}
+    restarted = dict(completed)
+    restarted[start] = 1 << 18
+    restarted[start + 0x38] &= ~(1 << 4)
+    if restarted[start] != 1 << 18 or restarted[start + 0x38] & (1 << 4):
+        failures.append("a sequential transaction cannot enter the running state")
+
+    if failures:
+        print("FAIL spi reset lifecycle regression")
+        for failure in failures:
+            print(f"  {failure}")
+        return False
+    print("PASS spi reset lifecycle regression: stop/start, SYNC_RESET and sequential transfer")
+    return True
+
+
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
     relative = manifest_path.relative_to(tests_dir)
     try:
@@ -398,6 +468,10 @@ def main():
             else:
                 failed += 1
             if run_spi_endpoint_regression():
+                passed += 1
+            else:
+                failed += 1
+            if run_spi_reset_regression():
                 passed += 1
             else:
                 failed += 1
