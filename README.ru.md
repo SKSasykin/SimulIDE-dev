@@ -143,9 +143,9 @@ Arduino. Реализованы различающаяся между чипам
 
 | Устройство | Виртуальный WiFi | Встроенный пример HTTP | Bluetooth |
 | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; только Reset |
-| ESP32-S3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; только Reset |
-| ESP32-C3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; только Reset |
+| ESP32 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; запуск NimBLE |
+| ESP32-S3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; запуск NimBLE |
+| ESP32-C3 | SLC DMA NIC с DHCP/NAT через libslirp | Да | HCI-транспорт для разработки; запуск NimBLE |
 | ESP8266EX | Виртуальный SLC NIC доступен; готового примера прошивки пока нет | Нет | В микросхеме отсутствует |
 
 Встроенные примеры **WiFi HTTP Hello World** для ESP32, ESP32-S3 и ESP32-C3
@@ -164,8 +164,11 @@ Espressif не заработает автоматически без транс
 безопасности приведено в подробной документации.
 
 Bluetooth Classic и BLE пока **не поддерживаются end-to-end**. ESP32,
-ESP32-S3 и ESP32-C3 теперь имеют DMA/H4-транспорт для разработки, а минимальный
-контроллер отвечает на HCI Reset. Запуск NimBLE, advertising, scanning,
+ESP32-S3 и ESP32-C3 теперь имеют DMA/H4-транспорт для разработки, а контроллер
+реализует полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7
+(Reset, Read Local Version/Features, Set Event Mask×2, LE Set Event Mask,
+LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, flow
+control для ESP32, resolving-list команды для S3/C3). Advertising, scanning,
 соединения, GATT, виртуальный радиоэфир и проброс Bluetooth-адаптера хоста пока
 не реализованы. Настройки Bluetooth намеренно скрыты из панели свойств.
 Полная архитектура, настройка и ограничения описаны в

@@ -201,11 +201,76 @@ def hci_command_complete(frame, frame_max=1536):
         return None
 
     opcode = frame[1] | (frame[2] << 8)
+
+    status = 0x01
+    response_data = b''
+    expected_len = 7
+
     if opcode == 0x0C03:
         status = 0x00 if parameter_length == 0 else 0x12
+    elif opcode == 0x1001:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x09\x00\x00\x09\x00\x00\x00\x00'
+            expected_len = 15
+    elif opcode == 0x1003:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x00\x00\x00\x00\x60\x00\x00\x00'
+            expected_len = 15
+    elif opcode == 0x0C01:
+        status = 0x00 if parameter_length == 8 else 0x12
+    elif opcode == 0x0C63:
+        status = 0x00 if parameter_length == 8 else 0x12
+    elif opcode == 0x2001:
+        status = 0x00 if parameter_length == 8 else 0x12
+    elif opcode == 0x2002:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x1B\x00\x01'
+            expected_len = 10
+    elif opcode == 0x2003:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            expected_len = 15
+    elif opcode == 0x1009:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x11\x22\x33\x44\x55\x66'
+            expected_len = 13
+    elif opcode == 0x0C31:
+        status = 0x00 if parameter_length == 1 and frame[4] in (0, 1) else 0x12
+    elif opcode == 0x0C33:
+        status = 0x00 if parameter_length == 7 else 0x12
+        if status == 0x00:
+            acl_len = frame[4] | (frame[5] << 8)
+            sco_len = frame[6]
+            acl_cnt = frame[7] | (frame[8] << 8)
+            sco_cnt = frame[9] | (frame[10] << 8)
+            if sco_len != 0 or sco_cnt != 0 or acl_len == 0 or acl_cnt == 0:
+                status = 0x12
+    elif opcode == 0x202D:
+        status = 0x00 if parameter_length == 1 else 0x12
+    elif opcode == 0x2029:
+        status = 0x00 if parameter_length == 0 else 0x12
+    elif opcode == 0x2027:
+        status = 0x00 if parameter_length == 39 else 0x12
+    elif opcode == 0x204E:
+        status = 0x00 if parameter_length == 8 else 0x12
     else:
         status = 0x01
-    return bytes((0x04, 0x0E, 0x04, 0x01, frame[1], frame[2], status))
+
+    result = bytearray()
+    result.append(0x04)
+    result.append(0x0E)
+    result.append(4 + len(response_data))
+    result.append(0x01)
+    result.append(frame[1])
+    result.append(frame[2])
+    result.append(status)
+    result.extend(response_data)
+    return bytes(result)
 
 
 def cpp_function_body(source, signature):
@@ -384,6 +449,21 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         ("HCI Reset", bytes.fromhex("01 03 0c 00"), bytes.fromhex("04 0e 04 01 03 0c 00")),
         ("Reset invalid parameter length", bytes.fromhex("01 03 0c 01 aa"), bytes.fromhex("04 0e 04 01 03 0c 12")),
         ("unknown command", bytes.fromhex("01 34 12 02 aa bb"), bytes.fromhex("04 0e 04 01 34 12 01")),
+        ("Read Local Version Info", bytes.fromhex("01 01 10 00"), bytes.fromhex("04 0e 0c 01 01 10 00 09 00 00 09 00 00 00 00")),
+        ("Read Local Supported Features", bytes.fromhex("01 03 10 00"), bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 60 00 00 00")),
+        ("Set Event Mask", bytes.fromhex("01 01 0c 08 90 80 00 02 00 80 00 20"), bytes.fromhex("04 0e 04 01 01 0c 00")),
+        ("Set Event Mask Page 2", bytes.fromhex("01 63 0c 08 00 00 80 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 63 0c 00")),
+        ("LE Set Event Mask", bytes.fromhex("01 01 20 08 1f 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 01 20 00")),
+        ("LE Read Buffer Size", bytes.fromhex("01 02 20 00"), bytes.fromhex("04 0e 07 01 02 20 00 1b 00 01")),
+        ("LE Read Local Supported Features", bytes.fromhex("01 03 20 00"), bytes.fromhex("04 0e 0c 01 03 20 00 00 00 00 00 00 00 00 00")),
+        ("Read BD_ADDR", bytes.fromhex("01 09 10 00"), bytes.fromhex("04 0e 0a 01 09 10 00 11 22 33 44 55 66")),
+        ("Set Controller To Host Flow Control enable", bytes.fromhex("01 31 0c 01 01"), bytes.fromhex("04 0e 04 01 31 0c 00")),
+        ("Set Controller To Host Flow Control disable", bytes.fromhex("01 31 0c 01 00"), bytes.fromhex("04 0e 04 01 31 0c 00")),
+        ("Host Buffer Size", bytes.fromhex("01 33 0c 07 ff 00 00 14 00 00 00"), bytes.fromhex("04 0e 04 01 33 0c 00")),
+        ("LE Set Address Resolution Enable", bytes.fromhex("01 2d 20 01 01"), bytes.fromhex("04 0e 04 01 2d 20 00")),
+        ("LE Clear Resolving List", bytes.fromhex("01 29 20 00"), bytes.fromhex("04 0e 04 01 29 20 00")),
+        ("LE Add Device To Resolving List", bytes.fromhex("01 27 20 27 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 27 20 00")),
+        ("LE Set Privacy Mode", bytes.fromhex("01 4e 20 08 00 00 00 00 00 00 00 01"), bytes.fromhex("04 0e 04 01 4e 20 00")),
     )
     for name, frame, expected in cases:
         actual = hci_command_complete(frame)
@@ -401,6 +481,33 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
     for frame in malformed:
         if hci_command_complete(frame) is not None:
             failures.append(f"malformed frame accepted: {frame[:8].hex(' ')} len={len(frame)}")
+
+    length_mismatch = (
+        bytes.fromhex("01 01 10 01 00"),
+        bytes.fromhex("01 03 10 01 00"),
+        bytes.fromhex("01 01 0c 07 00 00 00 00 00 00 00"),
+        bytes.fromhex("01 63 0c 07 00 00 00 00 00 00 00"),
+        bytes.fromhex("01 01 20 07 00 00 00 00 00 00 00"),
+        bytes.fromhex("01 02 20 01 00"),
+        bytes.fromhex("01 03 20 01 00"),
+        bytes.fromhex("01 09 10 01 00"),
+        bytes.fromhex("01 31 0c 02 00 01"),
+        bytes.fromhex("01 33 0c 06 ff 00 00 14 00 00"),
+    )
+    for frame in length_mismatch:
+        actual = hci_command_complete(frame)
+        if actual is None or actual[6] != 0x12:
+            failures.append(f"length mismatch not rejected with 0x12: {frame.hex(' ')} -> {actual}")
+
+    invalid_flow = bytes.fromhex("01 31 0c 01 02")
+    actual = hci_command_complete(invalid_flow)
+    if actual is None or actual[6] != 0x12:
+        failures.append(f"invalid flow control mode not rejected: {invalid_flow.hex(' ')} -> {actual}")
+
+    invalid_host_buf = bytes.fromhex("01 33 0c 07 ff 00 01 14 00 00 00")
+    actual = hci_command_complete(invalid_host_buf)
+    if actual is None or actual[6] != 0x12:
+        failures.append(f"invalid host buffer size not rejected: {invalid_host_buf.hex(' ')} -> {actual}")
 
     try:
         bt_source = (root_dir / BT_SOURCE).read_text(encoding="utf-8")
@@ -423,13 +530,16 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         return False
 
     required_bt = (
-        "len > QEMU_WIFI_FRAME_MAX",
-        "len >= 4 && frame[0] == 0x01",
-        "len == packetLen",
-        "opcode == 0x0C03",
-        "frame[3] == 0 ? 0x00 : 0x12",
+        "FRAME_MAX",
+        "H4_CMD",
+        "paramLen != spec->parameterLength",
+        "HCI_INVALID_HCI_COMMAND_PARAMETERS",
+        "HCI_UNKNOWN_HCI_COMMAND",
         "std::memory_order_acquire",
         "std::memory_order_release",
+        "CommandSpec",
+        "dispatchCommand",
+        "buildCommandComplete",
     )
     for fragment in required_bt:
         if fragment not in bt_source:

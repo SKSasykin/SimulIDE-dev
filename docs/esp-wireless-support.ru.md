@@ -65,19 +65,18 @@ Bluetooth Classic и BLE не реализованы end-to-end. В текуще
 
 - кольца `bt_tx` и `bt_rx` в арене разделяемой памяти SimulIDE/QEMU;
 - descriptor-based H4-транспорт по адресу `0x3ff52000` на ESP32 и `0x60012000` на ESP32-S3/C3 с level IRQ и асинхронной доставкой RX;
-- минимальный контроллер `QemuBt`, реализующий HCI Reset и безопасное отклонение malformed и неизвестных команд;
+- контроллер `QemuBt`, реализующий полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7: Reset, Read Local Version Info, Read Local Supported Features, Set Event Mask, Set Event Mask Page 2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List, LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3);
 - исходный код тестовой прошивки Reset в `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 В текущем дереве нет:
 
-- набора HCI-команд, необходимого для запуска NimBLE;
 - advertising, scanning, connections, планирования ACL/ISO или виртуального радио;
 - просмотра GATT или взаимодействия с ним в UI SimulIDE;
 - проброса Bluetooth-адаптера через CoreBluetooth, BlueZ или WinRT.
 
 По этой причине прежние экспериментальные настройки `WiFiLinkPort` и `BtLinkPort` не отображаются в панели свойств. Их нельзя трактовать как рабочую поддержку Bluetooth.
 
-Следующий этап реализации — набор HCI-команд для запуска NimBLE, затем advertising и scanning. Bluetooth-монитор SimulIDE после этого сможет работать как виртуальный central, отображать advertising и GATT-сервисы, а также выполнять операции чтения, записи и notification для характеристик. Детерминированное виртуальное радио, общее для симулируемых ESP-устройств, должно предшествовать опциональному пробросу адаптера хоста.
+Следующий этап реализации — advertising и scanning команды, затем ACL data path с Number Of Completed Packets flow control, детерминированное виртуальное радио, общее для симулируемых ESP-устройств, и GATT-инспекция в UI SimulIDE. Проброс адаптера хоста следует после виртуального радио.
 
 ## Важные файлы реализации
 

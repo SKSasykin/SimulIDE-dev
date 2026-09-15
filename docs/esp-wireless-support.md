@@ -94,14 +94,18 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
 - `bt_tx` and `bt_rx` rings in the SimulIDE/QEMU shared-memory arena;
 - a descriptor-based H4 transport at `0x3ff52000` on ESP32 and `0x60012000`
   on ESP32-S3/C3, with level interrupts and asynchronous RX delivery;
-- a minimal `QemuBt` controller that implements HCI Reset and safe rejection
-  of malformed and unknown commands;
+- a `QemuBt` controller that implements the full HCI command set required for
+  ESP-IDF 4.4.7 NimBLE host synchronization: Reset, Read Local Version Info,
+  Read Local Supported Features, Set Event Mask, Set Event Mask Page 2,
+  LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features,
+  Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control
+  (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List,
+  LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3);
 - source for a Reset transport smoke-test firmware under
   `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 The current tree does not have:
 
-- the HCI command set required to start NimBLE;
 - advertising, scanning, connections, ACL/ISO scheduling or a virtual radio;
 - GATT inspection or interaction in the SimulIDE UI;
 - Bluetooth adapter passthrough through CoreBluetooth, BlueZ or WinRT.
@@ -110,12 +114,10 @@ For this reason, the former experimental `WiFiLinkPort` and `BtLinkPort`
 settings are not exposed in the Properties panel. They must not be interpreted
 as working Bluetooth support.
 
-The next implementation stage is the HCI command subset required to start
-NimBLE, followed by advertising and scanning. A SimulIDE Bluetooth monitor can
-then act as a virtual central, display advertisements and GATT services, and
-perform characteristic read, write and notification operations. A
-deterministic virtual radio shared by simulated ESP devices should precede
-optional host-adapter passthrough.
+The next implementation stage is advertising and scanning commands, followed by
+ACL data path with Number Of Completed Packets flow control, a deterministic
+virtual radio medium shared by simulated ESP devices, and GATT inspection in
+the SimulIDE UI. Host-adapter passthrough follows after the virtual radio.
 
 ## Relevant implementation files
 
