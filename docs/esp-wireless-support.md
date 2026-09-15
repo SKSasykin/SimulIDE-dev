@@ -3,16 +3,16 @@
 This document describes the wireless networking facilities exposed by the
 ESP devices in SimulIDE. Virtual WiFi is a packet-level integration between
 guest firmware, the QEMU fork and libslirp. It is not an RF or 802.11 MAC/PHY
-simulation. Bluetooth transport scaffolding exists internally, but Bluetooth
-is not currently a supported user-facing feature.
+simulation. A first BLE HCI transport and Reset command are implemented for
+development, but Bluetooth is not currently a supported user-facing feature.
 
 ## Support matrix
 
 | Device | Virtual WiFi backend | Bundled HTTP demo | Silicon Bluetooth | Bluetooth in SimulIDE |
 | --- | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Not supported; transport scaffolding only |
-| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Not supported; transport scaffolding only |
-| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Not supported |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Development HCI transport; Reset only |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport; Reset only |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport; Reset only |
 | ESP8266EX | Virtual SLC NIC available | No guest demo yet | None | Not applicable |
 
 ## Virtual WiFi architecture
@@ -92,14 +92,16 @@ checks for libslirp and configures QEMU with SLIRP enabled.
 Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
 
 - `bt_tx` and `bt_rx` rings in the SimulIDE/QEMU shared-memory arena;
-- a `QemuBt` host module that can move opaque packets through an experimental
-  UDP backend;
-- ESP32 and ESP32-S3 bridge ranges reserved for future controller transport.
+- a descriptor-based H4 transport at `0x3ff52000` on ESP32 and `0x60012000`
+  on ESP32-S3/C3, with level interrupts and asynchronous RX delivery;
+- a minimal `QemuBt` controller that implements HCI Reset and safe rejection
+  of malformed and unknown commands;
+- source for a Reset transport smoke-test firmware under
+  `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 The current tree does not have:
 
-- an emulated ESP Bluetooth controller;
-- a defined and tested HCI transport used by guest firmware;
+- the HCI command set required to start NimBLE;
 - advertising, scanning, connections, ACL/ISO scheduling or a virtual radio;
 - GATT inspection or interaction in the SimulIDE UI;
 - Bluetooth adapter passthrough through CoreBluetooth, BlueZ or WinRT.
@@ -108,19 +110,20 @@ For this reason, the former experimental `WiFiLinkPort` and `BtLinkPort`
 settings are not exposed in the Properties panel. They must not be interpreted
 as working Bluetooth support.
 
-A practical future implementation should start with BLE and NimBLE over a
-defined HCI transport. A SimulIDE Bluetooth monitor could then act as a virtual
-central, display advertisements and GATT services, and perform characteristic
-read, write and notification operations. A deterministic virtual radio shared
-by simulated ESP devices should precede optional host-adapter passthrough.
+The next implementation stage is the HCI command subset required to start
+NimBLE, followed by advertising and scanning. A SimulIDE Bluetooth monitor can
+then act as a virtual central, display advertisements and GATT services, and
+perform characteristic read, write and notification operations. A
+deterministic virtual radio shared by simulated ESP devices should precede
+optional host-adapter passthrough.
 
 ## Relevant implementation files
 
 - `src/microsim/cores/qemu/qemudevice.{h,cpp}`: shared arena and QEMU launch
   options.
 - `src/microsim/cores/qemu/qemuwifi.{h,cpp}`: SimulIDE WiFi ring module.
-- `src/microsim/cores/qemu/qemubt.{h,cpp}`: experimental Bluetooth transport
-  scaffolding.
+- `src/microsim/cores/qemu/qemubt.{h,cpp}`: minimal HCI controller.
+- `third_party/qemu-simulide/hw/misc/esp32_ble_hci.c`: guest DMA/H4 transport.
 - `third_party/qemu-simulide/hw/dma/esp32_slc.c`: SLC DMA virtual NIC.
 - `third_party/qemu-simulide/hw/misc/esp32-simulide-bridge.c`: shared-memory
   bridge maps.

@@ -1,0 +1,15 @@
+{
+  "description": "ESP32 virtual BLE HCI transport routing",
+  "checks": [
+    {
+      "name": "host routes BLE notifications to QemuBt",
+      "path": "src/microsim/cores/qemu/esp32/esp32.cpp",
+      "contains": ["new QemuBt", "0x00052000, 0x00052FFF"]
+    },
+    {
+      "name": "QEMU maps virtual HCI and RWBLE interrupt",
+      "path": "third_party/qemu-simulide/hw/xtensa/esp32-simul.c",
+      "contains": ["esp32_ble_hci_create", "0x3ff52000", "ETS_RWBLE_INTR_SOURCE", "0x00052000"]
+    }
+  ]
+}

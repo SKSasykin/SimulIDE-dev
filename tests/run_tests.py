@@ -9,7 +9,7 @@ from pathlib import Path
 TESTS_DIR = Path(__file__).resolve().parent
 ROOT_DIR = TESTS_DIR.parent
 MCUS = ("esp8266", "esp32", "esp32-s3", "esp32-c3")
-DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi")
+DIRECTIONS = ("adc", "gpio-pulls", "pwm", "i2c", "spi", "wifi", "bluetooth")
 # Per-component source contracts, outside the ESP MCU tree.
 COMPONENT_CONTRACTS = (
     "components/acvoltage/test.json",
@@ -17,6 +17,9 @@ COMPONENT_CONTRACTS = (
     "components/max31855/test.json",
 )
 SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
+BT_SOURCE = "src/microsim/cores/qemu/qemubt.cpp"
+BT_QEMU_SOURCE = "third_party/qemu-simulide/hw/misc/esp32_ble_hci.c"
+BT_FIRMWARE_SOURCE = "resources/data/bin/esp/examples/ble-hci-reset/main/main.c"
 TOP_LEVEL_KEYS = {"description", "checks"}
 CHECK_KEYS = {"name", "path", "contains", "not_contains", "ordered", "within_lines"}
 
@@ -190,6 +193,21 @@ def spi_reset_registers(registers, mem_start, mem_end, modern=False, esp8266=Fal
     return reset
 
 
+def hci_command_complete(frame, frame_max=1536):
+    if len(frame) > frame_max or len(frame) < 4 or frame[0] != 0x01:
+        return None
+    parameter_length = frame[3]
+    if len(frame) != 4 + parameter_length:
+        return None
+
+    opcode = frame[1] | (frame[2] << 8)
+    if opcode == 0x0C03:
+        status = 0x00 if parameter_length == 0 else 0x12
+    else:
+        status = 0x01
+    return bytes((0x04, 0x0E, 0x04, 0x01, frame[1], frame[2], status))
+
+
 def cpp_function_body(source, signature):
     start = source.index(signature)
     opening = source.index("{", start)
@@ -360,6 +378,115 @@ def run_spi_reset_regression(root_dir=ROOT_DIR):
     return True
 
 
+def run_ble_controller_regression(root_dir=ROOT_DIR):
+    failures = []
+    cases = (
+        ("HCI Reset", bytes.fromhex("01 03 0c 00"), bytes.fromhex("04 0e 04 01 03 0c 00")),
+        ("Reset invalid parameter length", bytes.fromhex("01 03 0c 01 aa"), bytes.fromhex("04 0e 04 01 03 0c 12")),
+        ("unknown command", bytes.fromhex("01 34 12 02 aa bb"), bytes.fromhex("04 0e 04 01 34 12 01")),
+    )
+    for name, frame, expected in cases:
+        actual = hci_command_complete(frame)
+        if actual != expected:
+            failures.append(f"{name}: expected {expected.hex(' ')}, got {actual}")
+
+    malformed = (
+        b"",
+        bytes.fromhex("01 03 0c"),
+        bytes.fromhex("02 03 0c 00"),
+        bytes.fromhex("01 03 0c 01"),
+        bytes.fromhex("01 03 0c 00 ff"),
+        bytes(1537),
+    )
+    for frame in malformed:
+        if hci_command_complete(frame) is not None:
+            failures.append(f"malformed frame accepted: {frame[:8].hex(' ')} len={len(frame)}")
+
+    try:
+        bt_source = (root_dir / BT_SOURCE).read_text(encoding="utf-8")
+        esp32 = (root_dir / "src/microsim/cores/qemu/esp32/esp32.cpp").read_text(encoding="utf-8")
+        esp32s3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32s3.cpp").read_text(encoding="utf-8")
+        esp32c3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32c3.cpp").read_text(encoding="utf-8")
+        qemu_transport = (root_dir / BT_QEMU_SOURCE).read_text(encoding="utf-8")
+        firmware = (root_dir / BT_FIRMWARE_SOURCE).read_text(encoding="utf-8")
+        qemu_rx = cpp_function_body(
+            qemu_transport, "static void esp32_ble_hci_rx(Esp32BleHciState *s)"
+        )
+        qemu_tick = cpp_function_body(
+            qemu_transport, "static void esp32_ble_hci_rx_tick(void *opaque)"
+        )
+        qemu_reset = cpp_function_body(
+            qemu_transport, "static void esp32_ble_hci_reset_state(Esp32BleHciState *s)"
+        )
+    except (OSError, ValueError, IndexError) as error:
+        print(f"FAIL BLE controller regression: {error}")
+        return False
+
+    required_bt = (
+        "len > QEMU_WIFI_FRAME_MAX",
+        "len >= 4 && frame[0] == 0x01",
+        "len == packetLen",
+        "opcode == 0x0C03",
+        "frame[3] == 0 ? 0x00 : 0x12",
+        "std::memory_order_acquire",
+        "std::memory_order_release",
+    )
+    for fragment in required_bt:
+        if fragment not in bt_source:
+            failures.append(f"controller source is missing {fragment!r}")
+    for forbidden in ("setInterrupt(", "QemuNetBackend", "sendFrame("):
+        if forbidden in bt_source:
+            failures.append(f"controller source contains forbidden {forbidden!r}")
+
+    required_transport = (
+        "BLE_HCI_DESC_OWN",
+        "esp32_ble_hci_valid_h4",
+        "desc.length > BLE_HCI_MAX_FRAME",
+        "simulide_bt_notify",
+        "BLE_HCI_INT_RX_DONE",
+        "QEMU_CLOCK_VIRTUAL",
+    )
+    for fragment in required_transport:
+        if fragment not in qemu_transport:
+            failures.append(f"QEMU transport source is missing {fragment!r}")
+    if "simulide_bt_notify(s->simulide_iomem_offset);" not in qemu_rx:
+        failures.append("RX consumption does not wake a backpressured host command")
+    if "goto done;" not in qemu_rx or "done:" not in qemu_rx:
+        failures.append("partial RX completion can bypass wakeup and IRQ handling")
+    if "esp32_ble_hci_tx(s);" not in qemu_tick:
+        failures.append("virtual timer does not retry backpressured TX descriptors")
+    for fragment in ("tx_ring->tail = tx_ring->head;", "rx_ring->head = rx_ring->tail;"):
+        if fragment not in qemu_reset:
+            failures.append(f"transport reset does not flush stale traffic via {fragment!r}")
+
+    for fragment in (
+        "0x01, 0x03, 0x0c, 0x00",
+        "0x04, 0x0e, 0x04, 0x01, 0x03, 0x0c, 0x00",
+        "BLE_HCI_RESET_PASS",
+    ):
+        if fragment not in firmware:
+            failures.append(f"BLE reset firmware is missing {fragment!r}")
+
+    routes = (
+        ("ESP32", esp32, "0x00052000, 0x00052FFF"),
+        ("ESP32-S3", esp32s3, "0x00012000, 0x00012FFF"),
+        ("ESP32-C3", esp32c3, "0x00012000, 0x00012FFF"),
+    )
+    for name, source, route in routes:
+        if route not in source or "new QemuBt" not in source:
+            failures.append(f"{name} virtual HCI route is missing")
+        if "setBtLinkPort(" in source:
+            failures.append(f"{name} still enables default BLE UDP")
+
+    if failures:
+        print("FAIL BLE controller regression")
+        for failure in failures:
+            print(f"  {failure}")
+        return False
+    print("PASS BLE controller regression: H4 responses, rejection, routing and IRQ ownership")
+    return True
+
+
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
     relative = manifest_path.relative_to(tests_dir)
     try:
@@ -472,6 +599,11 @@ def main():
             else:
                 failed += 1
             if run_spi_reset_regression():
+                passed += 1
+            else:
+                failed += 1
+        if args.direction in (None, "bluetooth"):
+            if run_ble_controller_regression():
                 passed += 1
             else:
                 failed += 1

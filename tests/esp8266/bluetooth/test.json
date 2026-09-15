@@ -1,0 +1,10 @@
+{
+  "description": "ESP8266 correctly exposes no Bluetooth transport",
+  "checks": [
+    {
+      "name": "negative source contract: ESP8266 has no Bluetooth module",
+      "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp",
+      "not_contains": ["QemuBt", "BLE_HCI"]
+    }
+  ]
+}

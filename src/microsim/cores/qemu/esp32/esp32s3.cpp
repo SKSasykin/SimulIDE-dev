@@ -84,15 +84,9 @@ Esp32s3::Esp32s3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00019000, 0x00019FFF, LedcVariant::Esp32s3, 8, 4 );
 
-    // BT controller range is shadowed by the QEMU bridge and forwarded here.
-    // Passthrough stub for now; the VHCI host backend lands in phase 4.
-    // ETS_RWBT_INTR_SOURCE = 7 on ESP32-S3 (enum is sequential from 0)
-    m_bt = new QemuBt( this, id + "-BT", 0, 0x00011000, 0x00011FFF, 7 );
+    m_bt = new QemuBt( this, id + "-BT", 0, 0x00012000, 0x00012FFF );
 
     m_wifi = new QemuWifi( this, id + "-WiFi", 0, 0x00033000, 0x00035FFF );
-
-    // Default host-link UDP port (overridable from the property editor).
-    setBtLinkPort( 14569 );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 

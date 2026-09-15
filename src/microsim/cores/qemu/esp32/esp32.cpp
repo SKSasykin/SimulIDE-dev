@@ -86,16 +86,12 @@ Esp32::Esp32( QString type, QString id, QString device ) : QemuDevice( type, id 
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00059000, 0x00059FFF, LedcVariant::Esp32, 16, 8 );
 
-    // WiFi MAC (WDEV) and BT controller ranges are shadowed by the QEMU bridge
-    // and forwarded here. These modules are passthrough stubs for now; the host
-    // backend that moves real frames through the shared rings lands in phase 3/4.
+    // WiFi MAC (WDEV) and virtual HCI notifications are forwarded by QEMU.
     m_wifi = new QemuWifi( this, id + "-WiFi", 0, 0x00030000, 0x00033FFF );
-    // ETS_RWBT_INTR_SOURCE = 6 on ESP32 (BT controller / VHCI host interrupt)
-    m_bt   = new QemuBt( this, id + "-BT", 0, 0x00051000, 0x00051FFF, 6 );
+    m_bt   = new QemuBt( this, id + "-BT", 0, 0x00052000, 0x00052FFF );
 
-    // Default host-link UDP ports (overridable from the property editor).
+    // Default WiFi host-link UDP port (overridable from the property editor).
     setWifiLinkPort( 14567 );
-    setBtLinkPort( 14568 );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );
 

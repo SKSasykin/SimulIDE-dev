@@ -148,9 +148,9 @@ device.
 
 | Device | Virtual WiFi backend | Bundled HTTP example | Bluetooth |
 | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
-| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
-| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Not supported |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; Reset only |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; Reset only |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; Reset only |
 | ESP8266EX | Virtual SLC NIC available; no bundled guest demo yet | No | Not available on the chip |
 
 The bundled ESP32, ESP32-S3 and ESP32-C3 **WiFi HTTP Hello World** examples
@@ -169,12 +169,12 @@ examples do not reserve a host port and can run in parallel. The current QEMU
 rule binds to all host IPv4 interfaces; see the security note in the detailed
 documentation.
 
-Bluetooth Classic and BLE are **not supported end-to-end yet**. The codebase
-contains internal shared-memory rings and ESP32/ESP32-S3 bridge scaffolding for
-future HCI transport, but there is currently no emulated Bluetooth controller,
-virtual radio, scanning, connections, GATT, or host Bluetooth adapter
-passthrough. These experimental link settings are intentionally hidden from
-the Properties panel. See
+Bluetooth Classic and BLE are **not supported end-to-end yet**. ESP32,
+ESP32-S3 and ESP32-C3 now expose a development DMA/H4 transport, and the
+minimal controller answers HCI Reset. NimBLE startup, advertising, scanning,
+connections, GATT, a virtual radio and host Bluetooth adapter passthrough are
+not implemented. Bluetooth settings remain hidden from the Properties panel.
+See
 [docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
 architecture, setup and limitations.
 

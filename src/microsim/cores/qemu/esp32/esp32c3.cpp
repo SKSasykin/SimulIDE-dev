@@ -19,6 +19,7 @@
 #include "esp32spi.h"
 #include "esp32twi.h"
 #include "esp32usart.h"
+#include "qemubt.h"
 #include "qemuwifi.h"
 #include "itemlibrary.h"
 #include "mainwindow.h"
@@ -78,6 +79,7 @@ Esp32c3::Esp32c3( QString type, QString id, QString device ) : QemuDevice( type,
 
     m_leds = new Esp32Led( this, id + "Leds", 0, &m_apbFreq, 0x00019000, 0x00019FFF, LedcVariant::Esp32c3, 6, 4 );
 
+    m_bt = new QemuBt( this, id + "-BT", 0, 0x00012000, 0x00012FFF );
     m_wifi = new QemuWifi( this, id + "-WiFi", 0, 0x00033000, 0x00035FFF );
 
     m_dummyModule = new QemuModule( this, "UnMapped", 0, nullptr, 0, IOMEM_SIZE - 1 );

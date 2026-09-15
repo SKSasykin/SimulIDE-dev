@@ -139,6 +139,36 @@ class SpiResetTests(unittest.TestCase):
         self.assertTrue(run_tests.run_spi_reset_regression())
 
 
+class BleControllerTests(unittest.TestCase):
+    def test_reset_and_unknown_command_completions(self):
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 03 0c 00")),
+            bytes.fromhex("04 0e 04 01 03 0c 00"),
+        )
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 03 0c 01 aa")),
+            bytes.fromhex("04 0e 04 01 03 0c 12"),
+        )
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 34 12 00")),
+            bytes.fromhex("04 0e 04 01 34 12 01"),
+        )
+
+    def test_malformed_non_command_and_oversized_frames_are_rejected(self):
+        for frame in (
+            b"",
+            bytes.fromhex("01 03 0c"),
+            bytes.fromhex("02 03 0c 00"),
+            bytes.fromhex("01 03 0c 01"),
+            bytes.fromhex("01 03 0c 00 ff"),
+            bytes(1537),
+        ):
+            self.assertIsNone(run_tests.hci_command_complete(frame))
+
+    def test_common_runner_executes_ble_regression(self):
+        self.assertTrue(run_tests.run_ble_controller_regression())
+
+
 class CommandLineTests(unittest.TestCase):
     def test_invalid_mcu_and_direction_exit_with_usage_error(self):
         script = str(Path(run_tests.__file__))

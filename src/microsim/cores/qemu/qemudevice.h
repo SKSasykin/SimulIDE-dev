@@ -17,7 +17,7 @@
 //      wifi_rx : host  -> guest  (frames received, delivered to the driver)
 //      bt_tx   : guest -> host   (HCI/ACL/iso out)
 //      bt_rx   : host  -> guest  (HCI/ACL/iso in)
-//    head is written by the producer, tail by the consumer.
+//    tail is written by the producer, head by the consumer.
 
 #define QEMU_WIFI_RING_FRAMES 64
 #define QEMU_WIFI_FRAME_MAX   1536
