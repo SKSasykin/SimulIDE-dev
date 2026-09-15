@@ -168,9 +168,11 @@ ESP32-S3 и ESP32-C3 теперь имеют DMA/H4-транспорт для р
 реализует полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7
 (Reset, Read Local Version/Features, Set Event Mask×2, LE Set Event Mask,
 LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, flow
-control для ESP32, resolving-list команды для S3/C3). Advertising, scanning,
-соединения, GATT, виртуальный радиоэфир и проброс Bluetooth-адаптера хоста пока
-не реализованы. Настройки Bluetooth намеренно скрыты из панели свойств.
+control для ESP32, resolving-list команды для S3/C3). Также поддерживаются
+legacy advertising и пассивное/активное scanning через детерминированную среду,
+общую для симулируемых ESP и выдающую отчёты при активации. Соединения, ACL,
+GATT, временная модель/коллизии радиоэфира и проброс Bluetooth-адаптера хоста
+пока не реализованы. Настройки Bluetooth намеренно скрыты из панели свойств.
 Полная архитектура, настройка и ограничения описаны в
 [docs/esp-wireless-support.ru.md](docs/esp-wireless-support.ru.md).
 

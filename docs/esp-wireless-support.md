@@ -3,16 +3,17 @@
 This document describes the wireless networking facilities exposed by the
 ESP devices in SimulIDE. Virtual WiFi is a packet-level integration between
 guest firmware, the QEMU fork and libslirp. It is not an RF or 802.11 MAC/PHY
-simulation. A first BLE HCI transport and Reset command are implemented for
-development, but Bluetooth is not currently a supported user-facing feature.
+simulation. A development BLE HCI transport, NimBLE startup command profile,
+and legacy undirected advertising/scanning medium are implemented, but
+Bluetooth is not currently a supported user-facing feature.
 
 ## Support matrix
 
 | Device | Virtual WiFi backend | Bundled HTTP demo | Silicon Bluetooth | Bluetooth in SimulIDE |
 | --- | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Development HCI transport; Reset only |
-| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport; Reset only |
-| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport; Reset only |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Development HCI transport and legacy undirected advertising/scanning |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport and legacy undirected advertising/scanning |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport and legacy undirected advertising/scanning |
 | ESP8266EX | Virtual SLC NIC available | No guest demo yet | None | Not applicable |
 
 ## Virtual WiFi architecture
@@ -101,12 +102,21 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
   Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control
   (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List,
   LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3);
+- legacy undirected LE Set Advertising Parameters/Data/Scan Response/Enable
+  and LE Set Scan Parameters/Enable commands, with strict parameter validation;
+- an in-process deterministic medium shared by `QemuBt` instances. An enabled
+  advertiser publishes a snapshot; enabled passive scanners receive one LE
+  Advertising Report, while active scanners also receive a Scan Response.
+  Duplicate filtering and RX-ring backpressure are preserved;
 - source for a Reset transport smoke-test firmware under
   `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 The current tree does not have:
 
-- advertising, scanning, connections, ACL/ISO scheduling or a virtual radio;
+- connection establishment, ACL/ISO data or Number Of Completed Packets flow
+  control;
+- interval scheduling, channels, propagation, interference or collisions. The
+  current medium is activation-driven rather than a timed RF simulation;
 - GATT inspection or interaction in the SimulIDE UI;
 - Bluetooth adapter passthrough through CoreBluetooth, BlueZ or WinRT.
 
@@ -114,10 +124,10 @@ For this reason, the former experimental `WiFiLinkPort` and `BtLinkPort`
 settings are not exposed in the Properties panel. They must not be interpreted
 as working Bluetooth support.
 
-The next implementation stage is advertising and scanning commands, followed by
-ACL data path with Number Of Completed Packets flow control, a deterministic
-virtual radio medium shared by simulated ESP devices, and GATT inspection in
-the SimulIDE UI. Host-adapter passthrough follows after the virtual radio.
+The next implementation stage is connection establishment and the ACL data path
+with Number Of Completed Packets flow control, followed by GATT inspection in
+the SimulIDE UI. Timed RF behavior and host-adapter passthrough remain later
+stages.
 
 ## Relevant implementation files
 

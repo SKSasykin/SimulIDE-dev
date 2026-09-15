@@ -221,6 +221,54 @@ class BleControllerTests(unittest.TestCase):
             bytes.fromhex("04 0e 04 01 4e 20 00"),
         )
 
+    def test_legacy_advertising_and_scanning_commands(self):
+        commands = (
+            "01 06 20 0f 00 08 00 08 00 00 00 00 00 00 00 00 00 07 00",
+            "01 08 20 20 03 02 01 06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+            "01 09 20 20 02 01 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+            "01 0a 20 01 01",
+            "01 0b 20 07 00 10 00 10 00 00 00",
+            "01 0c 20 02 01 01",
+        )
+        for command in commands:
+            response = run_tests.hci_command_complete(bytes.fromhex(command))
+            self.assertIsNotNone(response)
+            self.assertEqual(response[6], 0)
+
+    def test_legacy_advertising_report_bytes(self):
+        report = run_tests.hci_le_advertising_report(
+            0, 0, bytes.fromhex("11 22 33 44 55 02"), bytes.fromhex("02 01 06")
+        )
+        self.assertEqual(
+            report,
+            bytes.fromhex("04 3e 0f 02 01 00 00 11 22 33 44 55 02 03 02 01 06 d6"),
+        )
+
+    def test_invalid_legacy_radio_parameters_rejected(self):
+        commands = (
+            "01 06 20 0f 00 08 00 08 05 00 00 00 00 00 00 00 00 07 00",
+            "01 06 20 0f 00 08 00 08 01 00 00 00 00 00 00 00 00 07 00",
+            "01 08 20 20 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+            "01 0a 20 01 02",
+            "01 0b 20 07 00 10 00 20 00 00 00",
+            "01 0c 20 02 01 02",
+        )
+        for command in commands:
+            response = run_tests.hci_command_complete(bytes.fromhex(command))
+            self.assertIsNotNone(response)
+            self.assertEqual(response[6], 0x12)
+
+    def test_invalid_privacy_parameter_values_rejected(self):
+        commands = (
+            "01 2d 20 01 02",
+            "01 27 20 27 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+            "01 4e 20 08 00 00 00 00 00 00 00 02",
+        )
+        for command in commands:
+            response = run_tests.hci_command_complete(bytes.fromhex(command))
+            self.assertIsNotNone(response)
+            self.assertEqual(response[6], 0x12)
+
     def test_malformed_non_command_and_oversized_frames_are_rejected(self):
         for frame in (
             b"",

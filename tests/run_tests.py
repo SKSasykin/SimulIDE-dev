@@ -18,6 +18,7 @@ COMPONENT_CONTRACTS = (
 )
 SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
 BT_SOURCE = "src/microsim/cores/qemu/qemubt.cpp"
+BT_HEADER = "src/microsim/cores/qemu/qemubt.h"
 BT_QEMU_SOURCE = "third_party/qemu-simulide/hw/misc/esp32_ble_hci.c"
 BT_FIRMWARE_SOURCE = "resources/data/bin/esp/examples/ble-hci-reset/main/main.c"
 TOP_LEVEL_KEYS = {"description", "checks"}
@@ -251,13 +252,50 @@ def hci_command_complete(frame, frame_max=1536):
             if sco_len != 0 or sco_cnt != 0 or acl_len == 0 or acl_cnt == 0:
                 status = 0x12
     elif opcode == 0x202D:
-        status = 0x00 if parameter_length == 1 else 0x12
+        status = 0x00 if parameter_length == 1 and frame[4] <= 1 else 0x12
     elif opcode == 0x2029:
         status = 0x00 if parameter_length == 0 else 0x12
     elif opcode == 0x2027:
-        status = 0x00 if parameter_length == 39 else 0x12
+        status = 0x00 if parameter_length == 39 and frame[4] <= 1 else 0x12
     elif opcode == 0x204E:
-        status = 0x00 if parameter_length == 8 else 0x12
+        status = (
+            0x00
+            if parameter_length == 8 and frame[4] <= 1 and frame[11] <= 1
+            else 0x12
+        )
+    elif opcode == 0x2006:
+        status = 0x00 if parameter_length == 15 else 0x12
+        if status == 0x00:
+            minimum = frame[4] | (frame[5] << 8)
+            maximum = frame[6] | (frame[7] << 8)
+            valid = (
+                0x0020 <= minimum <= maximum <= 0x4000
+                and frame[8] in (0, 2, 3)
+                and frame[9] == 0
+                and frame[10] <= 1
+                and frame[17] & 0x07
+                and not frame[17] & 0xF8
+                and frame[18] == 0
+            )
+            status = 0x00 if valid else 0x12
+    elif opcode in (0x2008, 0x2009):
+        status = 0x00 if parameter_length == 32 and frame[4] <= 31 else 0x12
+    elif opcode == 0x200A:
+        status = 0x00 if parameter_length == 1 and frame[4] <= 1 else 0x12
+    elif opcode == 0x200B:
+        status = 0x00 if parameter_length == 7 else 0x12
+        if status == 0x00:
+            interval = frame[5] | (frame[6] << 8)
+            window = frame[7] | (frame[8] << 8)
+            valid = (
+                frame[4] <= 1
+                and 0x0004 <= window <= interval <= 0x4000
+                and frame[9] == 0
+                and frame[10] == 0
+            )
+            status = 0x00 if valid else 0x12
+    elif opcode == 0x200C:
+        status = 0x00 if parameter_length == 2 and frame[4] <= 1 and frame[5] <= 1 else 0x12
     else:
         status = 0x01
 
@@ -271,6 +309,14 @@ def hci_command_complete(frame, frame_max=1536):
     result.append(status)
     result.extend(response_data)
     return bytes(result)
+
+
+def hci_le_advertising_report(event_type, address_type, address, data, rssi=-42):
+    if event_type > 4 or address_type > 1 or len(address) != 6 or len(data) > 31:
+        return None
+    payload = bytes((0x02, 0x01, event_type, address_type))
+    payload += bytes(address) + bytes((len(data),)) + bytes(data) + bytes((rssi & 0xFF,))
+    return bytes((0x04, 0x3E, len(payload))) + payload
 
 
 def cpp_function_body(source, signature):
@@ -464,6 +510,12 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         ("LE Clear Resolving List", bytes.fromhex("01 29 20 00"), bytes.fromhex("04 0e 04 01 29 20 00")),
         ("LE Add Device To Resolving List", bytes.fromhex("01 27 20 27 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 27 20 00")),
         ("LE Set Privacy Mode", bytes.fromhex("01 4e 20 08 00 00 00 00 00 00 00 01"), bytes.fromhex("04 0e 04 01 4e 20 00")),
+        ("LE Set Advertising Parameters", bytes.fromhex("01 06 20 0f 00 08 00 08 00 00 00 00 00 00 00 00 00 07 00"), bytes.fromhex("04 0e 04 01 06 20 00")),
+        ("LE Set Advertising Data", bytes.fromhex("01 08 20 20 03 02 01 06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 08 20 00")),
+        ("LE Set Scan Response Data", bytes.fromhex("01 09 20 20 02 01 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 09 20 00")),
+        ("LE Set Advertising Enable", bytes.fromhex("01 0a 20 01 01"), bytes.fromhex("04 0e 04 01 0a 20 00")),
+        ("LE Set Scan Parameters", bytes.fromhex("01 0b 20 07 00 10 00 10 00 00 00"), bytes.fromhex("04 0e 04 01 0b 20 00")),
+        ("LE Set Scan Enable", bytes.fromhex("01 0c 20 02 01 01"), bytes.fromhex("04 0e 04 01 0c 20 00")),
     )
     for name, frame, expected in cases:
         actual = hci_command_complete(frame)
@@ -511,6 +563,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
 
     try:
         bt_source = (root_dir / BT_SOURCE).read_text(encoding="utf-8")
+        bt_header = (root_dir / BT_HEADER).read_text(encoding="utf-8")
         esp32 = (root_dir / "src/microsim/cores/qemu/esp32/esp32.cpp").read_text(encoding="utf-8")
         esp32s3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32s3.cpp").read_text(encoding="utf-8")
         esp32c3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32c3.cpp").read_text(encoding="utf-8")
@@ -544,6 +597,34 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
     for fragment in required_bt:
         if fragment not in bt_source:
             failures.append(f"controller source is missing {fragment!r}")
+    for handler in (
+        "handleReset", "handleReadLocalVersionInfo", "handleReadLocalSupportedFeatures",
+        "handleSetEventMask", "handleSetEventMaskPage2", "handleLeSetEventMask",
+        "handleLeReadBufferSize", "handleLeReadLocalSupportedFeatures", "handleReadBdAddr",
+        "handleSetControllerToHostFlowControl", "handleHostBufferSize",
+        "handleLeSetAddressResolutionEnable", "handleLeClearResolvingList",
+        "handleLeAddDeviceToResolvingList", "handleLeSetPrivacyMode",
+        "handleLeSetAdvertisingParameters", "handleLeSetAdvertisingData",
+        "handleLeSetScanResponseData", "handleLeSetAdvertisingEnable",
+        "handleLeSetScanParameters", "handleLeSetScanEnable",
+    ):
+        if f"QemuBt::{handler}(" not in bt_source or f" {handler}(" not in bt_header:
+            failures.append(f"controller declaration/definition mismatch for {handler}")
+    if "struct QemuBt::ControllerState" in bt_source:
+        failures.append("ControllerState is redefined outside the class")
+    if bt_source.find("completeControllerFrame(const") > bt_source.find("injectHostFrame("):
+        failures.append("completeControllerFrame is not declared before first use")
+    for fragment in (
+        "HCI_LE_SET_ADVERTISING_PARAMETERS", "HCI_LE_SET_ADVERTISING_DATA",
+        "HCI_LE_SET_SCAN_RESPONSE_DATA", "HCI_LE_SET_ADVERTISING_ENABLE",
+        "HCI_LE_SET_SCAN_PARAMETERS", "HCI_LE_SET_SCAN_ENABLE",
+        "EVT_LE_ADVERTISING_REPORT", "airAdvertisements", "airScanners",
+        "m_pendingEvents", "PENDING_EVENT_MAX", "m_seenAdvertisements",
+        "DUPLICATE_CACHE_MAX", "m_pendingCommandResponse",
+        "HCI_COMMAND_DISALLOWED", "pumpPendingEvents",
+    ):
+        if fragment not in bt_source and fragment not in bt_header:
+            failures.append(f"legacy advertising/scanning source is missing {fragment!r}")
     for forbidden in ("setInterrupt(", "QemuNetBackend", "sendFrame("):
         if forbidden in bt_source:
             failures.append(f"controller source contains forbidden {forbidden!r}")

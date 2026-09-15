@@ -175,9 +175,11 @@ controller implements the full HCI command set required for ESP-IDF 4.4.7
 NimBLE host synchronization (Reset, Read Local Version/Features, Set Event
 Mask×2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported
 Features, Read BD_ADDR, flow control for ESP32, resolving-list commands for
-S3/C3). Advertising, scanning, connections, GATT, a virtual radio and host
-Bluetooth adapter passthrough are not implemented. Bluetooth settings remain
-hidden from the Properties panel. See
+S3/C3). It also supports legacy advertising and passive/active scanning through
+an activation-driven deterministic medium shared by simulated ESP devices.
+Connections, ACL data, GATT, radio timing/collisions and host Bluetooth adapter
+passthrough are not implemented. Bluetooth settings remain hidden from the
+Properties panel. See
 [docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
 architecture, setup and limitations.
 

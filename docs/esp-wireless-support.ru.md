@@ -1,14 +1,14 @@
 # Поддержка виртуального WiFi и Bluetooth ESP
 
-Этот документ описывает средства беспроводной сети, предоставляемые устройствами ESP в SimulIDE. Виртуальный WiFi — это интеграция на уровне пакетов между гостевой прошивкой, форком QEMU и libslirp. Это не симуляция RF или 802.11 MAC/PHY. Первый BLE HCI-транспорт и команда Reset реализованы для разработки, но Bluetooth сейчас не является поддерживаемой пользовательской функцией.
+Этот документ описывает средства беспроводной сети, предоставляемые устройствами ESP в SimulIDE. Виртуальный WiFi — это интеграция на уровне пакетов между гостевой прошивкой, форком QEMU и libslirp. Это не симуляция RF или 802.11 MAC/PHY. Для разработки реализованы BLE HCI-транспорт, профиль команд запуска NimBLE и среда legacy undirected advertising/scanning, но Bluetooth сейчас не является поддерживаемой пользовательской функцией.
 
 ## Матрица поддержки
 
 | Устройство | Backend виртуального WiFi | Встроенный HTTP-демо | Bluetooth в кремнии | Bluetooth в SimulIDE |
 | --- | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC с DHCP/NAT libslirp | Да | Classic + BLE | HCI-транспорт для разработки; только Reset |
-| ESP32-S3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт для разработки; только Reset |
-| ESP32-C3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт для разработки; только Reset |
+| ESP32 | SLC DMA NIC с DHCP/NAT libslirp | Да | Classic + BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
+| ESP32-S3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
+| ESP32-C3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
 | ESP8266EX | Доступен виртуальный SLC NIC | Гостевого демо пока нет | Нет | Неприменимо |
 
 ## Архитектура виртуального WiFi
@@ -66,17 +66,20 @@ Bluetooth Classic и BLE не реализованы end-to-end. В текуще
 - кольца `bt_tx` и `bt_rx` в арене разделяемой памяти SimulIDE/QEMU;
 - descriptor-based H4-транспорт по адресу `0x3ff52000` на ESP32 и `0x60012000` на ESP32-S3/C3 с level IRQ и асинхронной доставкой RX;
 - контроллер `QemuBt`, реализующий полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7: Reset, Read Local Version Info, Read Local Supported Features, Set Event Mask, Set Event Mask Page 2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List, LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3);
+- legacy-команды undirected LE Set Advertising Parameters/Data/Scan Response/Enable и LE Set Scan Parameters/Enable со строгой проверкой параметров;
+- внутрипроцессная детерминированная среда, общая для экземпляров `QemuBt`: включённый advertiser публикует снимок, пассивный scanner получает один LE Advertising Report, а активный — также Scan Response. Поддерживаются фильтрация дубликатов и backpressure RX-кольца;
 - исходный код тестовой прошивки Reset в `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 В текущем дереве нет:
 
-- advertising, scanning, connections, планирования ACL/ISO или виртуального радио;
+- установления соединений, ACL/ISO data path и flow control Number Of Completed Packets;
+- планирования интервалов, каналов, распространения сигнала, помех и коллизий: текущая среда работает по событиям активации, а не моделирует RF во времени;
 - просмотра GATT или взаимодействия с ним в UI SimulIDE;
 - проброса Bluetooth-адаптера через CoreBluetooth, BlueZ или WinRT.
 
 По этой причине прежние экспериментальные настройки `WiFiLinkPort` и `BtLinkPort` не отображаются в панели свойств. Их нельзя трактовать как рабочую поддержку Bluetooth.
 
-Следующий этап реализации — advertising и scanning команды, затем ACL data path с Number Of Completed Packets flow control, детерминированное виртуальное радио, общее для симулируемых ESP-устройств, и GATT-инспекция в UI SimulIDE. Проброс адаптера хоста следует после виртуального радио.
+Следующий этап реализации — установление соединений и ACL data path с flow control Number Of Completed Packets, затем GATT-инспекция в UI SimulIDE. Временная RF-модель и проброс адаптера хоста остаются более поздними этапами.
 
 ## Важные файлы реализации
 
