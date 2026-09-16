@@ -98,7 +98,9 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
   on ESP32-S3/C3, with level interrupts and asynchronous RX delivery;
 - a `QemuBt` controller that implements the full HCI command set required for
   ESP-IDF 4.4.7 NimBLE host synchronization: Reset, Read Local Version Info,
-  Read Local Supported Features, Set Event Mask, Set Event Mask Page 2,
+  Read Local Supported Commands (bitmap of implemented commands, required by
+  NimBLE 5.x/6.x startup), Read Local Supported Features, Set Event Mask,
+  Set Event Mask Page 2,
   LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features,
   Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control
   (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List,
@@ -131,7 +133,10 @@ checks connection establishment, ACL credits, RX backpressure and peer
 teardown. A boot-level guest smoke test builds both fixture firmwares and
 runs them together in one SimulIDE circuit through the shared in-process
 medium; the GATT round-trip sentinel (`BLE_GATT_E2E_PASS`) is emitted by the
-central firmware but not yet asserted by the test runner.
+central firmware but not yet asserted by the test runner. The default gate
+builds IDF 4.4.7; `BLE_IDF_VERSION=5.5.5` and `BLE_IDF_VERSION=6.1` select the
+newer pinned images, and both were verified to build, boot and run (sentinel
+likewise unasserted).
 
 The current tree does not have:
 

@@ -217,6 +217,18 @@ def hci_command_complete(frame, frame_max=1536):
         if status == 0x00:
             response_data = b'\x09\x00\x00\x09\x00\x00\x00\x00'
             expected_len = 15
+    elif opcode == 0x1002:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            bitmap = bytearray(64)
+            for offset, value in (
+                (0, 0x20), (16, 0x05), (22, 0x15), (24, 0x07),
+                (25, 0x01), (28, 0x04), (56, 0xA7), (57, 0x3F),
+                (58, 0x20), (60, 0x40), (61, 0x11),
+            ):
+                bitmap[offset] = value
+            response_data = bytes(bitmap)
+            expected_len = 71
     elif opcode == 0x1003:
         status = 0x00 if parameter_length == 0 else 0x12
         if status == 0x00:
@@ -729,7 +741,8 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         if fragment not in bt_source:
             failures.append(f"controller source is missing {fragment!r}")
     for handler in (
-        "handleReset", "handleReadLocalVersionInfo", "handleReadLocalSupportedFeatures",
+        "handleReset", "handleReadLocalVersionInfo", "handleReadLocalSupportedCommands",
+        "handleReadLocalSupportedFeatures",
         "handleSetEventMask", "handleSetEventMaskPage2", "handleLeSetEventMask",
         "handleLeReadBufferSize", "handleLeReadLocalSupportedFeatures", "handleReadBdAddr",
         "handleSetControllerToHostFlowControl", "handleHostBufferSize",
@@ -746,6 +759,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
     if bt_source.find("completeControllerFrame(const") > bt_source.find("injectHostFrame("):
         failures.append("completeControllerFrame is not declared before first use")
     for fragment in (
+        "HCI_READ_LOCAL_SUPPORTED_COMMANDS", "handleReadLocalSupportedCommands",
         "HCI_LE_SET_ADVERTISING_PARAMETERS", "HCI_LE_SET_ADVERTISING_DATA",
         "HCI_LE_SET_SCAN_RESPONSE_DATA", "HCI_LE_SET_ADVERTISING_ENABLE",
         "HCI_LE_SET_SCAN_PARAMETERS", "HCI_LE_SET_SCAN_ENABLE",
@@ -826,10 +840,24 @@ def run_ble_runtime_test(root_dir=ROOT_DIR):
     return True
 
 
+BLE_IDF_IMAGES = {
+    "4.4.7": "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
+    "5.5.5": "espressif/idf@sha256:a9231d0697ab8f7517cc072e93b7c83e04907bfbfba80b6440d7dbbf90665cf2",
+    "6.1": "espressif/idf@sha256:81893c71bb5e570088901f21def8684c25cd2a9020281bd01b843a7655edb18c",
+}
+
+
 def run_ble_e2e_test(root_dir=ROOT_DIR):
     """Build BLE GATT peripheral+central firmware and run two-device smoke test."""
     fixture_dir = root_dir / "tests/fixtures/ble-gatt-e2e"
     build_dir = root_dir / "tmp/ble-gatt-e2e-test"
+
+    idf_version = os.environ.get("BLE_IDF_VERSION", "4.4.7")
+    idf_image = BLE_IDF_IMAGES.get(idf_version)
+    if idf_image is None:
+        print(f"FAIL BLE e2e test: unknown BLE_IDF_VERSION={idf_version!r}")
+        return False
+    print(f"BLE e2e test: IDF {idf_version}")
 
     # Clean previous build
     import shutil
@@ -846,7 +874,7 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
             "docker", "run", "--rm", "--platform", "linux/arm64",
             "-v", f"{root_dir}:/project",
             "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
-            "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
+            idf_image,
             "idf.py", "build"
         ]
         result = subprocess.run(build_cmd, check=False)
@@ -859,7 +887,7 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
             "docker", "run", "--rm", "--platform", "linux/arm64",
             "-v", f"{root_dir}:/project",
             "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
-            "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
+            idf_image,
             "esptool.py", "--chip", "esp32", "merge_bin",
             "-o", f"/project/tmp/ble-gatt-e2e-test/{image}.merged.bin",
             "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "2MB",

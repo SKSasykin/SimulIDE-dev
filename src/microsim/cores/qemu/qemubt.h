@@ -145,6 +145,7 @@ private:
 
     uint8_t handleReset(const uint8_t* params, uint8_t* responseData);
     uint8_t handleReadLocalVersionInfo(const uint8_t* params, uint8_t* responseData);
+    uint8_t handleReadLocalSupportedCommands(const uint8_t* params, uint8_t* responseData);
     uint8_t handleReadLocalSupportedFeatures(const uint8_t* params, uint8_t* responseData);
     uint8_t handleSetEventMask(const uint8_t* params, uint8_t* responseData);
     uint8_t handleSetEventMaskPage2(const uint8_t* params, uint8_t* responseData);

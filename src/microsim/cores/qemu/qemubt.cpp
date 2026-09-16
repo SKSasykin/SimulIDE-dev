@@ -31,6 +31,7 @@ constexpr uint8_t H4_EVT = 0x04;
 
 constexpr uint16_t HCI_RESET = 0x0C03;
 constexpr uint16_t HCI_READ_LOCAL_VERSION_INFO = 0x1001;
+constexpr uint16_t HCI_READ_LOCAL_SUPPORTED_COMMANDS = 0x1002;
 constexpr uint16_t HCI_READ_LOCAL_SUPPORTED_FEATURES = 0x1003;
 constexpr uint16_t HCI_SET_EVENT_MASK = 0x0C01;
 constexpr uint16_t HCI_SET_EVENT_MASK_PAGE_2 = 0x0C63;
@@ -401,6 +402,25 @@ uint8_t QemuBt::handleReadLocalVersionInfo(const uint8_t* params, uint8_t* respo
     responseData[5] = 0x00;
     responseData[6] = 0x00;
     responseData[7] = 0x00;
+    return HCI_SUCCESS;
+}
+
+uint8_t QemuBt::handleReadLocalSupportedCommands(const uint8_t* params, uint8_t* responseData) {
+    (void)params;
+    if (!responseData) return HCI_INVALID_HCI_COMMAND_PARAMETERS;
+
+    std::memset(responseData, 0, 64);
+    responseData[0] = 0x20;
+    responseData[16] = 0x05;
+    responseData[22] = 0x15;
+    responseData[24] = 0x07;
+    responseData[25] = 0x01;
+    responseData[28] = 0x04;
+    responseData[56] = 0xA7;
+    responseData[57] = 0x3F;
+    responseData[58] = 0x20;
+    responseData[60] = 0x40;
+    responseData[61] = 0x11;
     return HCI_SUCCESS;
 }
 
@@ -1098,6 +1118,7 @@ void QemuBt::tryPendingAcl() {
 const QemuBt::CommandSpec QemuBt::s_commands[] = {
     { HCI_RESET, 0, 0, &QemuBt::handleReset },
     { HCI_READ_LOCAL_VERSION_INFO, 0, 8, &QemuBt::handleReadLocalVersionInfo },
+    { HCI_READ_LOCAL_SUPPORTED_COMMANDS, 0, 64, &QemuBt::handleReadLocalSupportedCommands },
     { HCI_READ_LOCAL_SUPPORTED_FEATURES, 0, 8, &QemuBt::handleReadLocalSupportedFeatures },
     { HCI_SET_EVENT_MASK, 8, 0, &QemuBt::handleSetEventMask },
     { HCI_SET_EVENT_MASK_PAGE_2, 8, 0, &QemuBt::handleSetEventMaskPage2 },

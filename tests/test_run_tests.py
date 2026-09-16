@@ -159,6 +159,18 @@ class BleControllerTests(unittest.TestCase):
             run_tests.hci_command_complete(bytes.fromhex("01 01 10 00")),
             bytes.fromhex("04 0e 0c 01 01 10 00 09 00 00 09 00 00 00 00"),
         )
+        bitmap = bytearray(64)
+        for offset, value in (
+            (0, 0x20), (16, 0x05), (22, 0x15), (24, 0x07),
+            (25, 0x01), (28, 0x04), (56, 0xA7), (57, 0x3F),
+            (58, 0x20), (60, 0x40), (61, 0x11),
+        ):
+            bitmap[offset] = value
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 02 10 00")),
+            bytes.fromhex("04 0e 44 01 02 10 00") + bytes(bitmap),
+        )
+        self.assertEqual(bitmap[22] & 0x04, 0x04)
         self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 03 10 00")),
             bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 60 00 00 00"),
@@ -366,6 +378,7 @@ class BleControllerTests(unittest.TestCase):
     def test_invalid_parameter_lengths_rejected(self):
         for frame in (
             bytes.fromhex("01 01 10 01 00"),
+            bytes.fromhex("01 02 10 01 00"),
             bytes.fromhex("01 03 10 01 00"),
             bytes.fromhex("01 01 0c 07 00 00 00 00 00 00 00"),
             bytes.fromhex("01 63 0c 07 00 00 00 00 00 00 00"),

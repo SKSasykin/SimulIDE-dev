@@ -40,11 +40,21 @@
 - Phase 3: Legacy advertising + passive/active scanning + deterministic in-process BLE medium
 - Phase 4: Connections + ACL (Create/Cancel/Disconnect/Remote Features, PB translation, credits)
 - Phase 5: Runtime harness (`tests/qemubt-runtime/`) + VHCI wrapper for ESP-IDF firmware
+- Phase 6 (planned): Multi-version NimBLE support — IDF 4.4.x (done), 5.x LTS, 6.x LTS
+- **Multi-IDF requirement**: user examples on IDF 4, 5 and 6 must work correctly
+- **Multi-version strategy**: one `QemuBt` answering the superset of startup commands;
+  4.4.7 behavior must stay green as regression baseline
+- QEMU transport (`esp32_ble_hci.c`) is version-agnostic — IDF upgrades touch
+  `QemuBt` command table, tests and possibly the VHCI shim, not QEMU
 - **No GATT/ATT in controller** — stays in NimBLE host
 - **No controller-side encryption/SMP** — not implemented
 
 ### 7. ESP-IDF Firmware Builds
-- Use pinned Docker image: `espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000` (v4.4.7)
+- Pinned Docker images (multi-IDF BLE requirement):
+  - v4.4.7: `espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000`
+  - v5.5.5: `espressif/idf@sha256:a9231d0697ab8f7517cc072e93b7c83e04907bfbfba80b6440d7dbbf90665cf2`
+  - v6.1: `espressif/idf@sha256:81893c71bb5e570088901f21def8684c25cd2a9020281bd01b843a7655edb18c`
+- e2e runner selects image via `BLE_IDF_VERSION` (4.4.7 default); see `BLE_IDF_IMAGES` in `tests/run_tests.py`
 - Build in `./tmp/` or project example dirs, never pollute `resources/data/`
 - Merged binaries via `esptool.py merge_bin --fill-flash-size 2MB`
 
