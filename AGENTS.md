@@ -17,6 +17,15 @@
 ### 3. Build & Bundle Size
 - `SimulIDE.pri` copies entire `resources/data/` into `.app` bundle
 - **Never leave test binaries in `resources/data/bin/`** — they bloat the app
+- A correct fresh macOS build must regenerate the Makefile before `make`, otherwise
+  an existing timestamped `.app` can be relinked instead of creating a new build:
+  ```sh
+  /opt/homebrew/bin/qmake -o build/Makefile build/SimulIDE_Build.pro
+  make -C build -j4
+  ```
+- For an intentional build without tests, use
+  `SIMULIDE_SKIP_TESTS=1 make -C build -j4` after the same `qmake` command
+- To launch the newest build, run `./start.sh` from the repository root
 - Verify bundle size after each build (`du -sh build/executables/*.app`)
 - Target size: ~101 MB for macOS arm64
 
