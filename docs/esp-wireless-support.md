@@ -120,9 +120,10 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
   `resources/data/bin/esp/examples/ble-hci-reset/`.
 
 The controller object is compiled directly and its HCI framing is covered by
-exact byte-vector and source-contract tests. There is not yet a standalone C++
-runtime harness for multi-controller scenarios because `QemuBt` is coupled to
-the full `QemuDevice` shared-memory lifecycle.
+exact byte-vector and source-contract tests. A standalone C++ runtime harness
+constructs two production `QemuBt` controllers over separate packet arenas and
+checks connection establishment, ACL credits, RX backpressure and peer
+teardown. Guest firmware still has no end-to-end NimBLE runtime test.
 
 The current tree does not have:
 

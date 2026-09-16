@@ -39,6 +39,11 @@ The IDE layer then boots bundled firmware through the real SimulIDE-QEMU process
 boundary. A failure is reported with its MCU, direction, scenario and source
 path. Every passing contract reports separate positive and negative counts.
 
+Bluetooth also runs the C++ executable under `tests/qemubt-runtime/`. It
+constructs two production `QemuBt` controllers on separate packet arenas and
+checks connection establishment, ACL credit backpressure, RX-ring retry, and
+peer teardown without duplicating the controller in Python.
+
 Normal IDE builds run this suite automatically. For an intentional debug build
 without tests, use:
 

@@ -19,6 +19,7 @@ class QemuBt : public QemuModule {
 public:
     QemuBt( QemuDevice* mcu, QString name, int n,
             uint64_t memStart, uint64_t memEnd );
+    QemuBt( volatile qemuArena_t& arena, QString name, int n = 0 );
     ~QemuBt();
 
     void reset() override;
@@ -140,6 +141,7 @@ private:
     QByteArray completedPacketsEvent(uint16_t handle) const;
     void pumpPendingEvents();
     void pumpTx();
+    void initializeController();
 
     uint8_t handleReset(const uint8_t* params, uint8_t* responseData);
     uint8_t handleReadLocalVersionInfo(const uint8_t* params, uint8_t* responseData);

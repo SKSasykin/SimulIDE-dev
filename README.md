@@ -185,6 +185,10 @@ Properties panel. See
 [docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
 architecture, setup and limitations.
 
+A standalone C++ runtime test drives two production controllers through their
+packet rings and covers connection setup, ACL credits, RX backpressure and peer
+teardown. A guest ESP-IDF/NimBLE end-to-end firmware test is still missing.
+
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
 build, so they do not need to be added or committed manually.

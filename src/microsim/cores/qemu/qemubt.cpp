@@ -122,16 +122,28 @@ bool writeLe16(uint16_t src, uint8_t* dst) {
 } // namespace
 
 QemuBt::QemuBt( QemuDevice* mcu, QString name, int n,
-                uint64_t memStart, uint64_t memEnd )
+                 uint64_t memStart, uint64_t memEnd )
     : QemuModule( mcu, name, n, nullptr, memStart, memEnd )
     , m_rxCount( 0 )
     , m_txCount( 0 )
 {
+    initializeController();
+}
+
+QemuBt::QemuBt( volatile qemuArena_t& arena, QString name, int n )
+    : QemuModule( arena, name, n )
+    , m_rxCount( 0 )
+    , m_txCount( 0 )
+{
+    initializeController();
+}
+
+void QemuBt::initializeController() {
     m_type = "bt";
     m_arena->bt_rx.head = m_arena->bt_rx.tail = 0;
     m_arena->bt_tx.head = m_arena->bt_tx.tail = 0;
 
-    const QByteArray identity = name.toUtf8();
+    const QByteArray identity = m_name.toUtf8();
     uint64_t hash = 1469598103934665603ULL;
     for (char byte : identity) {
         hash ^= static_cast<uint8_t>(byte);

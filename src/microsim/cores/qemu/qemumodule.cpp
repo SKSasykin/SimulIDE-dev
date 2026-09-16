@@ -23,6 +23,16 @@ QemuModule::QemuModule( QemuDevice* mcu, QString name, int n, uint32_t* clk, uin
     m_device->addModule( this );
     //qDebug() << "QemuModule::QemuModule" << m_name << toHex32( memStart ) << toHex32( memEnd );
 }
+QemuModule::QemuModule( volatile qemuArena_t& arena, QString name, int n ) {
+    m_device = nullptr;
+    m_number = n;
+    m_name = name;
+    m_frequency = nullptr;
+    m_memStart = 0;
+    m_memEnd = 0;
+    m_ioMem = nullptr;
+    m_arena = &arena;
+}
 QemuModule::~QemuModule() { }
 
 void QemuModule::reset() {

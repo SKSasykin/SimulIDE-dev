@@ -72,7 +72,7 @@ Bluetooth Classic и BLE не реализованы end-to-end. В текуще
 - непрозрачная пересылка H4 ACL между соединёнными контроллерами: ACL-фрагменты не разбираются, PB-флаги и локальные handle преобразуются, ограниченные очереди создают backpressure, а Number Of Completed Packets и настроенные host credits обеспечивают flow control;
 - исходный код тестовой прошивки Reset в `resources/data/bin/esp/examples/ble-hci-reset/`.
 
-Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельного runtime C++ harness для сценариев с несколькими контроллерами пока нет, поскольку `QemuBt` связан с полным lifecycle разделяемой памяти `QemuDevice`.
+Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельный runtime C++ harness создаёт два production-экземпляра `QemuBt` с разными packet arenas и проверяет установление соединения, ACL credits, RX backpressure и удаление peer. End-to-end runtime-теста с гостевой NimBLE-прошивкой пока нет.
 
 В текущем дереве нет:
 

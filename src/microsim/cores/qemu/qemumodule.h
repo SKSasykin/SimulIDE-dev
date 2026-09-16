@@ -38,6 +38,8 @@ public:
     virtual void freqChanged() { ; }
 
 protected:
+    QemuModule( volatile qemuArena_t& arena, QString name, int n );
+
     virtual void writeRegister();
     virtual void readRegister();
 

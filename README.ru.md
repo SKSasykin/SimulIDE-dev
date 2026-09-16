@@ -178,6 +178,10 @@ Bluetooth-адаптера хоста не реализованы. Настро�
 Полная архитектура, настройка и ограничения описаны в
 [docs/esp-wireless-support.ru.md](docs/esp-wireless-support.ru.md).
 
+Отдельный runtime-тест C++ управляет двумя production-контроллерами через их
+packet rings и проверяет соединение, ACL credits, RX backpressure и удаление
+peer. End-to-end теста гостевой прошивки ESP-IDF/NimBLE пока нет.
+
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,
 так что добавлять или коммитить их вручную не нужно.

@@ -21,6 +21,7 @@ BT_SOURCE = "src/microsim/cores/qemu/qemubt.cpp"
 BT_HEADER = "src/microsim/cores/qemu/qemubt.h"
 BT_QEMU_SOURCE = "third_party/qemu-simulide/hw/misc/esp32_ble_hci.c"
 BT_FIRMWARE_SOURCE = "resources/data/bin/esp/examples/ble-hci-reset/main/main.c"
+BT_RUNTIME_TEST = "tests/qemubt-runtime/run.sh"
 TOP_LEVEL_KEYS = {"description", "checks"}
 CHECK_KEYS = {"name", "path", "contains", "not_contains", "ordered", "within_lines"}
 
@@ -823,6 +824,16 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
     return True
 
 
+def run_ble_runtime_test(root_dir=ROOT_DIR):
+    command = root_dir / BT_RUNTIME_TEST
+    result = subprocess.run([str(command)], cwd=root_dir, check=False)
+    if result.returncode:
+        print("FAIL BLE production runtime test")
+        return False
+    print("PASS BLE production runtime test: connection, ACL credits, backpressure and lifetime")
+    return True
+
+
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):
     relative = manifest_path.relative_to(tests_dir)
     try:
@@ -940,6 +951,10 @@ def main():
                 failed += 1
         if args.direction in (None, "bluetooth"):
             if run_ble_controller_regression():
+                passed += 1
+            else:
+                failed += 1
+            if run_ble_runtime_test():
                 passed += 1
             else:
                 failed += 1

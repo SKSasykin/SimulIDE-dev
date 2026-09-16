@@ -7,4 +7,6 @@ ESP32-C3.
 
 These tests cross the real IDE, shared-memory bridge and QEMU process boundary.
 ESP8266 WiFi remains contract-tested only because no compatible bundled guest
-demo exists yet.
+demo exists yet. BLE controller-to-controller behavior is covered separately by
+`tests/qemubt-runtime/`; no guest ESP-IDF/NimBLE BLE scenario is part of the IDE
+suite yet.
