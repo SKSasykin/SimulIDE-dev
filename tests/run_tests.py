@@ -827,7 +827,7 @@ def run_ble_runtime_test(root_dir=ROOT_DIR):
 
 
 def run_ble_e2e_test(root_dir=ROOT_DIR):
-    """Build BLE GATT peripheral firmware in ./tmp/ and run smoke test."""
+    """Build BLE GATT peripheral+central firmware and run two-device smoke test."""
     fixture_dir = root_dir / "tests/fixtures/ble-gatt-e2e"
     build_dir = root_dir / "tmp/ble-gatt-e2e-test"
 
@@ -837,48 +837,46 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
         shutil.rmtree(build_dir)
     build_dir.mkdir(parents=True)
 
-    # Build peripheral firmware using Docker
-    build_cmd = [
-        "docker", "run", "--rm", "--platform", "linux/arm64",
-        "-v", f"{root_dir}:/project",
-        "-w", f"/project/tests/fixtures/ble-gatt-e2e/peripheral",
-        "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
-        "idf.py", "build"
-    ]
-    result = subprocess.run(build_cmd, check=False)
-    if result.returncode != 0:
-        print("FAIL BLE e2e test: firmware build failed")
-        shutil.rmtree(build_dir, ignore_errors=True)
-        return False
+    firmware = (
+        ("peripheral", "ble_gatt_peripheral"),
+        ("central", "ble_gatt_central"),
+    )
+    for project, image in firmware:
+        build_cmd = [
+            "docker", "run", "--rm", "--platform", "linux/arm64",
+            "-v", f"{root_dir}:/project",
+            "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
+            "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
+            "idf.py", "build"
+        ]
+        result = subprocess.run(build_cmd, check=False)
+        if result.returncode != 0:
+            print(f"FAIL BLE e2e test: {project} firmware build failed")
+            shutil.rmtree(build_dir, ignore_errors=True)
+            return False
 
-    # Create merged binary
-    merge_cmd = [
-        "docker", "run", "--rm", "--platform", "linux/arm64",
-        "-v", f"{root_dir}:/project",
-        "-w", f"/project/tests/fixtures/ble-gatt-e2e/peripheral",
-        "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
-        "esptool.py", "--chip", "esp32", "merge_bin",
-        "-o", f"/project/tmp/ble-gatt-e2e-test/ble_gatt_peripheral.merged.bin",
-        "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "2MB",
-        "--fill-flash-size", "2MB",
-        "0x1000", "build/bootloader/bootloader.bin",
-        "0x8000", "build/partition_table/partition-table.bin",
-        "0x10000", "build/ble_gatt_peripheral.bin"
-    ]
-    result = subprocess.run(merge_cmd, check=False)
-    if result.returncode != 0:
-        print("FAIL BLE e2e test: merge_bin failed")
-        shutil.rmtree(build_dir, ignore_errors=True)
-        return False
+        merge_cmd = [
+            "docker", "run", "--rm", "--platform", "linux/arm64",
+            "-v", f"{root_dir}:/project",
+            "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
+            "espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000",
+            "esptool.py", "--chip", "esp32", "merge_bin",
+            "-o", f"/project/tmp/ble-gatt-e2e-test/{image}.merged.bin",
+            "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "2MB",
+            "--fill-flash-size", "2MB",
+            "0x1000", "build/bootloader/bootloader.bin",
+            "0x8000", "build/partition_table/partition-table.bin",
+            "0x10000", f"build/{image}.bin"
+        ]
+        result = subprocess.run(merge_cmd, check=False)
+        if result.returncode != 0:
+            print(f"FAIL BLE e2e test: {project} merge_bin failed")
+            shutil.rmtree(build_dir, ignore_errors=True)
+            return False
 
-    # Copy merged binary to resources/data/bin/esp32/ for SimulIDE
-    merged_bin = build_dir / "ble_gatt_peripheral.merged.bin"
-    target_bin = root_dir / "resources/data/bin/esp32/ble_gatt_peripheral_test.merged.bin"
-    shutil.copy2(merged_bin, target_bin)
-
-    # Copy circuit
-    circuit_src = fixture_dir / "circuits/esp32-ble-gatt-peripheral.sim2"
-    circuit_dst = build_dir / "esp32-ble-gatt-peripheral.sim2"
+    # Copy two-device circuit next to both merged binaries
+    circuit_src = fixture_dir / "circuits/esp32-ble-gatt-e2e.sim2"
+    circuit_dst = build_dir / "esp32-ble-gatt-e2e.sim2"
     shutil.copy2(circuit_src, circuit_dst)
 
     # Find SimulIDE executable
@@ -897,7 +895,6 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
     if not simulide_exe:
         print("FAIL BLE e2e test: SimulIDE executable not found")
         shutil.rmtree(build_dir, ignore_errors=True)
-        target_bin.unlink(missing_ok=True)
         return False
 
     # Run smoke test
@@ -908,20 +905,25 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
 
     smoke_cmd = [
         str(simulide_exe), "-silent", "-nogui", "-smoke-test",
-        str(circuit_dst), "15000"
+        str(circuit_dst), "25000"
     ]
-    result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False, timeout=60)
+    result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False, timeout=90)
 
     # Cleanup
-    target_bin.unlink(missing_ok=True)
     shutil.rmtree(build_dir, ignore_errors=True)
-    # Clean up fixture build directory (Docker creates it in the mounted volume)
-    fixture_build_dir = fixture_dir / "peripheral/build"
-    if fixture_build_dir.exists():
-        shutil.rmtree(fixture_build_dir, ignore_errors=True)
+    # Clean up fixture build directories and generated sdkconfig
+    # (Docker creates them in the mounted volume)
+    for project, _ in firmware:
+        fixture_build_dir = fixture_dir / project / "build"
+        if fixture_build_dir.exists():
+            shutil.rmtree(fixture_build_dir, ignore_errors=True)
+        for generated in ("sdkconfig", "sdkconfig.old"):
+            generated_path = fixture_dir / project / generated
+            if generated_path.is_file():
+                generated_path.unlink()
 
     if result.returncode == 0:
-        print("PASS BLE e2e test: peripheral firmware startup and advertising")
+        print("PASS BLE e2e test: peripheral+central boot and run in shared medium")
         return True
     else:
         print("FAIL BLE e2e test: smoke test failed")

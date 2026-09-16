@@ -70,9 +70,9 @@ Bluetooth Classic и BLE не реализованы end-to-end. В текуще
 - внутрипроцессная детерминированная среда, общая для экземпляров `QemuBt`: включённый advertiser публикует снимок, пассивный scanner получает один LE Advertising Report, а активный — также Scan Response. Поддерживаются фильтрация дубликатов и backpressure RX-кольца;
 - одно детерминированное LE-соединение на `QemuBt` с глобально уникальными локальными handle, legacy/enhanced Connection Complete, отменой, отключением и Remote Features Complete;
 - непрозрачная пересылка H4 ACL между соединёнными контроллерами: ACL-фрагменты не разбираются, PB-флаги и локальные handle преобразуются, ограниченные очереди создают backpressure, а Number Of Completed Packets и настроенные host credits обеспечивают flow control;
-- исходный код тестовой прошивки Reset в `resources/data/bin/esp/examples/ble-hci-reset/`.
+- гостевые тестовые фикстуры в `tests/fixtures/ble-gatt-e2e/`: VHCI-прослойка, направляющая stock NimBLE из ESP-IDF 4.4.7 через виртуальный транспорт, плюс минимальные исходники peripheral (read/write/notify-характеристика) и central (scan/connect/discover/subscribe/write/read) с одно- и двухустройственными схемами. Сборка фикстур идёт в Docker, артефакты — в `./tmp/` с последующей очисткой; пользовательский `resources/data/` не затрагивается.
 
-Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельный runtime C++ harness создаёт два production-экземпляра `QemuBt` с разными packet arenas и проверяет установление соединения, ACL credits, RX backpressure и удаление peer. End-to-end runtime-теста с гостевой NimBLE-прошивкой пока нет.
+Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельный runtime C++ harness создаёт два production-экземпляра `QemuBt` с разными packet arenas и проверяет установление соединения, ACL credits, RX backpressure и удаление peer. Boot-level гостевой smoke-тест собирает обе фикстурные прошивки и запускает их вместе в одной схеме SimulIDE через общую внутрипроцессную среду; sentinel GATT round-trip (`BLE_GATT_E2E_PASS`) прошивка central испускает, но раннер его пока не проверяет.
 
 В текущем дереве нет:
 

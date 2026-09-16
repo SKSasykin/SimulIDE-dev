@@ -180,7 +180,9 @@ Bluetooth-адаптера хоста не реализованы. Настро�
 
 Отдельный runtime-тест C++ управляет двумя production-контроллерами через их
 packet rings и проверяет соединение, ACL credits, RX backpressure и удаление
-peer. End-to-end теста гостевой прошивки ESP-IDF/NimBLE пока нет.
+peer. Boot-level гостевой тест собирает peripheral+central фикстуры из
+`tests/fixtures/ble-gatt-e2e/` и запускает их вместе в одной схеме;
+sentinel GATT round-trip раннер пока не проверяет.
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,

@@ -116,14 +116,22 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
   not interpreted; PB flags and peer-local handles are translated, bounded
   queues apply backpressure, and Number Of Completed Packets plus configured
   controller-to-host credits provide flow control;
-- source for a Reset transport smoke-test firmware under
-  `resources/data/bin/esp/examples/ble-hci-reset/`.
+- guest test fixtures under `tests/fixtures/ble-gatt-e2e/`: a VHCI shim
+  routing stock ESP-IDF 4.4.7 NimBLE through the virtual transport, plus
+  minimal peripheral (read/write/notify characteristic) and central
+  (scan/connect/discover/subscribe/write/read) firmware sources with
+  single- and two-device circuits. Fixture builds run in Docker with
+  artifacts in `./tmp/` and are cleaned up afterwards; they never touch
+  user-facing `resources/data/`.
 
 The controller object is compiled directly and its HCI framing is covered by
 exact byte-vector and source-contract tests. A standalone C++ runtime harness
 constructs two production `QemuBt` controllers over separate packet arenas and
 checks connection establishment, ACL credits, RX backpressure and peer
-teardown. Guest firmware still has no end-to-end NimBLE runtime test.
+teardown. A boot-level guest smoke test builds both fixture firmwares and
+runs them together in one SimulIDE circuit through the shared in-process
+medium; the GATT round-trip sentinel (`BLE_GATT_E2E_PASS`) is emitted by the
+central firmware but not yet asserted by the test runner.
 
 The current tree does not have:
 

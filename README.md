@@ -187,7 +187,9 @@ architecture, setup and limitations.
 
 A standalone C++ runtime test drives two production controllers through their
 packet rings and covers connection setup, ACL credits, RX backpressure and peer
-teardown. A guest ESP-IDF/NimBLE end-to-end firmware test is still missing.
+teardown. A boot-level guest test builds peripheral+central fixture firmwares
+from `tests/fixtures/ble-gatt-e2e/` and runs them together in one circuit;
+the GATT round-trip sentinel is not asserted by the runner yet.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
