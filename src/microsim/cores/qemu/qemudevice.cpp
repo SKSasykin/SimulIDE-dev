@@ -383,7 +383,11 @@ void QemuDevice::runEvent() {
         if ( m_arena->simuAction ) {
             if ( m_arena->simuAction == SIM_FREQ )
                 updtFrequency();
-            else if ( m_arena->simuAction != SIM_EVENT )
+            else if ( m_arena->simuAction == SIM_EVENT ) {
+                for ( QemuModule* module : m_modules )
+                    module->runTick();
+            }
+            else
                 doAction();
             m_arena->simuAction = 0;
 

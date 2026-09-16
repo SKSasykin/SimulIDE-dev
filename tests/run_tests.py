@@ -730,7 +730,12 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         esp32 = (root_dir / "src/microsim/cores/qemu/esp32/esp32.cpp").read_text(encoding="utf-8")
         esp32s3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32s3.cpp").read_text(encoding="utf-8")
         esp32c3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32c3.cpp").read_text(encoding="utf-8")
+        qemu_device = (root_dir / "src/microsim/cores/qemu/qemudevice.cpp").read_text(encoding="utf-8")
+        qemu_module = (root_dir / "src/microsim/cores/qemu/qemumodule.h").read_text(encoding="utf-8")
         qemu_transport = (root_dir / BT_QEMU_SOURCE).read_text(encoding="utf-8")
+        qemu_interface = (
+            root_dir / "third_party/qemu-simulide/system/simuliface.c"
+        ).read_text(encoding="utf-8")
         qemu_rx = cpp_function_body(
             qemu_transport, "static void esp32_ble_hci_rx(Esp32BleHciState *s)"
         )
@@ -780,6 +785,21 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         failures.append("ControllerState is redefined outside the class")
     if bt_source.find("completeControllerFrame(const") > bt_source.find("injectHostFrame("):
         failures.append("completeControllerFrame is not declared before first use")
+    for fragment in ("void QemuBt::runTick()", "pumpTx();"):
+        if fragment not in bt_source:
+            failures.append(f"controller periodic pump is missing {fragment!r}")
+    if "void runTick() override" not in bt_header or "virtual void runTick()" not in qemu_module:
+        failures.append("controller periodic pump hook is not declared")
+    if "module->runTick()" not in qemu_device:
+        failures.append("QEMU periodic events do not service module queues")
+    for fragment in (
+        "static QemuMutex s_signal_mutex",
+        "qemu_mutex_init( &s_signal_mutex )",
+        "qemu_mutex_lock( &s_signal_mutex )",
+        "simulide_signal_locked( SIM_BT",
+    ):
+        if fragment not in qemu_interface:
+            failures.append(f"QEMU mailbox serialization is missing {fragment!r}")
     for fragment in (
         "HCI_READ_LOCAL_SUPPORTED_COMMANDS", "handleReadLocalSupportedCommands",
         "HCI_LE_SET_ADVERTISING_PARAMETERS", "HCI_LE_SET_ADVERTISING_DATA",
@@ -885,9 +905,6 @@ BLE_IDF_TARGETS = {
         "circuit": "esp32-c3-ble-gatt-e2e.sim2",
     },
 }
-
-BLE_E2E_SMOKE_ATTEMPTS = 3
-
 
 def ble_e2e_matrix(mcu=None, environ=None):
     environ = os.environ if environ is None else environ
@@ -1019,43 +1036,36 @@ def run_ble_e2e_test(root_dir=ROOT_DIR, idf_version=None, target=None):
             str(simulide_exe), "-silent", "-nogui", "-smoke-test",
             str(circuit_dst), "25000"
         ]
-        passed = False
-        for attempt in range(1, BLE_E2E_SMOKE_ATTEMPTS + 1):
-            print(f"BLE e2e smoke ({label}): attempt "
-                  f"{attempt}/{BLE_E2E_SMOKE_ATTEMPTS}", flush=True)
-            try:
-                result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False,
-                                        timeout=120, capture_output=True, text=True)
-            except subprocess.TimeoutExpired as error:
-                result = None
-                output = (error.stdout or "") + (error.stderr or "")
-                failure = "smoke test timed out"
+        print(f"BLE e2e smoke ({label})", flush=True)
+        try:
+            result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False,
+                                    timeout=120, capture_output=True, text=True)
+        except subprocess.TimeoutExpired as error:
+            passed = False
+            output = (error.stdout or "") + (error.stderr or "")
+            failure = "smoke test timed out"
+        else:
+            output = result.stdout + result.stderr
+            missing = [
+                sentinel
+                for sentinel in ("BLE_GATT_PERIPHERAL_READY", "BLE_GATT_E2E_PASS")
+                if sentinel not in output
+            ]
+            passed = result.returncode == 0 and not missing
+            if result.returncode != 0:
+                failure = f"smoke test exited with status {result.returncode}"
             else:
-                output = result.stdout + result.stderr
-                missing = [
-                    sentinel
-                    for sentinel in ("BLE_GATT_PERIPHERAL_READY", "BLE_GATT_E2E_PASS")
-                    if sentinel not in output
-                ]
-                if result.returncode == 0 and not missing:
-                    passed = True
-                    break
-                if result.returncode != 0:
-                    failure = f"smoke test exited with status {result.returncode}"
-                else:
-                    failure = f"missing guest sentinel(s): {', '.join(missing)}"
+                failure = f"missing guest sentinel(s): {', '.join(missing)}"
 
-            print(f"FAIL BLE e2e smoke ({label}, attempt {attempt}): {failure}")
+        if not passed:
+            print(f"FAIL BLE e2e smoke ({label}): {failure}")
             uart_lines = [line for line in output.splitlines() if line.startswith("[UART")]
             print("\n".join(uart_lines[-100:]))
-            if attempt < BLE_E2E_SMOKE_ATTEMPTS:
-                print(f"RETRY BLE e2e smoke ({label})", flush=True)
     finally:
         shutil.rmtree(build_dir, ignore_errors=True)
 
     if not passed:
-        print(f"FAIL BLE e2e test ({label}): "
-              f"smoke test failed after {BLE_E2E_SMOKE_ATTEMPTS} attempts")
+        print(f"FAIL BLE e2e test ({label}): smoke test failed")
         return False
     print(f"PASS BLE e2e test ({label}): GATT round-trip verified (subscribe/write/notify/read)")
     return True

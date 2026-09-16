@@ -186,14 +186,6 @@ fi
 # (directory mtimes only change for direct children). So in addition to the
 # canonical resources/data/bin location, mirror the emulators + ROMs into the
 # built .app bundle when it already exists.
-BUNDLE_BIN_DIR=""
-for d in "$REPO_ROOT"/build/executables/*.app/Contents/MacOS/data/bin; do
-    if [ -d "$d" ]; then
-        BUNDLE_BIN_DIR="$d"
-        break
-    fi
-done
-
 install_emulators() {
     local bin_dir="$1"
     local rom_dir="$bin_dir/esp/rom/bin"
@@ -216,10 +208,11 @@ install_emulators() {
 
 info "installing emulators + ROM dumps -> $BIN_DIR"
 install_emulators "$BIN_DIR"
-if [ -n "$BUNDLE_BIN_DIR" ]; then
-    info "mirroring emulators + ROM dumps -> $BUNDLE_BIN_DIR"
-    install_emulators "$BUNDLE_BIN_DIR"
-fi
+for bundle_bin_dir in "$REPO_ROOT"/build/executables/*.app/Contents/MacOS/data/bin; do
+    if [ ! -d "$bundle_bin_dir" ]; then continue; fi
+    info "mirroring emulators + ROM dumps -> $bundle_bin_dir"
+    install_emulators "$bundle_bin_dir"
+done
 printf '%s\n' "$(git -C "$QEMU_DIR" rev-parse HEAD)" > "$HEAD_STAMP"
 
 info "done. Emulators installed to $BIN_DIR"

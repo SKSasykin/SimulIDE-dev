@@ -23,6 +23,8 @@ public:
 
     virtual void runAction();
 
+    virtual void runTick() { ; }
+
     // Optional host-network link hook (overridden by network modules such as
     // QemuWifi / QemuBt). Default: no-op so generic modules are unaffected.
     virtual void setHostLink( quint16 port ) { (void)port; }

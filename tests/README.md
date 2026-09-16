@@ -49,7 +49,8 @@ runs both through the real SimulIDE-QEMU boundary, and requires a complete GATT
 subscribe/write/notify/read round trip. IDF 4.4.7 and ESP32 are the defaults.
 Use `BLE_IDF_VERSION=5.5.5` or `6.1` and `BLE_IDF_TARGET=esp32-s3` or
 `esp32-c3` to select one pair. The value `all` selects every value on one axis;
-`BLE_E2E_MATRIX=1` runs all nine IDF/MCU pairs.
+`BLE_E2E_MATRIX=1` runs all nine IDF/MCU pairs. Every pair gets one smoke run;
+the gate does not retry a failed process.
 
 Normal IDE builds run this suite automatically. For an intentional debug build
 without tests, use:

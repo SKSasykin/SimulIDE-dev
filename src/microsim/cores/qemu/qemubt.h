@@ -24,6 +24,7 @@ public:
 
     void reset() override;
     void runAction() override;
+    void runTick() override;
 
     void injectHostFrame( const QByteArray& frame );
 

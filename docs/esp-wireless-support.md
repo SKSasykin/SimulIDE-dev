@@ -142,6 +142,9 @@ The default gate builds IDF 4.4.7 for ESP32. `BLE_IDF_VERSION` and
 `BLE_IDF_TARGET` select one version and MCU; either accepts `all`, while
 `BLE_E2E_MATRIX=1` runs the complete matrix. IDF 4.4.7, 5.5.5 and 6.1 are
 verified through the full GATT round trip on ESP32, ESP32-S3 and ESP32-C3.
+Each matrix pair gets one smoke run. QEMU serializes all producers of the
+single SimulIDE mailbox, and `QemuBt` also retries queued ring work on periodic
+simulation events, so correctness does not depend on a one-shot notification.
 
 The current tree does not have:
 

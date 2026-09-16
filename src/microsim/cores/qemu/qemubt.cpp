@@ -1342,6 +1342,11 @@ void QemuBt::runAction() {
     pumpTx();
 }
 
+void QemuBt::runTick() {
+    ensureMediumRegistration();
+    pumpTx();
+}
+
 void QemuBt::injectHostFrame(const QByteArray& frame) {
     if (frame.size() <= 0 || static_cast<uint32_t>(frame.size()) > FRAME_MAX) return;
     const uint8_t* data = reinterpret_cast<const uint8_t*>(frame.constData());

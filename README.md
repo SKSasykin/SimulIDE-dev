@@ -188,7 +188,8 @@ packet rings and covers connection setup, ACL credits, RX backpressure and peer
 teardown. A boot-level guest test builds peripheral+central fixture firmwares
 from `tests/fixtures/ble-gatt-e2e/` and verifies a host-side GATT
 subscribe/write/notify/read round trip across the complete ESP-IDF 4.4.7,
-5.5.5 and 6.1 by ESP32, ESP32-S3 and ESP32-C3 matrix.
+5.5.5 and 6.1 by ESP32, ESP32-S3 and ESP32-C3 matrix. Each pair is verified in
+a single smoke process without retries.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
