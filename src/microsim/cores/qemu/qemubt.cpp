@@ -43,6 +43,7 @@ constexpr uint16_t HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL = 0x0C31;
 constexpr uint16_t HCI_HOST_BUFFER_SIZE = 0x0C33;
 constexpr uint16_t HCI_HOST_NUMBER_OF_COMPLETED_PACKETS = 0x0C35;
 constexpr uint16_t HCI_DISCONNECT = 0x0406;
+constexpr uint16_t HCI_READ_REMOTE_VERSION_INFO = 0x041D;
 constexpr uint16_t HCI_LE_SET_ADDRESS_RESOLUTION_ENABLE = 0x202D;
 constexpr uint16_t HCI_LE_CLEAR_RESOLVING_LIST = 0x2029;
 constexpr uint16_t HCI_LE_ADD_DEVICE_TO_RESOLVING_LIST = 0x2027;
@@ -56,10 +57,12 @@ constexpr uint16_t HCI_LE_SET_SCAN_ENABLE = 0x200C;
 constexpr uint16_t HCI_LE_CREATE_CONNECTION = 0x200D;
 constexpr uint16_t HCI_LE_CREATE_CONNECTION_CANCEL = 0x200E;
 constexpr uint16_t HCI_LE_READ_REMOTE_FEATURES = 0x2016;
+constexpr uint16_t HCI_LE_RAND = 0x2018;
 
 constexpr uint8_t EVT_CMD_COMPLETE = 0x0E;
 constexpr uint8_t EVT_CMD_STATUS = 0x0F;
 constexpr uint8_t EVT_DISCONNECTION_COMPLETE = 0x05;
+constexpr uint8_t EVT_READ_REMOTE_VERSION_COMPLETE = 0x0C;
 constexpr uint8_t EVT_NUMBER_OF_COMPLETED_PACKETS = 0x13;
 constexpr uint8_t EVT_LE_META = 0x3E;
 constexpr uint8_t EVT_LE_CONNECTION_COMPLETE = 0x01;
@@ -69,6 +72,7 @@ constexpr uint8_t EVT_LE_ENHANCED_CONNECTION_COMPLETE = 0x0A;
 
 constexpr uint64_t EVENT_MASK_LE_META = uint64_t(1) << 61;
 constexpr uint64_t EVENT_MASK_DISCONNECTION_COMPLETE = uint64_t(1) << 4;
+constexpr uint64_t EVENT_MASK_READ_REMOTE_VERSION_COMPLETE = uint64_t(1) << 11;
 constexpr uint64_t LE_EVENT_MASK_ADVERTISING_REPORT = uint64_t(1) << 1;
 constexpr uint64_t LE_EVENT_MASK_CONNECTION_COMPLETE = uint64_t(1) << 0;
 constexpr uint64_t LE_EVENT_MASK_READ_REMOTE_FEATURES_COMPLETE = uint64_t(1) << 3;
@@ -345,6 +349,21 @@ bool QemuBt::dispatchCommand(const uint8_t* cmd, uint32_t len, uint8_t* response
         return buildCommandStatus(opcode, status, response, responseLen);
     }
 
+    if (opcode == HCI_READ_REMOTE_VERSION_INFO) {
+        uint8_t status = HCI_INVALID_HCI_COMMAND_PARAMETERS;
+        if (paramLen == 2) {
+            uint16_t handle = 0;
+            readLe16(params, handle);
+            status = (!m_connection.peer || handle != m_connection.localHandle)
+                ? HCI_UNKNOWN_CONNECTION_IDENTIFIER : HCI_SUCCESS;
+            if (status == HCI_SUCCESS) {
+                m_pendingHandle = handle;
+                m_pendingAction = ReadRemoteVersion;
+            }
+        }
+        return buildCommandStatus(opcode, status, response, responseLen);
+    }
+
     const CommandSpec* spec = nullptr;
     for (size_t i = 0; i < s_commandCount; ++i) {
         if (s_commands[i].opcode == opcode) {
@@ -415,6 +434,7 @@ uint8_t QemuBt::handleReadLocalSupportedCommands(const uint8_t* params, uint8_t*
     responseData[22] = 0x15;
     responseData[24] = 0x07;
     responseData[25] = 0x01;
+    responseData[27] = 0x02;
     responseData[28] = 0x04;
     responseData[56] = 0xA7;
     responseData[57] = 0x3F;
@@ -428,7 +448,7 @@ uint8_t QemuBt::handleReadLocalSupportedFeatures(const uint8_t* params, uint8_t*
     (void)params;
     if (!responseData) return HCI_INVALID_HCI_COMMAND_PARAMETERS;
 
-    const uint64_t features = 0x0000000060000000ULL;
+    const uint64_t features = 0x0000006000000000ULL;
     writeLe64(features, responseData);
     return HCI_SUCCESS;
 }
@@ -473,6 +493,16 @@ uint8_t QemuBt::handleLeReadLocalSupportedFeatures(const uint8_t* params, uint8_
     if (!responseData) return HCI_INVALID_HCI_COMMAND_PARAMETERS;
 
     std::memset(responseData, 0, 8);
+    return HCI_SUCCESS;
+}
+
+uint8_t QemuBt::handleLeRand(const uint8_t* params, uint8_t* responseData) {
+    (void)params;
+    if (!responseData) return HCI_INVALID_HCI_COMMAND_PARAMETERS;
+
+    std::copy(m_state.bdAddr.begin(), m_state.bdAddr.end(), responseData);
+    responseData[6] = 0x5A;
+    responseData[7] = 0xA5;
     return HCI_SUCCESS;
 }
 
@@ -873,6 +903,20 @@ QByteArray QemuBt::remoteFeaturesEvent(uint16_t handle) const {
     return event;
 }
 
+QByteArray QemuBt::remoteVersionEvent(uint16_t handle) const {
+    if (!(m_state.eventMask & EVENT_MASK_READ_REMOTE_VERSION_COMPLETE))
+        return QByteArray();
+    QByteArray event(11, 0);
+    uint8_t* out = reinterpret_cast<uint8_t*>(event.data());
+    out[0] = H4_EVT;
+    out[1] = EVT_READ_REMOTE_VERSION_COMPLETE;
+    out[2] = 8;
+    out[3] = HCI_SUCCESS;
+    writeLe16(handle, out + 4);
+    out[6] = 0x09;
+    return event;
+}
+
 QByteArray QemuBt::completedPacketsEvent(uint16_t handle) const {
     QByteArray event(8, 0);
     uint8_t* out = reinterpret_cast<uint8_t*>(event.data());
@@ -1028,6 +1072,9 @@ void QemuBt::commitPendingAction(uint16_t opcode) {
     } else if (action == ReadRemoteFeatures) {
         const QByteArray event = remoteFeaturesEvent(m_pendingHandle);
         if (!event.isEmpty()) queueFrame(event, true);
+    } else if (action == ReadRemoteVersion) {
+        const QByteArray event = remoteVersionEvent(m_pendingHandle);
+        if (!event.isEmpty()) queueFrame(event, true);
     }
     m_pendingHandle = 0;
     m_pendingReason = 0;
@@ -1125,6 +1172,7 @@ const QemuBt::CommandSpec QemuBt::s_commands[] = {
     { HCI_LE_SET_EVENT_MASK, 8, 0, &QemuBt::handleLeSetEventMask },
     { HCI_LE_READ_BUFFER_SIZE, 0, 3, &QemuBt::handleLeReadBufferSize },
     { HCI_LE_READ_LOCAL_SUPPORTED_FEATURES, 0, 8, &QemuBt::handleLeReadLocalSupportedFeatures },
+    { HCI_LE_RAND, 0, 8, &QemuBt::handleLeRand },
     { HCI_READ_BD_ADDR, 0, 6, &QemuBt::handleReadBdAddr },
     { HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL, 1, 0, &QemuBt::handleSetControllerToHostFlowControl },
     { HCI_HOST_BUFFER_SIZE, 7, 0, &QemuBt::handleHostBufferSize },

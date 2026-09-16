@@ -163,14 +163,12 @@ Espressif не заработает автоматически без транс
 Текущее правило QEMU слушает все IPv4-интерфейсы хоста; предупреждение по
 безопасности приведено в подробной документации.
 
-Bluetooth Classic и BLE пока **не поддерживаются end-to-end**. ESP32,
-ESP32-S3 и ESP32-C3 теперь имеют DMA/H4-транспорт для разработки, а контроллер
-реализует полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7
-(Reset, Read Local Version/Features, Set Event Mask×2, LE Set Event Mask,
-LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, flow
-control для ESP32, resolving-list команды для S3/C3). Также поддерживаются
-legacy advertising и пассивное/активное scanning через детерминированную среду,
-общую для симулируемых ESP и выдающую отчёты при активации. Эта среда теперь
+Bluetooth Classic и BLE пока **не поддерживаются как пользовательские функции**.
+ESP32, ESP32-S3 и ESP32-C3 имеют DMA/H4-транспорт для разработки, а контроллер
+реализует профиль HCI-команд, необходимый проверенным хостам NimBLE из ESP-IDF
+4.4.7, 5.5.5 и 6.1. Также поддерживаются legacy advertising и
+пассивное/активное scanning через детерминированную среду, общую для
+симулируемых ESP и выдающую отчёты при активации. Эта среда теперь
 устанавливает одно детерминированное LE-соединение на контроллер и непрозрачно
 пересылает ограниченные H4 ACL-пакеты с host flow control. Controller ATT/GATT,
 SMP, шифрование, временная модель соединения, реальное RF-поведение и проброс
@@ -181,8 +179,8 @@ Bluetooth-адаптера хоста не реализованы. Настро�
 Отдельный runtime-тест C++ управляет двумя production-контроллерами через их
 packet rings и проверяет соединение, ACL credits, RX backpressure и удаление
 peer. Boot-level гостевой тест собирает peripheral+central фикстуры из
-`tests/fixtures/ble-gatt-e2e/` и запускает их вместе в одной схеме;
-sentinel GATT round-trip раннер пока не проверяет.
+`tests/fixtures/ble-gatt-e2e/` и проверяет host-side GATT round trip
+subscribe/write/notify/read на ESP-IDF 4.4.7, 5.5.5 и 6.1.
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,

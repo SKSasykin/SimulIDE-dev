@@ -52,6 +52,18 @@ static SemaphoreHandle_t s_tx_lock;
 static TaskHandle_t s_rx_task;
 static bool s_started;
 
+esp_err_t __wrap_esp_bt_controller_init(esp_bt_controller_config_t *cfg)
+{
+    (void)cfg;
+    return ESP_OK;
+}
+
+esp_err_t __wrap_esp_bt_controller_enable(esp_bt_mode_t mode)
+{
+    (void)mode;
+    return ESP_OK;
+}
+
 static void post_rx(void)
 {
     s_rx_desc.buffer = (uint32_t)(uintptr_t)s_rx_buffer;

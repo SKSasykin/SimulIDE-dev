@@ -3,6 +3,8 @@ idf_component_register(SRCS "virtual_vhci.c"
                        REQUIRES bt)
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE
+    "-Wl,--wrap=esp_bt_controller_init"
+    "-Wl,--wrap=esp_bt_controller_enable"
     "-Wl,--wrap=esp_vhci_host_register_callback"
     "-Wl,--wrap=esp_vhci_host_check_send_available"
     "-Wl,--wrap=esp_vhci_host_send_packet")

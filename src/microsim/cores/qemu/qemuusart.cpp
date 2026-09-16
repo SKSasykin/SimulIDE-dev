@@ -5,6 +5,8 @@
 
 #include <QDebug>
 
+#include <cstdio>
+
 #include "iopin.h"
 #include "qemudevice.h"
 #include "qemuusart.h"
@@ -13,6 +15,14 @@
 #include "usarttx.h"
 
 #include "simulator.h"
+
+namespace {
+bool uartTapEnabled()
+{
+    static const bool enabled = qEnvironmentVariableIsSet( "SIMULIDE_TEST_MODE" );
+    return enabled;
+}
+}
 
 QemuUsart::QemuUsart( QemuDevice* mcu, QString name, int n, uint32_t* clk, uint64_t memStart, uint64_t memEnd )
     : QemuModule( mcu, name, n, clk, memStart, memEnd ), UsartModule( nullptr, mcu->getId() + "-" + name ) {
@@ -24,6 +34,7 @@ QemuUsart::~QemuUsart() { }
 
 void QemuUsart::enable( bool e ) {
     m_enabled = e;
+    if ( !e ) m_testLine.clear();
     //m_serData.clear();
     //m_uartData.clear();
     m_sender->enable( e );
@@ -61,6 +72,18 @@ void QemuUsart::frameSent( uint8_t data ) {
     //qDebug() << "QemuUsart::frameSent"<< m_number;
     printOut( data );
     //m_sender->raiseInt();
+    if ( uartTapEnabled() ) {
+        if ( data == '\n' ) {
+            QString tag = m_device ? m_device->getId() : QString( "detached" );
+            tag += QString( "-uart%1" ).arg( m_number );
+            fprintf( stderr, "[UART %s] %s\n",
+                     tag.toLocal8Bit().constData(), m_testLine.constData() );
+            fflush( stderr );
+            m_testLine.clear();
+        } else if ( data != '\r' && m_testLine.size() < 1024 && ( data >= 0x20 || data == '\t' ) ) {
+            m_testLine.append( char( data ) );
+        }
+    }
 }
 
 void QemuUsart::readByte( uint8_t ) {

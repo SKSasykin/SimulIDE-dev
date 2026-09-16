@@ -162,7 +162,7 @@ class BleControllerTests(unittest.TestCase):
         bitmap = bytearray(64)
         for offset, value in (
             (0, 0x20), (16, 0x05), (22, 0x15), (24, 0x07),
-            (25, 0x01), (28, 0x04), (56, 0xA7), (57, 0x3F),
+            (25, 0x01), (27, 0x02), (28, 0x04), (56, 0xA7), (57, 0x3F),
             (58, 0x20), (60, 0x40), (61, 0x11),
         ):
             bitmap[offset] = value
@@ -173,7 +173,7 @@ class BleControllerTests(unittest.TestCase):
         self.assertEqual(bitmap[22] & 0x04, 0x04)
         self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 03 10 00")),
-            bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 60 00 00 00"),
+            bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 00 60 00 00"),
         )
         self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 01 0c 08 90 80 00 02 00 80 00 20")),
@@ -194,6 +194,10 @@ class BleControllerTests(unittest.TestCase):
         self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 03 20 00")),
             bytes.fromhex("04 0e 0c 01 03 20 00 00 00 00 00 00 00 00 00"),
+        )
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 18 20 00")),
+            bytes.fromhex("04 0e 0c 01 18 20 00 11 22 33 44 55 66 5a a5"),
         )
         self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 09 10 00")),
@@ -293,6 +297,10 @@ class BleControllerTests(unittest.TestCase):
             run_tests.hci_command_complete(bytes.fromhex("01 0e 20 00")),
             bytes.fromhex("04 0e 04 01 0e 20 0c"),
         )
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 1d 04 02 01 00")),
+            bytes.fromhex("04 0f 04 02 01 1d 04"),
+        )
 
     def test_phase4_connection_event_vectors(self):
         address = bytes.fromhex("11 22 33 44 55 66")
@@ -310,6 +318,10 @@ class BleControllerTests(unittest.TestCase):
         self.assertEqual(
             run_tests.hci_le_remote_features_complete(1),
             bytes.fromhex("04 3e 0c 04 00 01 00 00 00 00 00 00 00 00 00"),
+        )
+        self.assertEqual(
+            run_tests.hci_remote_version_complete(1),
+            bytes.fromhex("04 0c 08 00 01 00 09 00 00 00 00"),
         )
         self.assertEqual(
             run_tests.hci_disconnection_complete(1, 0x16),

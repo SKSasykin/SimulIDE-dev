@@ -44,6 +44,11 @@ constructs two production `QemuBt` controllers on separate packet arenas and
 checks connection establishment, ACL credit backpressure, RX-ring retry, and
 peer teardown without duplicating the controller in Python.
 
+The BLE e2e gate builds stock ESP-IDF NimBLE peripheral and central fixtures,
+runs both through the real SimulIDE-QEMU boundary, and requires a complete GATT
+subscribe/write/notify/read round trip. IDF 4.4.7 is the default;
+`BLE_IDF_VERSION=5.5.5` and `BLE_IDF_VERSION=6.1` select the other pinned images.
+
 Normal IDE builds run this suite automatically. For an intentional debug build
 without tests, use:
 

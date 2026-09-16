@@ -223,7 +223,7 @@ def hci_command_complete(frame, frame_max=1536):
             bitmap = bytearray(64)
             for offset, value in (
                 (0, 0x20), (16, 0x05), (22, 0x15), (24, 0x07),
-                (25, 0x01), (28, 0x04), (56, 0xA7), (57, 0x3F),
+                (25, 0x01), (27, 0x02), (28, 0x04), (56, 0xA7), (57, 0x3F),
                 (58, 0x20), (60, 0x40), (61, 0x11),
             ):
                 bitmap[offset] = value
@@ -232,7 +232,7 @@ def hci_command_complete(frame, frame_max=1536):
     elif opcode == 0x1003:
         status = 0x00 if parameter_length == 0 else 0x12
         if status == 0x00:
-            response_data = b'\x00\x00\x00\x00\x60\x00\x00\x00'
+            response_data = b'\x00\x00\x00\x00\x00\x60\x00\x00'
             expected_len = 15
     elif opcode == 0x0C01:
         status = 0x00 if parameter_length == 8 else 0x12
@@ -249,6 +249,11 @@ def hci_command_complete(frame, frame_max=1536):
         status = 0x00 if parameter_length == 0 else 0x12
         if status == 0x00:
             response_data = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            expected_len = 15
+    elif opcode == 0x2018:
+        status = 0x00 if parameter_length == 0 else 0x12
+        if status == 0x00:
+            response_data = b'\x11\x22\x33\x44\x55\x66\x5a\xa5'
             expected_len = 15
     elif opcode == 0x1009:
         status = 0x00 if parameter_length == 0 else 0x12
@@ -341,6 +346,9 @@ def hci_command_complete(frame, frame_max=1536):
         command_status = True
         valid_reasons = (0x05, 0x13, 0x14, 0x15, 0x1A, 0x29, 0x3B)
         status = 0x02 if parameter_length == 3 and frame[6] in valid_reasons else 0x12
+    elif opcode == 0x041D:
+        command_status = True
+        status = 0x02 if parameter_length == 2 else 0x12
     elif opcode == 0x2016:
         command_status = True
         status = 0x02 if parameter_length == 2 else 0x12
@@ -374,6 +382,11 @@ def hci_le_advertising_report(event_type, address_type, address, data, rssi=-42)
 
 def hci_command_status(opcode, status=0):
     return bytes((0x04, 0x0F, 0x04, status, 0x01, opcode & 0xFF, opcode >> 8))
+
+
+def hci_remote_version_complete(handle):
+    return bytes((0x04, 0x0C, 0x08, 0x00, handle & 0xFF, handle >> 8,
+                  0x09, 0x00, 0x00, 0x00, 0x00))
 
 
 def hci_le_connection_complete(status, handle, role, peer_address, interval=0,
@@ -597,12 +610,13 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         ("Reset invalid parameter length", bytes.fromhex("01 03 0c 01 aa"), bytes.fromhex("04 0e 04 01 03 0c 12")),
         ("unknown command", bytes.fromhex("01 34 12 02 aa bb"), bytes.fromhex("04 0e 04 01 34 12 01")),
         ("Read Local Version Info", bytes.fromhex("01 01 10 00"), bytes.fromhex("04 0e 0c 01 01 10 00 09 00 00 09 00 00 00 00")),
-        ("Read Local Supported Features", bytes.fromhex("01 03 10 00"), bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 60 00 00 00")),
+        ("Read Local Supported Features", bytes.fromhex("01 03 10 00"), bytes.fromhex("04 0e 0c 01 03 10 00 00 00 00 00 00 60 00 00")),
         ("Set Event Mask", bytes.fromhex("01 01 0c 08 90 80 00 02 00 80 00 20"), bytes.fromhex("04 0e 04 01 01 0c 00")),
         ("Set Event Mask Page 2", bytes.fromhex("01 63 0c 08 00 00 80 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 63 0c 00")),
         ("LE Set Event Mask", bytes.fromhex("01 01 20 08 1f 00 00 00 00 00 00 00"), bytes.fromhex("04 0e 04 01 01 20 00")),
         ("LE Read Buffer Size", bytes.fromhex("01 02 20 00"), bytes.fromhex("04 0e 07 01 02 20 00 1b 00 01")),
         ("LE Read Local Supported Features", bytes.fromhex("01 03 20 00"), bytes.fromhex("04 0e 0c 01 03 20 00 00 00 00 00 00 00 00 00")),
+        ("LE Rand", bytes.fromhex("01 18 20 00"), bytes.fromhex("04 0e 0c 01 18 20 00 11 22 33 44 55 66 5a a5")),
         ("Read BD_ADDR", bytes.fromhex("01 09 10 00"), bytes.fromhex("04 0e 0a 01 09 10 00 11 22 33 44 55 66")),
         ("Set Controller To Host Flow Control enable", bytes.fromhex("01 31 0c 01 01"), bytes.fromhex("04 0e 04 01 31 0c 00")),
         ("Set Controller To Host Flow Control disable", bytes.fromhex("01 31 0c 01 00"), bytes.fromhex("04 0e 04 01 31 0c 00")),
@@ -768,7 +782,8 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "DUPLICATE_CACHE_MAX", "m_pendingCommandResponse",
         "HCI_COMMAND_DISALLOWED", "pumpPendingEvents",
         "HCI_LE_CREATE_CONNECTION", "HCI_LE_CREATE_CONNECTION_CANCEL",
-        "HCI_DISCONNECT", "HCI_LE_READ_REMOTE_FEATURES",
+        "HCI_DISCONNECT", "HCI_READ_REMOTE_VERSION_INFO",
+        "HCI_LE_READ_REMOTE_FEATURES",
         "HCI_HOST_NUMBER_OF_COMPLETED_PACKETS", "handleAclFrame",
         "LE_EVENT_MASK_ENHANCED_CONNECTION_COMPLETE", "PendingFrame",
         "RELIABLE_DATA_EVENT_MAX", "commitPendingAction",
@@ -776,6 +791,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "m_hostAclOutstanding", "m_deferredWake", "m_pumping",
         "m_pumpRequested", "tryPendingAcl",
         "EVENT_MASK_DISCONNECTION_COMPLETE",
+        "EVENT_MASK_READ_REMOTE_VERSION_COMPLETE",
         "LE_EVENT_MASK_READ_REMOTE_FEATURES_COMPLETE",
     ):
         if fragment not in bt_source and fragment not in bt_header:
@@ -935,7 +951,13 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
         str(simulide_exe), "-silent", "-nogui", "-smoke-test",
         str(circuit_dst), "25000"
     ]
-    result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False, timeout=90)
+    try:
+        result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False,
+                                timeout=120, capture_output=True, text=True)
+    except subprocess.TimeoutExpired:
+        print("FAIL BLE e2e test: smoke test timed out")
+        result = None
+    output = (result.stdout if result else "") + (result.stderr if result else "")
 
     # Cleanup
     shutil.rmtree(build_dir, ignore_errors=True)
@@ -950,12 +972,19 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
             if generated_path.is_file():
                 generated_path.unlink()
 
-    if result.returncode == 0:
-        print("PASS BLE e2e test: peripheral+central boot and run in shared medium")
-        return True
-    else:
+    if result is None or result.returncode != 0:
         print("FAIL BLE e2e test: smoke test failed")
+        print(output[-4000:])
         return False
+    missing = [s for s in ("BLE_GATT_PERIPHERAL_READY", "BLE_GATT_E2E_PASS")
+               if s not in output]
+    if missing:
+        print(f"FAIL BLE e2e test: missing guest sentinel(s): {', '.join(missing)}")
+        uart_lines = [line for line in output.splitlines() if line.startswith("[UART")]
+        print("\n".join(uart_lines[-20:]))
+        return False
+    print("PASS BLE e2e test: GATT round-trip verified (subscribe/write/notify/read)")
+    return True
 
 
 def run_contract(manifest_path, root_dir=ROOT_DIR, tests_dir=TESTS_DIR):

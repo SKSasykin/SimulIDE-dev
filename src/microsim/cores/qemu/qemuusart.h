@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <QByteArray>
+
 #include "qemumodule.h"
 #include "usartmodule.h"
 
@@ -48,4 +50,6 @@ protected:
 
     regBits_t m_bit9Tx;
     regBits_t m_bit9Rx;
+
+    QByteArray m_testLine;
 };

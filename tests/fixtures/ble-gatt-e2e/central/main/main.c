@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "esp_log.h"
+#include "esp_idf_version.h"
 #include "esp_nimble_hci.h"
 #include "host/ble_gap.h"
 #include "host/ble_gatt.h"
@@ -182,7 +183,7 @@ static int on_svc_discovered(uint16_t conn_handle,
     if (svc && ble_uuid_cmp(&svc->uuid.u, &s_service_uuid.u) == 0) {
         s_svc_start = svc->start_handle;
         s_svc_end = svc->end_handle;
-        return 1;
+        return 0;
     }
     return 0;
 }
@@ -267,8 +268,12 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(virtual_vhci_start());
+#if ESP_IDF_VERSION_MAJOR < 5
     ESP_ERROR_CHECK(esp_nimble_hci_init());
     nimble_port_init();
+#else
+    ESP_ERROR_CHECK(nimble_port_init());
+#endif
     ble_svc_gap_init();
     ble_svc_gatt_init();
     ble_hs_cfg.sync_cb = on_sync;

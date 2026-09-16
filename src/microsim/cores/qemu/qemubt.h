@@ -105,7 +105,8 @@ private:
         StartInitiation,
         CancelInitiation,
         DisconnectConnection,
-        ReadRemoteFeatures
+        ReadRemoteFeatures,
+        ReadRemoteVersion
     };
 
     bool buildCommandComplete(uint16_t opcode, uint8_t status, const uint8_t* data, uint8_t dataLen, uint8_t* out, uint32_t& outLen);
@@ -138,6 +139,7 @@ private:
                                        const std::array<uint8_t, 6>& peerAddress) const;
     QByteArray disconnectionCompleteEvent(uint16_t handle, uint8_t reason) const;
     QByteArray remoteFeaturesEvent(uint16_t handle) const;
+    QByteArray remoteVersionEvent(uint16_t handle) const;
     QByteArray completedPacketsEvent(uint16_t handle) const;
     void pumpPendingEvents();
     void pumpTx();
@@ -152,6 +154,7 @@ private:
     uint8_t handleLeSetEventMask(const uint8_t* params, uint8_t* responseData);
     uint8_t handleLeReadBufferSize(const uint8_t* params, uint8_t* responseData);
     uint8_t handleLeReadLocalSupportedFeatures(const uint8_t* params, uint8_t* responseData);
+    uint8_t handleLeRand(const uint8_t* params, uint8_t* responseData);
     uint8_t handleReadBdAddr(const uint8_t* params, uint8_t* responseData);
     uint8_t handleSetControllerToHostFlowControl(const uint8_t* params, uint8_t* responseData);
     uint8_t handleHostBufferSize(const uint8_t* params, uint8_t* responseData);

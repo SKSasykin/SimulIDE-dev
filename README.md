@@ -169,14 +169,12 @@ examples do not reserve a host port and can run in parallel. The current QEMU
 rule binds to all host IPv4 interfaces; see the security note in the detailed
 documentation.
 
-Bluetooth Classic and BLE are **not supported end-to-end yet**. ESP32,
-ESP32-S3 and ESP32-C3 now expose a development DMA/H4 transport, and the
-controller implements the full HCI command set required for ESP-IDF 4.4.7
-NimBLE host synchronization (Reset, Read Local Version/Features, Set Event
-Mask×2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported
-Features, Read BD_ADDR, flow control for ESP32, resolving-list commands for
-S3/C3). It also supports legacy advertising and passive/active scanning through
-an activation-driven deterministic medium shared by simulated ESP devices.
+Bluetooth Classic and BLE are **not supported as user-facing features yet**.
+ESP32, ESP32-S3 and ESP32-C3 expose a development DMA/H4 transport, and the
+controller implements the HCI command profile required by the tested ESP-IDF
+4.4.7, 5.5.5 and 6.1 NimBLE hosts. It also supports legacy advertising and
+passive/active scanning through an activation-driven deterministic medium
+shared by simulated ESP devices.
 That development medium now establishes one deterministic LE connection per
 controller and forwards bounded H4 ACL payloads opaquely with host flow control.
 It does not implement controller ATT/GATT, SMP, encryption, connection timing,
@@ -188,8 +186,8 @@ architecture, setup and limitations.
 A standalone C++ runtime test drives two production controllers through their
 packet rings and covers connection setup, ACL credits, RX backpressure and peer
 teardown. A boot-level guest test builds peripheral+central fixture firmwares
-from `tests/fixtures/ble-gatt-e2e/` and runs them together in one circuit;
-the GATT round-trip sentinel is not asserted by the runner yet.
+from `tests/fixtures/ble-gatt-e2e/` and verifies a host-side GATT
+subscribe/write/notify/read round trip on ESP-IDF 4.4.7, 5.5.5 and 6.1.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
