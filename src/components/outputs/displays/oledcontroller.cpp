@@ -3,6 +3,8 @@
  *                                                                         *
  ***( see copyright.txt file at root folder )*******************************/
 
+#include <algorithm>
+
 #include <QPainter>
 
 #include "circuit.h"
@@ -16,12 +18,15 @@
 #include "intprop.h"
 #include "stringprop.h"
 
+static constexpr uint64_t DISPLAY_SETTLE_TIME = 200ULL * 1000000000ULL; // 200 ms in ps
+
 OledController::OledController( QString type, QString id ) : Component( type, id ), TwiModule( id ) {
     m_graphical = true;
 
     m_rotate = false;
     m_displayDirty = true;
-    m_busUpdated = false;
+    m_pendingWriteCount = 0;
+    m_lastBusUpdate = 0;
 
     m_pin.resize( 2 );
     m_pin[0] = m_clkPin = new IoPin( 270, QPoint( -48, 48 ), id + "-PinSck", 0, this, openCo );
@@ -53,9 +58,15 @@ void OledController::stamp() {
 }
 
 void OledController::updateStep() {
-    if ( m_displayDirty && !m_busUpdated )
+    uint64_t circTime = Simulator::self()->circTime();
+    bool frameComplete = m_pendingWriteCount == m_width * m_rows;
+    bool busSettled = !m_lastBusUpdate || circTime - m_lastBusUpdate >= DISPLAY_SETTLE_TIME;
+    if ( m_displayDirty && ( frameComplete || busSettled ) ) {
         renderDisplay();
-    m_busUpdated = false;
+        for ( std::vector<bool>& column : m_pendingWrites )
+            std::fill( column.begin(), column.end(), false );
+        m_pendingWriteCount = 0;
+    }
     update();
     if ( !m_scrollSingle && !m_scroll )
         return;
@@ -155,7 +166,10 @@ void OledController::reset() {
 
     m_addrMode = PAGE_ADDR_MODE;
     m_displayDirty = true;
-    m_busUpdated = false;
+    for ( std::vector<bool>& column : m_pendingWrites )
+        std::fill( column.begin(), column.end(), false );
+    m_pendingWriteCount = 0;
+    m_lastBusUpdate = 0;
 }
 
 void OledController::startWrite() {
@@ -184,10 +198,14 @@ void OledController::readByte() {
     if ( !m_readBytes )
         m_start = m_Co; // If Co bit then next byte should be Control Byte
     m_displayDirty = true;
-    m_busUpdated = true;
+    m_lastBusUpdate = Simulator::self()->circTime();
 }
 
 void OledController::writeData() {
+    if ( !m_pendingWrites[m_addrX][m_addrY] ) {
+        m_pendingWrites[m_addrX][m_addrY] = true;
+        m_pendingWriteCount++;
+    }
     m_DDRAM[m_addrX][m_addrY] = m_rxReg;
 
     if ( m_addrMode & VERT_ADDR_MODE ) {
@@ -277,6 +295,8 @@ void OledController::setSize( int w, int h ) {
     setHeight( h );
 
     m_DDRAM.resize( m_width, std::vector<uint8_t>( m_rows, 0 ) );
+    m_pendingWrites.resize( m_width, std::vector<bool>( m_rows, false ) );
+    m_pendingWriteCount = 0;
     m_displayDirty = true;
 }
 

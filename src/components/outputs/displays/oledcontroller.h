@@ -62,7 +62,9 @@ protected:
     QColor m_foreground;
     QImage m_displayImage;
     bool m_displayDirty;
-    bool m_busUpdated;
+    std::vector<std::vector<bool>> m_pendingWrites;
+    uint16_t m_pendingWriteCount;
+    uint64_t m_lastBusUpdate;
 
     IoPin* m_pinSda;
 
