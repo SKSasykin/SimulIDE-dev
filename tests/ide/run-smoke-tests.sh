@@ -20,7 +20,8 @@ if [[ -z "$EXECUTABLE" || ! -x "$EXECUTABLE" ]]; then
     exit 1
 fi
 
-RESULT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/simulide-esp-tests.XXXXXX")"
+RESULT_DIR="$ROOT_DIR/tmp/simulide-esp-tests.$$"
+mkdir -p "$RESULT_DIR"
 trap 'rm -rf "$RESULT_DIR"' EXIT
 FAILED=0
 

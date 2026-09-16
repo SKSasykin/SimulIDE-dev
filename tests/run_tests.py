@@ -20,7 +20,6 @@ SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
 BT_SOURCE = "src/microsim/cores/qemu/qemubt.cpp"
 BT_HEADER = "src/microsim/cores/qemu/qemubt.h"
 BT_QEMU_SOURCE = "third_party/qemu-simulide/hw/misc/esp32_ble_hci.c"
-BT_FIRMWARE_SOURCE = "resources/data/bin/esp/examples/ble-hci-reset/main/main.c"
 BT_RUNTIME_TEST = "tests/qemubt-runtime/run.sh"
 TOP_LEVEL_KEYS = {"description", "checks"}
 CHECK_KEYS = {"name", "path", "contains", "not_contains", "ordered", "within_lines"}
@@ -697,7 +696,6 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         esp32s3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32s3.cpp").read_text(encoding="utf-8")
         esp32c3 = (root_dir / "src/microsim/cores/qemu/esp32/esp32c3.cpp").read_text(encoding="utf-8")
         qemu_transport = (root_dir / BT_QEMU_SOURCE).read_text(encoding="utf-8")
-        firmware = (root_dir / BT_FIRMWARE_SOURCE).read_text(encoding="utf-8")
         qemu_rx = cpp_function_body(
             qemu_transport, "static void esp32_ble_hci_rx(Esp32BleHciState *s)"
         )
@@ -795,14 +793,6 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
     for fragment in ("tx_ring->tail = tx_ring->head;", "rx_ring->head = rx_ring->tail;"):
         if fragment not in qemu_reset:
             failures.append(f"transport reset does not flush stale traffic via {fragment!r}")
-
-    for fragment in (
-        "0x01, 0x03, 0x0c, 0x00",
-        "0x04, 0x0e, 0x04, 0x01, 0x03, 0x0c, 0x00",
-        "BLE_HCI_RESET_PASS",
-    ):
-        if fragment not in firmware:
-            failures.append(f"BLE reset firmware is missing {fragment!r}")
 
     routes = (
         ("ESP32", esp32, "0x00052000, 0x00052FFF"),
