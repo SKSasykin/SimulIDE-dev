@@ -155,6 +155,7 @@ private:
     uint8_t handleLeReadBufferSize(const uint8_t* params, uint8_t* responseData);
     uint8_t handleLeReadLocalSupportedFeatures(const uint8_t* params, uint8_t* responseData);
     uint8_t handleLeRand(const uint8_t* params, uint8_t* responseData);
+    uint8_t handleLeSetDataLength(const uint8_t* params, uint8_t* responseData);
     uint8_t handleReadBdAddr(const uint8_t* params, uint8_t* responseData);
     uint8_t handleSetControllerToHostFlowControl(const uint8_t* params, uint8_t* responseData);
     uint8_t handleHostBufferSize(const uint8_t* params, uint8_t* responseData);

@@ -58,6 +58,7 @@ constexpr uint16_t HCI_LE_CREATE_CONNECTION = 0x200D;
 constexpr uint16_t HCI_LE_CREATE_CONNECTION_CANCEL = 0x200E;
 constexpr uint16_t HCI_LE_READ_REMOTE_FEATURES = 0x2016;
 constexpr uint16_t HCI_LE_RAND = 0x2018;
+constexpr uint16_t HCI_LE_SET_DATA_LENGTH = 0x2022;
 
 constexpr uint8_t EVT_CMD_COMPLETE = 0x0E;
 constexpr uint8_t EVT_CMD_STATUS = 0x0F;
@@ -503,6 +504,23 @@ uint8_t QemuBt::handleLeRand(const uint8_t* params, uint8_t* responseData) {
     std::copy(m_state.bdAddr.begin(), m_state.bdAddr.end(), responseData);
     responseData[6] = 0x5A;
     responseData[7] = 0xA5;
+    return HCI_SUCCESS;
+}
+
+uint8_t QemuBt::handleLeSetDataLength(const uint8_t* params, uint8_t* responseData) {
+    if (!params || !responseData) return HCI_INVALID_HCI_COMMAND_PARAMETERS;
+
+    uint16_t handle = 0, txOctets = 0, txTime = 0;
+    readLe16(params, handle);
+    readLe16(params + 2, txOctets);
+    readLe16(params + 4, txTime);
+    if (txOctets < 0x001B || txOctets > 0x00FB ||
+        txTime < 0x0148 || txTime > 0x4290)
+        return HCI_INVALID_HCI_COMMAND_PARAMETERS;
+    if (!m_connection.peer || handle != m_connection.localHandle)
+        return HCI_UNKNOWN_CONNECTION_IDENTIFIER;
+
+    writeLe16(handle, responseData);
     return HCI_SUCCESS;
 }
 
@@ -1173,6 +1191,7 @@ const QemuBt::CommandSpec QemuBt::s_commands[] = {
     { HCI_LE_READ_BUFFER_SIZE, 0, 3, &QemuBt::handleLeReadBufferSize },
     { HCI_LE_READ_LOCAL_SUPPORTED_FEATURES, 0, 8, &QemuBt::handleLeReadLocalSupportedFeatures },
     { HCI_LE_RAND, 0, 8, &QemuBt::handleLeRand },
+    { HCI_LE_SET_DATA_LENGTH, 6, 2, &QemuBt::handleLeSetDataLength },
     { HCI_READ_BD_ADDR, 0, 6, &QemuBt::handleReadBdAddr },
     { HCI_SET_CONTROLLER_TO_HOST_FLOW_CONTROL, 1, 0, &QemuBt::handleSetControllerToHostFlowControl },
     { HCI_HOST_BUFFER_SIZE, 7, 0, &QemuBt::handleHostBufferSize },

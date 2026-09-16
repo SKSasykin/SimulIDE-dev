@@ -200,6 +200,10 @@ class BleControllerTests(unittest.TestCase):
             bytes.fromhex("04 0e 0c 01 18 20 00 11 22 33 44 55 66 5a a5"),
         )
         self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 22 20 06 01 00 fb 00 48 08")),
+            bytes.fromhex("04 0e 04 01 22 20 02"),
+        )
+        self.assertEqual(
             run_tests.hci_command_complete(bytes.fromhex("01 09 10 00")),
             bytes.fromhex("04 0e 0a 01 09 10 00 11 22 33 44 55 66"),
         )
@@ -421,6 +425,25 @@ class BleControllerTests(unittest.TestCase):
 
     def test_common_runner_executes_ble_regression(self):
         self.assertTrue(run_tests.run_ble_controller_regression())
+
+    def test_ble_e2e_matrix_selection(self):
+        self.assertEqual(
+            run_tests.ble_e2e_matrix(environ={}),
+            (("4.4.7", "esp32"),),
+        )
+        self.assertEqual(
+            run_tests.ble_e2e_matrix("esp32-s3", {}),
+            (("4.4.7", "esp32-s3"),),
+        )
+        self.assertEqual(
+            run_tests.ble_e2e_matrix(environ={"BLE_IDF_VERSION": "all",
+                                              "BLE_IDF_TARGET": "esp32-c3"}),
+            (("4.4.7", "esp32-c3"), ("5.5.5", "esp32-c3"),
+             ("6.1", "esp32-c3")),
+        )
+        self.assertEqual(len(run_tests.ble_e2e_matrix(
+            environ={"BLE_E2E_MATRIX": "1"}
+        )), 9)
 
 
 class CommandLineTests(unittest.TestCase):

@@ -180,7 +180,8 @@ Bluetooth-адаптера хоста не реализованы. Настро�
 packet rings и проверяет соединение, ACL credits, RX backpressure и удаление
 peer. Boot-level гостевой тест собирает peripheral+central фикстуры из
 `tests/fixtures/ble-gatt-e2e/` и проверяет host-side GATT round trip
-subscribe/write/notify/read на ESP-IDF 4.4.7, 5.5.5 и 6.1.
+subscribe/write/notify/read на всей матрице ESP-IDF 4.4.7, 5.5.5 и 6.1 с
+ESP32, ESP32-S3 и ESP32-C3.
 
 ROM-дампы ESP32 (`data/bin/esp/rom/bin/*.bin`) копируются автоматически из
 каталога `pc-bios/` форка скриптом `scripts/build_qemu.sh` при каждой сборке,

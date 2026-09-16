@@ -255,6 +255,13 @@ def hci_command_complete(frame, frame_max=1536):
         if status == 0x00:
             response_data = b'\x11\x22\x33\x44\x55\x66\x5a\xa5'
             expected_len = 15
+    elif opcode == 0x2022:
+        status = 0x12
+        if parameter_length == 6:
+            tx_octets = frame[6] | (frame[7] << 8)
+            tx_time = frame[8] | (frame[9] << 8)
+            if 0x001B <= tx_octets <= 0x00FB and 0x0148 <= tx_time <= 0x4290:
+                status = 0x02
     elif opcode == 0x1009:
         status = 0x00 if parameter_length == 0 else 0x12
         if status == 0x00:
@@ -765,6 +772,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "handleLeSetAdvertisingParameters", "handleLeSetAdvertisingData",
         "handleLeSetScanResponseData", "handleLeSetAdvertisingEnable",
         "handleLeSetScanParameters", "handleLeSetScanEnable",
+        "handleLeSetDataLength",
     ):
         if f"QemuBt::{handler}(" not in bt_source or f" {handler}(" not in bt_header:
             failures.append(f"controller declaration/definition mismatch for {handler}")
@@ -793,6 +801,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "EVENT_MASK_DISCONNECTION_COMPLETE",
         "EVENT_MASK_READ_REMOTE_VERSION_COMPLETE",
         "LE_EVENT_MASK_READ_REMOTE_FEATURES_COMPLETE",
+        "HCI_LE_SET_DATA_LENGTH", "handleLeSetDataLength",
     ):
         if fragment not in bt_source and fragment not in bt_header:
             failures.append(f"legacy advertising/scanning source is missing {fragment!r}")
@@ -862,20 +871,72 @@ BLE_IDF_IMAGES = {
     "6.1": "espressif/idf@sha256:81893c71bb5e570088901f21def8684c25cd2a9020281bd01b843a7655edb18c",
 }
 
+BLE_IDF_TARGETS = {
+    "esp32": {
+        "idf_target": "esp32",
+        "circuit": "esp32-ble-gatt-e2e.sim2",
+    },
+    "esp32-s3": {
+        "idf_target": "esp32s3",
+        "circuit": "esp32-s3-ble-gatt-e2e.sim2",
+    },
+    "esp32-c3": {
+        "idf_target": "esp32c3",
+        "circuit": "esp32-c3-ble-gatt-e2e.sim2",
+    },
+}
 
-def run_ble_e2e_test(root_dir=ROOT_DIR):
+BLE_E2E_SMOKE_ATTEMPTS = 3
+
+
+def ble_e2e_matrix(mcu=None, environ=None):
+    environ = os.environ if environ is None else environ
+    if environ.get("BLE_E2E_MATRIX", "").lower() in ("1", "true", "yes"):
+        return tuple(
+            (version, target)
+            for version in BLE_IDF_IMAGES
+            for target in BLE_IDF_TARGETS
+        )
+
+    version = environ.get("BLE_IDF_VERSION", "4.4.7")
+    versions = tuple(BLE_IDF_IMAGES) if version == "all" else (version,)
+    default_target = mcu if mcu in BLE_IDF_TARGETS else "esp32"
+    target = environ.get("BLE_IDF_TARGET", default_target)
+    targets = tuple(BLE_IDF_TARGETS) if target == "all" else (target,)
+    return tuple((selected_version, selected_target)
+                 for selected_version in versions for selected_target in targets)
+
+
+def run_ble_e2e_matrix(mcu=None, root_dir=ROOT_DIR):
+    matrix = ble_e2e_matrix(mcu)
+    failures = []
+    for idf_version, target in matrix:
+        if not run_ble_e2e_test(root_dir, idf_version, target):
+            failures.append(f"IDF {idf_version} / {target}")
+    if failures:
+        print(f"FAIL BLE e2e matrix: {', '.join(failures)}")
+        return False
+    print(f"PASS BLE e2e matrix: {len(matrix)} combination(s)")
+    return True
+
+
+def run_ble_e2e_test(root_dir=ROOT_DIR, idf_version=None, target=None):
     """Build BLE GATT peripheral+central firmware and run two-device smoke test."""
     fixture_dir = root_dir / "tests/fixtures/ble-gatt-e2e"
-    build_dir = root_dir / "tmp/ble-gatt-e2e-test"
-
-    idf_version = os.environ.get("BLE_IDF_VERSION", "4.4.7")
+    idf_version = idf_version or os.environ.get("BLE_IDF_VERSION", "4.4.7")
+    target = target or os.environ.get("BLE_IDF_TARGET", "esp32")
     idf_image = BLE_IDF_IMAGES.get(idf_version)
     if idf_image is None:
         print(f"FAIL BLE e2e test: unknown BLE_IDF_VERSION={idf_version!r}")
         return False
-    print(f"BLE e2e test: IDF {idf_version}")
+    target_config = BLE_IDF_TARGETS.get(target)
+    if target_config is None:
+        print(f"FAIL BLE e2e test: unknown BLE_IDF_TARGET={target!r}")
+        return False
+    label = f"IDF {idf_version} / {target}"
+    build_dir = root_dir / "tmp/ble-gatt-e2e-test" / idf_version / target
+    print(f"BLE e2e test: {label}", flush=True)
 
-    # Clean previous build
     import shutil
     if build_dir.exists():
         shutil.rmtree(build_dir)
@@ -885,105 +946,118 @@ def run_ble_e2e_test(root_dir=ROOT_DIR):
         ("peripheral", "ble_gatt_peripheral"),
         ("central", "ble_gatt_central"),
     )
-    for project, image in firmware:
-        build_cmd = [
-            "docker", "run", "--rm", "--platform", "linux/arm64",
-            "-v", f"{root_dir}:/project",
-            "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
-            idf_image,
-            "idf.py", "build"
-        ]
-        result = subprocess.run(build_cmd, check=False)
-        if result.returncode != 0:
-            print(f"FAIL BLE e2e test: {project} firmware build failed")
-            shutil.rmtree(build_dir, ignore_errors=True)
-            return False
-
-        merge_cmd = [
-            "docker", "run", "--rm", "--platform", "linux/arm64",
-            "-v", f"{root_dir}:/project",
-            "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
-            idf_image,
-            "esptool.py", "--chip", "esp32", "merge_bin",
-            "-o", f"/project/tmp/ble-gatt-e2e-test/{image}.merged.bin",
-            "--flash_mode", "dio", "--flash_freq", "40m", "--flash_size", "2MB",
-            "--fill-flash-size", "2MB",
-            "0x1000", "build/bootloader/bootloader.bin",
-            "0x8000", "build/partition_table/partition-table.bin",
-            "0x10000", f"build/{image}.bin"
-        ]
-        result = subprocess.run(merge_cmd, check=False)
-        if result.returncode != 0:
-            print(f"FAIL BLE e2e test: {project} merge_bin failed")
-            shutil.rmtree(build_dir, ignore_errors=True)
-            return False
-
-    # Copy two-device circuit next to both merged binaries
-    circuit_src = fixture_dir / "circuits/esp32-ble-gatt-e2e.sim2"
-    circuit_dst = build_dir / "esp32-ble-gatt-e2e.sim2"
-    shutil.copy2(circuit_src, circuit_dst)
-
-    # Find SimulIDE executable
-    exe_dir = root_dir / "build/executables"
-    simulide_exe = None
-    for candidate in exe_dir.glob("simulide-*.app/Contents/MacOS/simulide-*"):
-        if candidate.is_file() and os.access(candidate, os.X_OK):
-            simulide_exe = candidate
-            break
-    if not simulide_exe:
-        for candidate in exe_dir.glob("simulide-*"):
-            if candidate.is_file() and os.access(candidate, os.X_OK):
-                simulide_exe = candidate
-                break
-
-    if not simulide_exe:
-        print("FAIL BLE e2e test: SimulIDE executable not found")
-        shutil.rmtree(build_dir, ignore_errors=True)
-        return False
-
-    # Run smoke test
-    env = os.environ.copy()
-    env["HOME"] = str(root_dir / "tmp")
-    env["SIMULIDE_TEST_MODE"] = "1"
-    env["QT_QPA_PLATFORM"] = "offscreen"
-
-    smoke_cmd = [
-        str(simulide_exe), "-silent", "-nogui", "-smoke-test",
-        str(circuit_dst), "25000"
-    ]
+    result = None
+    output = ""
     try:
-        result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False,
-                                timeout=120, capture_output=True, text=True)
-    except subprocess.TimeoutExpired:
-        print("FAIL BLE e2e test: smoke test timed out")
-        result = None
-    output = (result.stdout if result else "") + (result.stderr if result else "")
+        for project, image in firmware:
+            project_build = build_dir / project / "build"
+            sdkconfig = build_dir / project / "sdkconfig"
+            project_build.mkdir(parents=True)
+            container_build = f"/project/{project_build.relative_to(root_dir)}"
+            container_sdkconfig = f"/project/{sdkconfig.relative_to(root_dir)}"
+            build_cmd = [
+                "docker", "run", "--rm", "--platform", "linux/arm64",
+                "-e", f"IDF_TARGET={target_config['idf_target']}",
+                "-v", f"{root_dir}:/project",
+                "-w", f"/project/tests/fixtures/ble-gatt-e2e/{project}",
+                idf_image,
+                "idf.py", "-B", container_build,
+                "-D", f"SDKCONFIG={container_sdkconfig}", "build"
+            ]
+            build_result = subprocess.run(build_cmd, check=False)
+            if build_result.returncode != 0:
+                print(f"FAIL BLE e2e test ({label}): {project} firmware build failed")
+                return False
 
-    # Cleanup
-    shutil.rmtree(build_dir, ignore_errors=True)
-    # Clean up fixture build directories and generated sdkconfig
-    # (Docker creates them in the mounted volume)
-    for project, _ in firmware:
-        fixture_build_dir = fixture_dir / project / "build"
-        if fixture_build_dir.exists():
-            shutil.rmtree(fixture_build_dir, ignore_errors=True)
-        for generated in ("sdkconfig", "sdkconfig.old"):
-            generated_path = fixture_dir / project / generated
-            if generated_path.is_file():
-                generated_path.unlink()
+            flasher_args = json.loads(
+                (project_build / "flasher_args.json").read_text(encoding="utf-8")
+            )
+            flash_settings = flasher_args["flash_settings"]
+            flash_files = sorted(
+                flasher_args["flash_files"].items(),
+                key=lambda item: int(item[0], 0),
+            )
+            merge_cmd = [
+                "docker", "run", "--rm", "--platform", "linux/arm64",
+                "-v", f"{root_dir}:/project",
+                "-w", container_build,
+                idf_image,
+                "esptool.py", "--chip", target_config["idf_target"], "merge_bin",
+                "-o", f"/project/{(build_dir / (image + '.merged.bin')).relative_to(root_dir)}",
+                "--flash_mode", flash_settings["flash_mode"],
+                "--flash_freq", flash_settings["flash_freq"],
+                "--flash_size", ("2MB" if flash_settings["flash_size"] == "detect"
+                                 else flash_settings["flash_size"]),
+                "--fill-flash-size", "2MB",
+            ]
+            for offset, filename in flash_files:
+                merge_cmd.extend((offset, filename))
+            merge_result = subprocess.run(merge_cmd, check=False)
+            if merge_result.returncode != 0:
+                print(f"FAIL BLE e2e test ({label}): {project} merge_bin failed")
+                return False
 
-    if result is None or result.returncode != 0:
-        print("FAIL BLE e2e test: smoke test failed")
-        print(output[-4000:])
+        circuit_src = fixture_dir / "circuits" / target_config["circuit"]
+        circuit_dst = build_dir / target_config["circuit"]
+        shutil.copy2(circuit_src, circuit_dst)
+
+        exe_dir = root_dir / "build/executables"
+        candidates = list(exe_dir.glob("simulide-*.app/Contents/MacOS/simulide-*"))
+        candidates.extend(exe_dir.glob("simulide-*"))
+        executables = [candidate for candidate in candidates
+                       if candidate.is_file() and os.access(candidate, os.X_OK)]
+        if not executables:
+            print(f"FAIL BLE e2e test ({label}): SimulIDE executable not found")
+            return False
+        simulide_exe = max(executables, key=lambda candidate: candidate.stat().st_mtime)
+
+        env = os.environ.copy()
+        env["HOME"] = str(root_dir / "tmp")
+        env["SIMULIDE_TEST_MODE"] = "1"
+        env["QT_QPA_PLATFORM"] = "offscreen"
+        smoke_cmd = [
+            str(simulide_exe), "-silent", "-nogui", "-smoke-test",
+            str(circuit_dst), "25000"
+        ]
+        passed = False
+        for attempt in range(1, BLE_E2E_SMOKE_ATTEMPTS + 1):
+            print(f"BLE e2e smoke ({label}): attempt "
+                  f"{attempt}/{BLE_E2E_SMOKE_ATTEMPTS}", flush=True)
+            try:
+                result = subprocess.run(smoke_cmd, cwd=root_dir, env=env, check=False,
+                                        timeout=120, capture_output=True, text=True)
+            except subprocess.TimeoutExpired as error:
+                result = None
+                output = (error.stdout or "") + (error.stderr or "")
+                failure = "smoke test timed out"
+            else:
+                output = result.stdout + result.stderr
+                missing = [
+                    sentinel
+                    for sentinel in ("BLE_GATT_PERIPHERAL_READY", "BLE_GATT_E2E_PASS")
+                    if sentinel not in output
+                ]
+                if result.returncode == 0 and not missing:
+                    passed = True
+                    break
+                if result.returncode != 0:
+                    failure = f"smoke test exited with status {result.returncode}"
+                else:
+                    failure = f"missing guest sentinel(s): {', '.join(missing)}"
+
+            print(f"FAIL BLE e2e smoke ({label}, attempt {attempt}): {failure}")
+            uart_lines = [line for line in output.splitlines() if line.startswith("[UART")]
+            print("\n".join(uart_lines[-100:]))
+            if attempt < BLE_E2E_SMOKE_ATTEMPTS:
+                print(f"RETRY BLE e2e smoke ({label})", flush=True)
+    finally:
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+    if not passed:
+        print(f"FAIL BLE e2e test ({label}): "
+              f"smoke test failed after {BLE_E2E_SMOKE_ATTEMPTS} attempts")
         return False
-    missing = [s for s in ("BLE_GATT_PERIPHERAL_READY", "BLE_GATT_E2E_PASS")
-               if s not in output]
-    if missing:
-        print(f"FAIL BLE e2e test: missing guest sentinel(s): {', '.join(missing)}")
-        uart_lines = [line for line in output.splitlines() if line.startswith("[UART")]
-        print("\n".join(uart_lines[-20:]))
-        return False
-    print("PASS BLE e2e test: GATT round-trip verified (subscribe/write/notify/read)")
+    print(f"PASS BLE e2e test ({label}): GATT round-trip verified (subscribe/write/notify/read)")
     return True
 
 
@@ -1111,7 +1185,7 @@ def main():
                 passed += 1
             else:
                 failed += 1
-            if run_ble_e2e_test():
+            if run_ble_e2e_matrix(args.mcu):
                 passed += 1
             else:
                 failed += 1

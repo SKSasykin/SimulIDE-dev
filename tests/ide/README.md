@@ -8,5 +8,6 @@ ESP32-C3.
 These tests cross the real IDE, shared-memory bridge and QEMU process boundary.
 ESP8266 WiFi remains contract-tested only because no compatible bundled guest
 demo exists yet. BLE controller-to-controller behavior is covered separately by
-`tests/qemubt-runtime/`; no guest ESP-IDF/NimBLE BLE scenario is part of the IDE
-suite yet.
+`tests/qemubt-runtime/`. The main test runner also has a separate boot-level
+ESP-IDF/NimBLE GATT gate across ESP32, ESP32-S3 and ESP32-C3; it is not part of
+`run-smoke-tests.sh`.

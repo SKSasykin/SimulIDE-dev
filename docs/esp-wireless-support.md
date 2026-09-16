@@ -105,8 +105,8 @@ The current development implementation has:
   LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features,
   Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control
   (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List,
-  LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3), LE Rand
-  and Read Remote Version Information;
+  LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3), LE Rand,
+  Read Remote Version Information and LE Set Data Length;
 - legacy undirected LE Set Advertising Parameters/Data/Scan Response/Enable
   and LE Set Scan Parameters/Enable commands, with strict parameter validation;
 - an in-process deterministic medium shared by `QemuBt` instances. An enabled
@@ -125,7 +125,8 @@ The current development implementation has:
   transport, plus
   minimal peripheral (read/write/notify characteristic) and central
   (scan/connect/discover/subscribe/write/read) firmware sources with
-  single- and two-device circuits. Fixture builds run in Docker with
+  target-specific two-device circuits for ESP32, ESP32-S3 and ESP32-C3.
+  Fixture builds run in Docker with
   artifacts in `./tmp/` and are cleaned up afterwards; they never touch
   user-facing `resources/data/`.
 
@@ -137,9 +138,10 @@ teardown. A boot-level guest smoke test builds both fixture firmwares and
 runs them together in one SimulIDE circuit through the shared in-process
 medium. The runner requires both peripheral-ready and GATT round-trip
 (`BLE_GATT_E2E_PASS`) sentinels, covering subscribe, write, notify and read.
-The default gate builds IDF 4.4.7; `BLE_IDF_VERSION=5.5.5` and
-`BLE_IDF_VERSION=6.1` select the newer pinned images. All three versions are
-verified through the complete GATT round trip.
+The default gate builds IDF 4.4.7 for ESP32. `BLE_IDF_VERSION` and
+`BLE_IDF_TARGET` select one version and MCU; either accepts `all`, while
+`BLE_E2E_MATRIX=1` runs the complete matrix. IDF 4.4.7, 5.5.5 and 6.1 are
+verified through the full GATT round trip on ESP32, ESP32-S3 and ESP32-C3.
 
 The current tree does not have:
 
