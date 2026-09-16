@@ -148,9 +148,9 @@ device.
 
 | Device | Virtual WiFi backend | Bundled HTTP example | Bluetooth |
 | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; NimBLE startup |
-| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; NimBLE startup |
-| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; NimBLE startup |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; deterministic BLE links |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; deterministic BLE links |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Development HCI transport; deterministic BLE links |
 | ESP8266EX | Virtual SLC NIC available; no bundled guest demo yet | No | Not available on the chip |
 
 The bundled ESP32, ESP32-S3 and ESP32-C3 **WiFi HTTP Hello World** examples
@@ -177,8 +177,10 @@ Mask×2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported
 Features, Read BD_ADDR, flow control for ESP32, resolving-list commands for
 S3/C3). It also supports legacy advertising and passive/active scanning through
 an activation-driven deterministic medium shared by simulated ESP devices.
-Connections, ACL data, GATT, radio timing/collisions and host Bluetooth adapter
-passthrough are not implemented. Bluetooth settings remain hidden from the
+That development medium now establishes one deterministic LE connection per
+controller and forwards bounded H4 ACL payloads opaquely with host flow control.
+It does not implement controller ATT/GATT, SMP, encryption, connection timing,
+real RF behavior, or host Bluetooth adapter passthrough. Bluetooth settings remain hidden from the
 Properties panel. See
 [docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
 architecture, setup and limitations.

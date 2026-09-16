@@ -4,16 +4,17 @@ This document describes the wireless networking facilities exposed by the
 ESP devices in SimulIDE. Virtual WiFi is a packet-level integration between
 guest firmware, the QEMU fork and libslirp. It is not an RF or 802.11 MAC/PHY
 simulation. A development BLE HCI transport, NimBLE startup command profile,
-and legacy undirected advertising/scanning medium are implemented, but
+legacy undirected advertising/scanning, deterministic connections and opaque
+ACL forwarding are implemented, but
 Bluetooth is not currently a supported user-facing feature.
 
 ## Support matrix
 
 | Device | Virtual WiFi backend | Bundled HTTP demo | Silicon Bluetooth | Bluetooth in SimulIDE |
 | --- | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Development HCI transport and legacy undirected advertising/scanning |
-| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport and legacy undirected advertising/scanning |
-| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport and legacy undirected advertising/scanning |
+| ESP32 | SLC DMA NIC with libslirp DHCP/NAT | Yes | Classic + BLE | Development HCI transport, deterministic LE links and opaque ACL forwarding |
+| ESP32-S3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport, deterministic LE links and opaque ACL forwarding |
+| ESP32-C3 | SLC DMA NIC with libslirp DHCP/NAT | Yes | BLE | Development HCI transport, deterministic LE links and opaque ACL forwarding |
 | ESP8266EX | Virtual SLC NIC available | No guest demo yet | None | Not applicable |
 
 ## Virtual WiFi architecture
@@ -108,13 +109,26 @@ Bluetooth Classic and BLE are not implemented end-to-end. The current tree has:
   advertiser publishes a snapshot; enabled passive scanners receive one LE
   Advertising Report, while active scanners also receive a Scan Response.
   Duplicate filtering and RX-ring backpressure are preserved;
+- one deterministic LE connection per `QemuBt`, with globally unique local
+  handles, legacy/enhanced connection-complete events, cancellation,
+  disconnection and remote-feature completion;
+- opaque H4 ACL forwarding between connected controllers. ACL fragments are
+  not interpreted; PB flags and peer-local handles are translated, bounded
+  queues apply backpressure, and Number Of Completed Packets plus configured
+  controller-to-host credits provide flow control;
 - source for a Reset transport smoke-test firmware under
   `resources/data/bin/esp/examples/ble-hci-reset/`.
 
+The controller object is compiled directly and its HCI framing is covered by
+exact byte-vector and source-contract tests. There is not yet a standalone C++
+runtime harness for multi-controller scenarios because `QemuBt` is coupled to
+the full `QemuDevice` shared-memory lifecycle.
+
 The current tree does not have:
 
-- connection establishment, ACL/ISO data or Number Of Completed Packets flow
-  control;
+- ISO data, controller-side ATT/GATT, SMP or encryption. Applications may run
+  host-side L2CAP/ATT over forwarded ACL data, but the development controller
+  does not inspect or implement those protocols;
 - interval scheduling, channels, propagation, interference or collisions. The
   current medium is activation-driven rather than a timed RF simulation;
 - GATT inspection or interaction in the SimulIDE UI;
@@ -124,10 +138,8 @@ For this reason, the former experimental `WiFiLinkPort` and `BtLinkPort`
 settings are not exposed in the Properties panel. They must not be interpreted
 as working Bluetooth support.
 
-The next implementation stage is connection establishment and the ACL data path
-with Number Of Completed Packets flow control, followed by GATT inspection in
-the SimulIDE UI. Timed RF behavior and host-adapter passthrough remain later
-stages.
+GATT inspection in the SimulIDE UI, security procedures, timed RF behavior and
+host-adapter passthrough remain later stages.
 
 ## Relevant implementation files
 

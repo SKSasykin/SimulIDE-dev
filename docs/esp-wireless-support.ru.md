@@ -1,14 +1,14 @@
 # Поддержка виртуального WiFi и Bluetooth ESP
 
-Этот документ описывает средства беспроводной сети, предоставляемые устройствами ESP в SimulIDE. Виртуальный WiFi — это интеграция на уровне пакетов между гостевой прошивкой, форком QEMU и libslirp. Это не симуляция RF или 802.11 MAC/PHY. Для разработки реализованы BLE HCI-транспорт, профиль команд запуска NimBLE и среда legacy undirected advertising/scanning, но Bluetooth сейчас не является поддерживаемой пользовательской функцией.
+Этот документ описывает средства беспроводной сети, предоставляемые устройствами ESP в SimulIDE. Виртуальный WiFi — это интеграция на уровне пакетов между гостевой прошивкой, форком QEMU и libslirp. Это не симуляция RF или 802.11 MAC/PHY. Для разработки реализованы BLE HCI-транспорт, профиль команд запуска NimBLE, legacy undirected advertising/scanning, детерминированные соединения и непрозрачная пересылка ACL, но Bluetooth сейчас не является поддерживаемой пользовательской функцией.
 
 ## Матрица поддержки
 
 | Устройство | Backend виртуального WiFi | Встроенный HTTP-демо | Bluetooth в кремнии | Bluetooth в SimulIDE |
 | --- | --- | --- | --- | --- |
-| ESP32 | SLC DMA NIC с DHCP/NAT libslirp | Да | Classic + BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
-| ESP32-S3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
-| ESP32-C3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт и legacy undirected advertising/scanning для разработки |
+| ESP32 | SLC DMA NIC с DHCP/NAT libslirp | Да | Classic + BLE | HCI-транспорт, детерминированные LE-соединения и непрозрачная пересылка ACL |
+| ESP32-S3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт, детерминированные LE-соединения и непрозрачная пересылка ACL |
+| ESP32-C3 | SLC DMA NIC с DHCP/NAT libslirp | Да | BLE | HCI-транспорт, детерминированные LE-соединения и непрозрачная пересылка ACL |
 | ESP8266EX | Доступен виртуальный SLC NIC | Гостевого демо пока нет | Нет | Неприменимо |
 
 ## Архитектура виртуального WiFi
@@ -68,18 +68,22 @@ Bluetooth Classic и BLE не реализованы end-to-end. В текуще
 - контроллер `QemuBt`, реализующий полный набор HCI-команд для синхронизации хоста NimBLE в ESP-IDF 4.4.7: Reset, Read Local Version Info, Read Local Supported Features, Set Event Mask, Set Event Mask Page 2, LE Set Event Mask, LE Read Buffer Size, LE Read Local Supported Features, Read BD_ADDR, Host Buffer Size, Set Controller To Host Flow Control (ESP32), LE Set Address Resolution Enable, LE Clear Resolving List, LE Add Device To Resolving List, LE Set Privacy Mode (ESP32-S3/C3);
 - legacy-команды undirected LE Set Advertising Parameters/Data/Scan Response/Enable и LE Set Scan Parameters/Enable со строгой проверкой параметров;
 - внутрипроцессная детерминированная среда, общая для экземпляров `QemuBt`: включённый advertiser публикует снимок, пассивный scanner получает один LE Advertising Report, а активный — также Scan Response. Поддерживаются фильтрация дубликатов и backpressure RX-кольца;
+- одно детерминированное LE-соединение на `QemuBt` с глобально уникальными локальными handle, legacy/enhanced Connection Complete, отменой, отключением и Remote Features Complete;
+- непрозрачная пересылка H4 ACL между соединёнными контроллерами: ACL-фрагменты не разбираются, PB-флаги и локальные handle преобразуются, ограниченные очереди создают backpressure, а Number Of Completed Packets и настроенные host credits обеспечивают flow control;
 - исходный код тестовой прошивки Reset в `resources/data/bin/esp/examples/ble-hci-reset/`.
+
+Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельного runtime C++ harness для сценариев с несколькими контроллерами пока нет, поскольку `QemuBt` связан с полным lifecycle разделяемой памяти `QemuDevice`.
 
 В текущем дереве нет:
 
-- установления соединений, ACL/ISO data path и flow control Number Of Completed Packets;
+- ISO data path, controller-side ATT/GATT, SMP и шифрования. Host-side L2CAP/ATT может работать поверх пересылаемых ACL-пакетов, но контроллер разработки не разбирает и не реализует эти протоколы;
 - планирования интервалов, каналов, распространения сигнала, помех и коллизий: текущая среда работает по событиям активации, а не моделирует RF во времени;
 - просмотра GATT или взаимодействия с ним в UI SimulIDE;
 - проброса Bluetooth-адаптера через CoreBluetooth, BlueZ или WinRT.
 
 По этой причине прежние экспериментальные настройки `WiFiLinkPort` и `BtLinkPort` не отображаются в панели свойств. Их нельзя трактовать как рабочую поддержку Bluetooth.
 
-Следующий этап реализации — установление соединений и ACL data path с flow control Number Of Completed Packets, затем GATT-инспекция в UI SimulIDE. Временная RF-модель и проброс адаптера хоста остаются более поздними этапами.
+GATT-инспекция в UI SimulIDE, процедуры безопасности, временная RF-модель и проброс адаптера хоста остаются более поздними этапами.
 
 ## Важные файлы реализации
 

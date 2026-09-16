@@ -244,6 +244,89 @@ class BleControllerTests(unittest.TestCase):
             bytes.fromhex("04 3e 0f 02 01 00 00 11 22 33 44 55 02 03 02 01 06 d6"),
         )
 
+    def test_phase4_command_status_and_create_connection_validation(self):
+        valid = bytes.fromhex(
+            "01 0d 20 19 10 00 10 00 00 00 11 22 33 44 55 66 00 "
+            "18 00 28 00 00 00 c8 00 00 00 00 00"
+        )
+        self.assertEqual(
+            run_tests.hci_command_complete(valid),
+            bytes.fromhex("04 0f 04 00 01 0d 20"),
+        )
+        invalid_timeout = valid[:23] + bytes.fromhex("0a 00") + valid[25:]
+        self.assertEqual(
+            run_tests.hci_command_complete(invalid_timeout),
+            bytes.fromhex("04 0f 04 12 01 0d 20"),
+        )
+        invalid_commands = []
+        for offset, replacement in (
+            (4, b"\x03\x00"),
+            (6, b"\x11\x00"),
+            (8, b"\x01"),
+            (9, b"\x01"),
+            (16, b"\x01"),
+            (17, b"\x05\x00"),
+            (19, b"\x81\x0c"),
+            (21, b"\xf4\x01"),
+            (25, b"\x01\x00"),
+        ):
+            command = bytearray(valid)
+            command[offset:offset + len(replacement)] = replacement
+            invalid_commands.append(bytes(command))
+        for command in invalid_commands:
+            response = run_tests.hci_command_complete(command)
+            self.assertIsNotNone(response)
+            self.assertEqual(response[3], 0x12)
+        self.assertEqual(
+            run_tests.hci_command_complete(bytes.fromhex("01 0e 20 00")),
+            bytes.fromhex("04 0e 04 01 0e 20 0c"),
+        )
+
+    def test_phase4_connection_event_vectors(self):
+        address = bytes.fromhex("11 22 33 44 55 66")
+        self.assertEqual(
+            run_tests.hci_le_connection_complete(0, 1, 0, address, 0x18, 0, 0xC8),
+            bytes.fromhex("04 3e 13 01 00 01 00 00 00 11 22 33 44 55 66 18 00 00 00 c8 00 00"),
+        )
+        self.assertEqual(
+            run_tests.hci_le_connection_complete(0, 1, 1, address, 0x18, 0, 0xC8, True),
+            bytes.fromhex(
+                "04 3e 1f 0a 00 01 00 01 00 11 22 33 44 55 66 "
+                "00 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 c8 00 00"
+            ),
+        )
+        self.assertEqual(
+            run_tests.hci_le_remote_features_complete(1),
+            bytes.fromhex("04 3e 0c 04 00 01 00 00 00 00 00 00 00 00 00"),
+        )
+        self.assertEqual(
+            run_tests.hci_disconnection_complete(1, 0x16),
+            bytes.fromhex("04 05 04 00 01 00 16"),
+        )
+
+    def test_phase4_acl_vectors_and_host_completion_no_response(self):
+        self.assertEqual(
+            run_tests.hci_acl_forward(bytes.fromhex("02 01 00 03 00 aa bb cc"), 2),
+            bytes.fromhex("02 02 20 03 00 aa bb cc"),
+        )
+        self.assertEqual(
+            run_tests.hci_acl_forward(bytes.fromhex("02 01 10 01 00 aa"), 2),
+            bytes.fromhex("02 02 10 01 00 aa"),
+        )
+        self.assertEqual(
+            run_tests.hci_number_of_completed_packets(1),
+            bytes.fromhex("04 13 05 01 01 00 01 00"),
+        )
+        self.assertIsNone(
+            run_tests.hci_command_complete(bytes.fromhex("01 35 0c 05 01 01 00 01 00"))
+        )
+        self.assertIsNone(
+            run_tests.hci_acl_forward(bytes.fromhex("02 01 40 01 00 aa"), 2)
+        )
+        self.assertIsNone(
+            run_tests.hci_acl_forward(bytes.fromhex("02 01 00 02 00 aa"), 2)
+        )
+
     def test_invalid_legacy_radio_parameters_rejected(self):
         commands = (
             "01 06 20 0f 00 08 00 08 05 00 00 00 00 00 00 00 00 07 00",
@@ -303,9 +386,13 @@ class BleControllerTests(unittest.TestCase):
         self.assertEqual(actual[6], 0x12)
 
     def test_invalid_host_buffer_size_rejected(self):
-        actual = run_tests.hci_command_complete(bytes.fromhex("01 33 0c 07 ff 00 01 14 00 00 00"))
-        self.assertIsNotNone(actual)
-        self.assertEqual(actual[6], 0x12)
+        for command in (
+            "01 33 0c 07 ff 00 01 14 00 00 00",
+            "01 33 0c 07 1a 00 00 14 00 00 00",
+        ):
+            actual = run_tests.hci_command_complete(bytes.fromhex(command))
+            self.assertIsNotNone(actual)
+            self.assertEqual(actual[6], 0x12)
 
     def test_common_runner_executes_ble_regression(self):
         self.assertTrue(run_tests.run_ble_controller_regression())

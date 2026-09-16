@@ -204,6 +204,7 @@ def hci_command_complete(frame, frame_max=1536):
     opcode = frame[1] | (frame[2] << 8)
 
     status = 0x01
+    command_status = False
     response_data = b''
     expected_len = 7
 
@@ -249,7 +250,7 @@ def hci_command_complete(frame, frame_max=1536):
             sco_len = frame[6]
             acl_cnt = frame[7] | (frame[8] << 8)
             sco_cnt = frame[9] | (frame[10] << 8)
-            if sco_len != 0 or sco_cnt != 0 or acl_len == 0 or acl_cnt == 0:
+            if sco_len != 0 or sco_cnt != 0 or acl_len < 27 or acl_cnt == 0:
                 status = 0x12
     elif opcode == 0x202D:
         status = 0x00 if parameter_length == 1 and frame[4] <= 1 else 0x12
@@ -296,8 +297,46 @@ def hci_command_complete(frame, frame_max=1536):
             status = 0x00 if valid else 0x12
     elif opcode == 0x200C:
         status = 0x00 if parameter_length == 2 and frame[4] <= 1 and frame[5] <= 1 else 0x12
+    elif opcode == 0x200D:
+        command_status = True
+        status = 0x12
+        if parameter_length == 25:
+            scan_interval = frame[4] | (frame[5] << 8)
+            scan_window = frame[6] | (frame[7] << 8)
+            interval_min = frame[17] | (frame[18] << 8)
+            interval_max = frame[19] | (frame[20] << 8)
+            latency = frame[21] | (frame[22] << 8)
+            timeout = frame[23] | (frame[24] << 8)
+            ce_min = frame[25] | (frame[26] << 8)
+            ce_max = frame[27] | (frame[28] << 8)
+            valid = (
+                0x0004 <= scan_window <= scan_interval <= 0x4000
+                and frame[8] == 0
+                and frame[9] == 0
+                and frame[16] == 0
+                and 0x0006 <= interval_min <= interval_max <= 0x0C80
+                and latency <= 0x01F3
+                and 0x000A <= timeout <= 0x0C80
+                and timeout * 4 > (1 + latency) * interval_max
+                and ce_min <= ce_max
+            )
+            status = 0x00 if valid else 0x12
+    elif opcode == 0x200E:
+        status = 0x0C if parameter_length == 0 else 0x12
+    elif opcode == 0x0406:
+        command_status = True
+        valid_reasons = (0x05, 0x13, 0x14, 0x15, 0x1A, 0x29, 0x3B)
+        status = 0x02 if parameter_length == 3 and frame[6] in valid_reasons else 0x12
+    elif opcode == 0x2016:
+        command_status = True
+        status = 0x02 if parameter_length == 2 else 0x12
+    elif opcode == 0x0C35:
+        return None
     else:
         status = 0x01
+
+    if command_status:
+        return hci_command_status(opcode, status)
 
     result = bytearray()
     result.append(0x04)
@@ -317,6 +356,50 @@ def hci_le_advertising_report(event_type, address_type, address, data, rssi=-42)
     payload = bytes((0x02, 0x01, event_type, address_type))
     payload += bytes(address) + bytes((len(data),)) + bytes(data) + bytes((rssi & 0xFF,))
     return bytes((0x04, 0x3E, len(payload))) + payload
+
+
+def hci_command_status(opcode, status=0):
+    return bytes((0x04, 0x0F, 0x04, status, 0x01, opcode & 0xFF, opcode >> 8))
+
+
+def hci_le_connection_complete(status, handle, role, peer_address, interval=0,
+                               latency=0, timeout=0, enhanced=False):
+    if len(peer_address) != 6 or role > 1 or handle > 0x0EFF:
+        return None
+    subevent = 0x0A if enhanced else 0x01
+    payload = bytes((subevent, status, handle & 0xFF, handle >> 8, role, 0))
+    payload += bytes(peer_address)
+    if enhanced:
+        payload += bytes(12)
+    payload += interval.to_bytes(2, "little")
+    payload += latency.to_bytes(2, "little")
+    payload += timeout.to_bytes(2, "little") + b"\x00"
+    return bytes((0x04, 0x3E, len(payload))) + payload
+
+
+def hci_le_remote_features_complete(handle):
+    return bytes.fromhex("04 3e 0c 04 00") + handle.to_bytes(2, "little") + bytes(8)
+
+
+def hci_disconnection_complete(handle, reason):
+    return bytes.fromhex("04 05 04 00") + handle.to_bytes(2, "little") + bytes((reason,))
+
+
+def hci_acl_forward(frame, peer_handle):
+    if len(frame) < 5 or frame[0] != 0x02:
+        return None
+    flags = frame[1] | (frame[2] << 8)
+    payload_length = frame[3] | (frame[4] << 8)
+    pb = (flags >> 12) & 3
+    bc = (flags >> 14) & 3
+    if len(frame) != 5 + payload_length or payload_length > 27 or pb > 1 or bc:
+        return None
+    translated = peer_handle | ((2 if pb == 0 else 1) << 12)
+    return bytes((0x02, translated & 0xFF, translated >> 8)) + frame[3:]
+
+
+def hci_number_of_completed_packets(handle, count=1):
+    return bytes.fromhex("04 13 05 01") + handle.to_bytes(2, "little") + count.to_bytes(2, "little")
 
 
 def cpp_function_body(source, signature):
@@ -491,6 +574,10 @@ def run_spi_reset_regression(root_dir=ROOT_DIR):
 
 def run_ble_controller_regression(root_dir=ROOT_DIR):
     failures = []
+    valid_create_connection = bytes.fromhex(
+        "01 0d 20 19 10 00 10 00 00 00 11 22 33 44 55 66 00 "
+        "18 00 28 00 00 00 c8 00 00 00 00 00"
+    )
     cases = (
         ("HCI Reset", bytes.fromhex("01 03 0c 00"), bytes.fromhex("04 0e 04 01 03 0c 00")),
         ("Reset invalid parameter length", bytes.fromhex("01 03 0c 01 aa"), bytes.fromhex("04 0e 04 01 03 0c 12")),
@@ -521,6 +608,47 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         actual = hci_command_complete(frame)
         if actual != expected:
             failures.append(f"{name}: expected {expected.hex(' ')}, got {actual}")
+
+    connection_vectors = (
+        ("LE Create Connection status", valid_create_connection,
+         bytes.fromhex("04 0f 04 00 01 0d 20")),
+        ("LE Create Connection timeout relation", valid_create_connection[:23] +
+         bytes.fromhex("0a 00") + valid_create_connection[25:],
+         bytes.fromhex("04 0f 04 12 01 0d 20")),
+        ("LE Create Connection Cancel without pending", bytes.fromhex("01 0e 20 00"),
+         bytes.fromhex("04 0e 04 01 0e 20 0c")),
+        ("Disconnect unknown handle", bytes.fromhex("01 06 04 03 01 00 13"),
+         bytes.fromhex("04 0f 04 02 01 06 04")),
+        ("LE Read Remote Features unknown handle", bytes.fromhex("01 16 20 02 01 00"),
+         bytes.fromhex("04 0f 04 02 01 16 20")),
+    )
+    for name, frame, expected in connection_vectors:
+        actual = hci_command_complete(frame)
+        if actual != expected:
+            failures.append(f"{name}: expected {expected.hex(' ')}, got {actual}")
+
+    event_vectors = (
+        (hci_le_connection_complete(0, 1, 0, bytes.fromhex("11 22 33 44 55 66"),
+                                    0x18, 0, 0xC8),
+         bytes.fromhex("04 3e 13 01 00 01 00 00 00 11 22 33 44 55 66 18 00 00 00 c8 00 00")),
+        (hci_le_connection_complete(0, 1, 1, bytes.fromhex("11 22 33 44 55 66"),
+                                    0x18, 0, 0xC8, enhanced=True),
+         bytes.fromhex("04 3e 1f 0a 00 01 00 01 00 11 22 33 44 55 66 "
+                       "00 00 00 00 00 00 00 00 00 00 00 00 18 00 00 00 c8 00 00")),
+        (hci_le_remote_features_complete(1),
+         bytes.fromhex("04 3e 0c 04 00 01 00 00 00 00 00 00 00 00 00")),
+        (hci_disconnection_complete(1, 0x16), bytes.fromhex("04 05 04 00 01 00 16")),
+        (hci_acl_forward(bytes.fromhex("02 01 00 03 00 aa bb cc"), 2),
+         bytes.fromhex("02 02 20 03 00 aa bb cc")),
+        (hci_acl_forward(bytes.fromhex("02 01 10 01 00 aa"), 2),
+         bytes.fromhex("02 02 10 01 00 aa")),
+        (hci_number_of_completed_packets(1), bytes.fromhex("04 13 05 01 01 00 01 00")),
+    )
+    for actual, expected in event_vectors:
+        if actual != expected:
+            failures.append(f"BLE event vector: expected {expected.hex(' ')}, got {actual}")
+    if hci_command_complete(bytes.fromhex("01 35 0c 05 01 01 00 01 00")) is not None:
+        failures.append("Host Number Of Completed Packets produced a response")
 
     malformed = (
         b"",
@@ -578,6 +706,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         qemu_reset = cpp_function_body(
             qemu_transport, "static void esp32_ble_hci_reset_state(Esp32BleHciState *s)"
         )
+        bt_pump = cpp_function_body(bt_source, "void QemuBt::pumpTx()")
     except (OSError, ValueError, IndexError) as error:
         print(f"FAIL BLE controller regression: {error}")
         return False
@@ -593,6 +722,7 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "CommandSpec",
         "dispatchCommand",
         "buildCommandComplete",
+        "buildCommandStatus",
     )
     for fragment in required_bt:
         if fragment not in bt_source:
@@ -622,12 +752,27 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         "m_pendingEvents", "PENDING_EVENT_MAX", "m_seenAdvertisements",
         "DUPLICATE_CACHE_MAX", "m_pendingCommandResponse",
         "HCI_COMMAND_DISALLOWED", "pumpPendingEvents",
+        "HCI_LE_CREATE_CONNECTION", "HCI_LE_CREATE_CONNECTION_CANCEL",
+        "HCI_DISCONNECT", "HCI_LE_READ_REMOTE_FEATURES",
+        "HCI_HOST_NUMBER_OF_COMPLETED_PACKETS", "handleAclFrame",
+        "LE_EVENT_MASK_ENHANCED_CONNECTION_COMPLETE", "PendingFrame",
+        "RELIABLE_DATA_EVENT_MAX", "commitPendingAction",
+        "airControllers", "nextConnectionHandle", "m_pendingAcl",
+        "m_hostAclOutstanding", "m_deferredWake", "m_pumping",
+        "m_pumpRequested", "tryPendingAcl",
+        "EVENT_MASK_DISCONNECTION_COMPLETE",
+        "LE_EVENT_MASK_READ_REMOTE_FEATURES_COMPLETE",
     ):
         if fragment not in bt_source and fragment not in bt_header:
             failures.append(f"legacy advertising/scanning source is missing {fragment!r}")
     for forbidden in ("setInterrupt(", "QemuNetBackend", "sendFrame("):
         if forbidden in bt_source:
             failures.append(f"controller source contains forbidden {forbidden!r}")
+    response_push = bt_pump.find("if (!pushRxFrame(completion, completionLen))")
+    action_commit = bt_pump.find("commitPendingAction(opcode);", response_push)
+    tx_consume = bt_pump.find("ring->head = (head + 1) % RING_FRAMES;", action_commit)
+    if response_push < 0 or action_commit < response_push or tx_consume < action_commit:
+        failures.append("command action is not committed between RX acceptance and TX consumption")
 
     required_transport = (
         "BLE_HCI_DESC_OWN",
