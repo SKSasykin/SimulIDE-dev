@@ -26,6 +26,8 @@
 - Smoke tests: `./tests/ide/run-smoke-tests.sh` (uses `./tmp/` for HOME)
 - Runtime harness: `./tests/qemubt-runtime/run.sh` (builds in `./tmp/qemubt-runtime/`)
 - All test working directories must be under `./tmp/`
+- Test firmware/examples/circuits: source in `./tests/fixtures/`, builds in `./tmp/`, cleaned after
+- Never leave build artifacts in `./tmp/` after test completion
 
 ### 5. Commits & Git
 - **No commits without explicit user command** — user said: "больше не коммить без соответствующей команды"
