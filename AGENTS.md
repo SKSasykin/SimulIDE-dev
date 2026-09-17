@@ -47,6 +47,8 @@
 - To launch the newest build, run `./start.sh` from the repository root
 - Verify bundle size after each build (`du -sh build/executables/*.app`)
 - Target size: ~113 MB for macOS arm64 with the bundled BLE GATT firmware matrix
+- Window title comes from `build/build/app_build_stamp.cpp` (generated at qmake
+  time with the same `BUILD_STAMP` as `TARGET`); never hardcode the title stamp
 
 ### 4. Testing
 - Contract tests: `./tests/run-tests.sh --contracts-only`
@@ -55,7 +57,8 @@
 - Runtime harness: `./tests/qemubt-runtime/run.sh` (builds in `./tmp/qemubt-runtime/`)
 - All test working directories must be under `./tmp/`
 - Test firmware/examples/circuits: source in `./tests/fixtures/`, builds in `./tmp/`, cleaned after
-- Never leave build artifacts in `./tmp/` after test completion
+- **Never leave build artifacts in `./tmp/` after test completion**
+- **Agent pre-commit cleanup: before committing, remove agent-created subdirs under `./tmp/` from the current session (e.g., `./tmp/kaloud-*`, `./tmp/qemubt-runtime/`) unless explicitly preserved**
 
 ### 5. Commits & Git
 - **No commits without explicit user command** — user said: "больше не коммить без соответствующей команды"

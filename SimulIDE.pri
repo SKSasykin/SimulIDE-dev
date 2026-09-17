@@ -152,7 +152,20 @@ CONFIG *= c++11
 DEFINES += REVNO=\\\"$$REV_NO\\\"
 DEFINES += APP_VERSION=\\\"$$VERSION-$$RELEASE\\\"
 DEFINES += BUILDDATE=\\\"$$BUILD_DATE\\\"
-DEFINES += BUILD_STAMP=\\\"$$BUILD_STAMP\\\"
+
+# The window title must always match the TARGET bundle name. A -D define alone
+# is not enough: changing DEFINES does not force mainwindow.o to rebuild, so an
+# incremental relink kept a stale title. Generate a stamp source at qmake time
+# instead (a header is impossible: qmake treats "#" as a comment everywhere);
+# the fresh object relinks every regenerated build, so title and TARGET agree.
+APP_STAMP_DIR = $$OUT_PWD/build
+APP_STAMP_CPP = $$APP_STAMP_DIR/app_build_stamp.cpp
+mkpath($$APP_STAMP_DIR)
+STAMP_WORDS = extern const char simulideBuildStamp[] = \"$$BUILD_STAMP\";
+APP_STAMP_LINE = $$join(STAMP_WORDS, " ")
+write_file($$APP_STAMP_CPP, APP_STAMP_LINE)
+!exists($$APP_STAMP_CPP): error( "Failed to generate $$APP_STAMP_CPP" )
+SOURCES += $$APP_STAMP_CPP
 
 TARGET = simulide-$$BUILD_STAMP
 

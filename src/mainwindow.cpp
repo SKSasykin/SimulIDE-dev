@@ -30,6 +30,8 @@
 
 MainWindow* MainWindow::m_pSelf = nullptr;
 
+extern const char simulideBuildStamp[];
+
 MainWindow::MainWindow() : QMainWindow() {
     setWindowIcon( QIcon( ":/simulide.png" ) );
     m_pSelf = this;
@@ -37,7 +39,7 @@ MainWindow::MainWindow() : QMainWindow() {
     m_autoBck = 15;
     m_state = "■";
     m_revision = QString( REVNO ).remove( "R" ).toInt();
-    m_version = "SimulIDE 2 -- " + QString( BUILD_STAMP );
+    m_version = "SimulIDE 2 -- " + QString::fromLatin1( simulideBuildStamp );
 
     this->setWindowTitle( m_version );
 
