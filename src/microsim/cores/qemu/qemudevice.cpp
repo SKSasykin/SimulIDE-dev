@@ -24,9 +24,11 @@
 #include <windows.h>
 #endif
 
+#include "blechatdialog.h"
 #include "circuitwidget.h"
 #include "iopin.h"
 #include "itemlibrary.h"
+#include "mainwindow.h"
 #include "qemudevice.h"
 #include "intprop.h"
 #include "qemuspi.h"
@@ -154,6 +156,11 @@ QemuDevice::QemuDevice( QString type, QString id ) : Chip( type, id ) {
                      0 } );
 }
 QemuDevice::~QemuDevice() {
+    if ( m_bleChat ) {
+        m_bleChat->close();
+        delete m_bleChat;
+        m_bleChat = nullptr;
+    }
     initialize();
 #if defined( __linux__ ) || defined( __APPLE__ )
     if ( m_shMemId != -1 )
@@ -438,6 +445,15 @@ void QemuDevice::slotOpenTerm( int num ) {
     //m_serialMon = num;
 }
 
+void QemuDevice::slotOpenBleChat() {
+    if ( !m_bleChat )
+        m_bleChat = new BleChatDialog( MainWindow::self() );
+    m_bleChat->setWindowTitle( idLabel() + " BLE Chat" );
+    m_bleChat->show();
+    m_bleChat->raise();
+    m_bleChat->activateWindow();
+}
+
 void QemuDevice::slotLoad() {
     QDir dir( m_lastFirmDir );
     if ( !dir.exists() )
@@ -514,6 +530,17 @@ void QemuDevice::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu
             QAction* act = serMonMenu->addAction( "USART" + QString::number( portNumber ) );
             QObject::connect( act, &QAction::triggered, [=]() { slotOpenTerm( portNumber ); } );
         }
+    }
+    bool hasBt = false;
+    for ( QemuModule* module : m_modules ) {
+        if ( module->getType() == "bt" ) {
+            hasBt = true;
+            break;
+        }
+    }
+    if ( hasBt ) {
+        QAction* bleChatAction = menu->addAction( QIcon( ":/terminal.svg" ), tr( "Open BLE Chat..." ) );
+        QObject::connect( bleChatAction, &QAction::triggered, [=]() { slotOpenBleChat(); } );
     }
     menu->addSeparator();
     Component::contextMenu( event, menu );

@@ -177,6 +177,13 @@ a success LED on GPIO4. The bundled firmware is built with ESP-IDF 5.5.5;
 reproducible sources and build provenance live under
 `resources/data/bin/esp/examples/ble-gatt/`.
 
+A host-side **BLE Chat** client is available from the ESP context menu
+(`Open BLE Chat...`): it scans the deterministic medium, connects to a
+simulated peripheral, discovers its service/characteristic, and provides chat
+style Read/Write plus notifications with a String/HEX selector. String mode
+shows printable ASCII literally and all other bytes as `\xNN`; HEX mode shows
+uppercase bytes separated by spaces without any `\x` prefix.
+
 The three MCU families expose a DMA/H4 transport, and the
 controller implements the HCI command profile required by the tested ESP-IDF
 4.4.7, 5.5.5 and 6.1 NimBLE hosts. It also supports legacy advertising and

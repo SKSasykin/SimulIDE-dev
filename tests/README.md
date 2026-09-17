@@ -42,7 +42,11 @@ path. Every passing contract reports separate positive and negative counts.
 Bluetooth also runs the C++ executable under `tests/qemubt-runtime/`. It
 constructs two production `QemuBt` controllers on separate packet arenas and
 checks connection establishment, ACL credit backpressure, RX-ring retry, and
-peer teardown without duplicating the controller in Python.
+peer teardown without duplicating the controller in Python. It also unit-tests
+the BLE Chat String/HEX formatting contract: printable ASCII stays literal,
+`\` becomes `\\`, other bytes become `\xNN`, and HEX output has no `\x` prefix.
+A scripted ATT peer drives the production `BleChatClient` through
+scan/connect/discovery/subscribe/write/notify/read/disconnect.
 
 The BLE e2e gate builds stock ESP-IDF NimBLE peripheral and central fixtures,
 runs both through the real SimulIDE-QEMU boundary, and requires a complete GATT

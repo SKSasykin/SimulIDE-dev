@@ -135,6 +135,16 @@ passthrough and RF simulation are not supported. The implementation has:
   provenance under `resources/data/bin/esp/examples/ble-gatt/`, and one
   controller-specific circuit under each ESP32 family examples directory. The
   central completes subscribe/write/notify/read and latches GPIO4 on success.
+- a host-side BLE Chat client (`BleChatClient` over a detached `QemuBt` plus a
+  `BleChatDialog` workbench opened from the ESP context menu). It scans,
+  connects, discovers one primary service/characteristic/CCCD, subscribes,
+  reads/writes and displays notifications. A peripheral holds a single
+  connection, so chat needs a single-peripheral setup: in the bundled
+  two-device demo circuits the guest central already occupies the peripheral,
+  and a chat connect attempt reports a timeout instead of hanging. String mode
+  renders printable ASCII literally and every other byte as `\xNN`; HEX mode
+  renders uppercase bytes separated by spaces with no `\x` prefix. ATT/GATT
+  stays in this host client; `QemuBt` remains a controller-only HCI relay.
 
 The controller object is compiled directly and its HCI framing is covered by
 exact byte-vector and source-contract tests. A standalone C++ runtime harness
@@ -159,14 +169,16 @@ The current tree does not have:
   does not inspect or implement those protocols;
 - interval scheduling, channels, propagation, interference or collisions. The
   current medium is activation-driven rather than a timed RF simulation;
-- GATT inspection or interaction in the SimulIDE UI;
+- full GATT browser features: the chat client supports one connection, MTU 23,
+  short reads/writes up to 20 bytes, one outstanding ATT request and no
+  pairing/encryption/long writes;
 - Bluetooth adapter passthrough through CoreBluetooth, BlueZ or WinRT.
 
 `WiFiLinkPort`, `BtLinkPort` and `HostForwardPort` remain available in the
 Properties panel. The bundled BLE examples use the deterministic in-process
 medium and do not require changing the default link-port settings.
 
-GATT inspection in the SimulIDE UI, security procedures, timed RF behavior and
+Multi-connection GATT browsing, security procedures, timed RF behavior and
 host-adapter passthrough remain later stages.
 
 ## Relevant implementation files

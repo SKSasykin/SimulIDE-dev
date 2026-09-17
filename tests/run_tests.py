@@ -931,6 +931,68 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
             if fragment not in circuit:
                 failures.append(f"official BLE circuit {example_dir} is missing {fragment!r}")
 
+    chat_format_h = root_dir / "src/microsim/cores/qemu/blechatformat.h"
+    chat_format_cpp = root_dir / "src/microsim/cores/qemu/blechatformat.cpp"
+    chat_client_h = root_dir / "src/microsim/cores/qemu/blechatclient.h"
+    chat_client_cpp = root_dir / "src/microsim/cores/qemu/blechatclient.cpp"
+    chat_dialog_h = root_dir / "src/gui/serial/blechatdialog.h"
+    chat_dialog_cpp = root_dir / "src/gui/serial/blechatdialog.cpp"
+    for path in (chat_format_h, chat_format_cpp, chat_client_h,
+                 chat_client_cpp, chat_dialog_h, chat_dialog_cpp):
+        if not path.is_file():
+            failures.append(f"BLE chat source is missing {path.name!r}")
+    try:
+        chat_format = chat_format_cpp.read_text(encoding="utf-8")
+        chat_client = chat_client_cpp.read_text(encoding="utf-8")
+        chat_client_header = chat_client_h.read_text(encoding="utf-8")
+        chat_dialog = chat_dialog_cpp.read_text(encoding="utf-8")
+        chat_dialog_header = chat_dialog_h.read_text(encoding="utf-8")
+    except OSError as error:
+        failures.append(f"BLE chat source is unreadable: {error}")
+        chat_format = chat_client = chat_client_header = ""
+        chat_dialog = chat_dialog_header = ""
+    for fragment in ("bleChatFormatString", "bleChatFormatHex",
+                     "bleChatParseString", "bleChatParseHex", "\\\\x"):
+        if fragment not in chat_format:
+            failures.append(f"BLE chat formatting is missing {fragment!r}")
+    for fragment in ("class BleChatClient", "startScan", "connectToDevice",
+                     "readValue", "writeValue", "setNotifications",
+                     "connecting()", "notificationsOn()", "m_connectTimer", "Connect timeout",
+                     "Connection request accepted", "Discovering services...",
+                     "selectServiceAndContinue", "selectCharAndContinue",
+                     "m_cancelRequested",
+                     "services", "chars", "descs",
+                     "0x0A", "0x12", "0x1B", "0x2902", "char( 0x28 )"):
+        if fragment not in chat_client and fragment not in chat_client_header:
+            failures.append(f"BLE chat client is missing {fragment!r}")
+    for fragment in ("class BleChatDialog", "Updatable", "updateStep",
+                     "String", "HEX", "setToolTip", "m_sendButton"):
+        if fragment not in chat_dialog and fragment not in chat_dialog_header:
+            failures.append(f"BLE chat dialog is missing {fragment!r}")
+    if "m_client->poll()" not in chat_dialog:
+        failures.append("BLE chat dialog does not pump the host client")
+    if "isRunning" not in chat_dialog or "stopScan" not in chat_dialog:
+        failures.append("BLE chat dialog does not stop scanning when simulation stops")
+    for fragment in ("Open BLE Chat", "slotOpenBleChat", "m_bleChat"):
+        if fragment not in qemu_device:
+            failures.append(f"QEMU device BLE chat entry is missing {fragment!r}")
+    if "BleChat" in bt_source or "bleChat" in bt_source:
+        failures.append("controller source must not implement BLE chat")
+    runtime_pro = root_dir / "tests/qemubt-runtime/qemubt-runtime.pro"
+    runtime_cpp = root_dir / "tests/qemubt-runtime/qemubt-runtime.cpp"
+    try:
+        runtime_pro_text = runtime_pro.read_text(encoding="utf-8")
+        runtime_cpp_text = runtime_cpp.read_text(encoding="utf-8")
+    except OSError as error:
+        failures.append(f"BLE runtime source is unreadable: {error}")
+        runtime_pro_text = runtime_cpp_text = ""
+    if "blechatformat.cpp" not in runtime_pro_text:
+        failures.append("BLE runtime harness does not build chat formatting")
+    if "testChatFormat" not in runtime_cpp_text:
+        failures.append("BLE runtime harness does not test chat formatting")
+    if "testChatClientRoundTrip" not in runtime_cpp_text:
+        failures.append("BLE runtime harness does not test chat round trip")
+
     building = demo_root / "BUILDING.md"
     expected_hashes = {}
     if building.is_file():

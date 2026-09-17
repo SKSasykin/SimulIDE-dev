@@ -16,8 +16,12 @@ INCLUDEPATH += ../../src \
 
 SOURCES += qemubt-runtime.cpp \
     ../../src/microsim/cores/qemu/qemubt.cpp \
-    ../../src/microsim/cores/qemu/qemumodule.cpp
+    ../../src/microsim/cores/qemu/qemumodule.cpp \
+    ../../src/microsim/cores/qemu/blechatformat.cpp \
+    ../../src/microsim/cores/qemu/blechatclient.cpp
 
 HEADERS += ../../src/microsim/cores/qemu/qemubt.h \
     ../../src/microsim/cores/qemu/qemumodule.h \
-    ../../src/microsim/cores/qemu/qemuarena.h
+    ../../src/microsim/cores/qemu/qemuarena.h \
+    ../../src/microsim/cores/qemu/blechatformat.h \
+    ../../src/microsim/cores/qemu/blechatclient.h

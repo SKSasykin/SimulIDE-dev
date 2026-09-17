@@ -10,6 +10,7 @@
 #include "chip.h"
 #include "qemuarena.h"
 
+class BleChatDialog;
 class IoPin;
 class QemuModule;
 class QemuUsart;
@@ -46,6 +47,7 @@ public:
     void slotLoad();
     void slotReload();
     void slotOpenTerm( int num );
+    void slotOpenBleChat();
 
     void addModule( QemuModule* m ) { m_modules.append( m ); }
 
@@ -118,6 +120,7 @@ protected:
     std::vector<QemuSpi*> m_spis;
     std::vector<QemuUsart*> m_usarts;
     std::vector<QemuTimer*> m_timers;
+    BleChatDialog* m_bleChat = nullptr;
     std::vector<uint32_t> m_ioMem;
 
     QList<QemuModule*> m_modules;
