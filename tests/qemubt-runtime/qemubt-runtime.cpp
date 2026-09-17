@@ -426,6 +426,7 @@ void testChatClientRoundTrip() {
     Bytes notified;
     bool gotNotify = false;
     bool writeOk = false;
+    bool writeFailed = false;
     QObject::connect(&client, &BleChatClient::connectionChanged,
                      [&]() { connected = client.connected(); });
     QObject::connect(&client, &BleChatClient::discoveryChanged,
@@ -441,7 +442,7 @@ void testChatClientRoundTrip() {
                          notified.assign(data.begin(), data.end());
                      });
     QObject::connect(&client, &BleChatClient::writeDone,
-                     [&](bool ok, QString) { writeOk = ok; });
+                     [&](bool ok, QString) { writeOk = ok; if (!ok) writeFailed = true; });
 
     client.start();
     client.startScan();
@@ -478,6 +479,55 @@ void testChatClientRoundTrip() {
         peripheralChatPump(peripheral, server);
     }
     require(gotRead && readValue == Bytes{0x19}, "chat readback mismatch");
+
+    require(client.serviceCount() == 2, "chat did not enumerate both services");
+    client.selectTarget(0, 0);
+    for (i = 0; i < 500 && client.selectedService() != 0; ++i) {
+        client.poll();
+        peripheralChatPump(peripheral, server);
+    }
+    require(client.selectedService() == 0, "chat did not switch service");
+    writeFailed = false;
+    out.clear();
+    out.append(char(0x55));
+    client.writeValue(out);
+    for (i = 0; i < 500 && !writeFailed; ++i) {
+        client.poll();
+        peripheralChatPump(peripheral, server);
+    }
+    require(writeFailed, "read-only characteristic accepted a write");
+
+    client.selectTarget(1, 0);
+    for (i = 0; i < 500 && (client.selectedService() != 1 || !client.notificationsOn()); ++i) {
+        client.poll();
+        peripheralChatPump(peripheral, server);
+    }
+    require(client.selectedService() == 1 && client.notificationsOn(),
+            "chat did not switch back");
+    writeOk = false;
+    gotNotify = false;
+    gotRead = false;
+    out.clear();
+    out.append(char(0x2A));
+    client.writeValue(out);
+    for (i = 0; i < 500 && !(writeOk && gotNotify); ++i) {
+        client.poll();
+        peripheralChatPump(peripheral, server);
+    }
+    if (!(writeOk && notified == Bytes{0x2A})) {
+        for (const QString& line : chatLog) std::fprintf(stderr, "DEBUG %s\n", line.toUtf8().constData());
+        std::fprintf(stderr, "DEBUG writeOk=%d gotNotify=%d notified=%zu ready=%d sel=%d attr=%s\n",
+                     int(writeOk), int(gotNotify), notified.size(), int(client.ready()),
+                     client.selectedService(),
+                     client.attributeText().toUtf8().constData());
+    }
+    require(writeOk && notified == Bytes{0x2A}, "chat notification mismatch after switch");
+    client.readValue();
+    for (i = 0; i < 500 && !gotRead; ++i) {
+        client.poll();
+        peripheralChatPump(peripheral, server);
+    }
+    require(gotRead && readValue == Bytes{0x2A}, "chat readback mismatch after switch");
 
     client.disconnect();
     for (i = 0; i < 200 && client.connected(); ++i) {

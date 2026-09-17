@@ -137,8 +137,10 @@ passthrough and RF simulation are not supported. The implementation has:
   central completes subscribe/write/notify/read and latches GPIO4 on success.
 - a host-side BLE Chat client (`BleChatClient` over a detached `QemuBt` plus a
   `BleChatDialog` workbench opened from the ESP context menu). It scans,
-  connects, discovers one primary service/characteristic/CCCD, subscribes,
-  reads/writes and displays notifications. A peripheral holds a single
+  connects, walks all primary services and characteristics, auto-selects a
+  writable+notifiable target, subscribes, and chats with read/write plus
+  notifications. Service and characteristic dropdowns let the user switch the
+  target, which resubscribes automatically. A peripheral holds a single
   connection, so chat needs a single-peripheral setup: in the bundled
   two-device demo circuits the guest central already occupies the peripheral,
   and a chat connect attempt reports a timeout instead of hanging. String mode

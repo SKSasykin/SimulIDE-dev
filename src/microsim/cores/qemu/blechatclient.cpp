@@ -75,6 +75,10 @@ void BleChatClient::resetLinkState()
     m_cancelRequested = false;
     m_services.clear();
     m_chars.clear();
+    m_discSvcIdx = 0;
+    m_selSvc = -1;
+    m_selChar = -1;
+    m_pendingTarget.active = false;
     m_connHandle = 0;
     m_peerAddress.clear();
     m_stage = DiscoverNone;
@@ -551,6 +555,10 @@ void BleChatClient::startServiceDiscovery()
     m_stage = DiscoverServices;
     m_services.clear();
     m_chars.clear();
+    m_discSvcIdx = 0;
+    m_selSvc = -1;
+    m_selChar = -1;
+    m_pendingTarget.active = false;
     m_svcStart = 0;
     m_svcEnd = 0;
     m_svcUuid.clear();
@@ -575,26 +583,35 @@ void BleChatClient::startServiceDiscovery()
 
 void BleChatClient::startCharDiscovery()
 {
-    if ( m_svcStart == 0 ) {
+    if ( m_discSvcIdx < 0 || m_discSvcIdx >= m_services.size() ) {
         finishDiscovery( false, "No service" );
         return;
     }
+    const KnownService& service = m_services.at( m_discSvcIdx );
     m_stage = DiscoverChars;
     QByteArray pdu;
     pdu.append( char( 0x08 ) );
-    pdu.append( char( m_svcStart & 0xFF ) );
-    pdu.append( char( ( m_svcStart >> 8 ) & 0xFF ) );
-    pdu.append( char( m_svcEnd & 0xFF ) );
-    pdu.append( char( ( m_svcEnd >> 8 ) & 0xFF ) );
+    pdu.append( char( service.start & 0xFF ) );
+    pdu.append( char( ( service.start >> 8 ) & 0xFF ) );
+    pdu.append( char( service.end & 0xFF ) );
+    pdu.append( char( ( service.end >> 8 ) & 0xFF ) );
     pdu.append( char( 0x03 ) );
     pdu.append( char( 0x28 ) );
     m_pending.active = true;
     m_pending.opcode = 0x08;
     m_pending.kind = "chars";
-    m_declHandle = 0;
-    m_valueHandle = 0;
     sendAtt( pdu );
     emit discoveryChanged();
+}
+
+void BleChatClient::continueCharWalk()
+{
+    ++m_discSvcIdx;
+    if ( m_discSvcIdx < m_services.size() ) {
+        startCharDiscovery();
+        return;
+    }
+    selectDefaultTarget();
 }
 
 void BleChatClient::startDescDiscovery()
@@ -623,52 +640,194 @@ void BleChatClient::startDescDiscovery()
     emit discoveryChanged();
 }
 
-void BleChatClient::selectServiceAndContinue()
+void BleChatClient::selectDefaultTarget()
 {
-    if ( m_services.isEmpty() ) {
-        finishDiscovery( false, "Service not found" );
-        return;
-    }
-    const KnownService* picked = &m_services.first();
-    for ( int i = 0; i < m_services.size(); ++i ) {
-        if ( m_services.at( i ).uuid.size() == 16 ) {
-            picked = &m_services.at( i );
-            break;
+    int bestSvc = -1;
+    int bestPos = -1;
+    int best = -1;
+    for ( int svc = 0; svc < m_services.size(); ++svc ) {
+        const int svcScore = m_services.at( svc ).uuid.size() == 16 ? 2 : 0;
+        for ( int pos = 0; pos < charCount( svc ); ++pos ) {
+            const KnownChar* chr = charAt( svc, pos );
+            if ( !chr ) continue;
+            int score = svcScore * 10;
+            if ( ( chr->props & 0x18 ) == 0x18 ) score += 2;
+            else if ( chr->props & 0x08 ) score += 1;
+            if ( score > best ) {
+                best = score;
+                bestSvc = svc;
+                bestPos = pos;
+            }
         }
     }
-    m_svcStart = picked->start;
-    m_svcEnd = picked->end;
-    m_svcUuid = picked->uuid;
-    emit statusMessage( "Service found handles " + QString::number( m_svcStart ) +
-                        "-" + QString::number( m_svcEnd ) );
-    startCharDiscovery();
-}
-
-void BleChatClient::selectCharAndContinue()
-{
-    if ( m_chars.isEmpty() ) {
+    if ( bestSvc < 0 ) {
         finishDiscovery( false, "Characteristic not found" );
         return;
     }
-    const KnownChar* picked = &m_chars.first();
-    int best = -1;
-    for ( int i = 0; i < m_chars.size(); ++i ) {
-        const KnownChar& chr = m_chars.at( i );
-        int score = 0;
-        if ( ( chr.props & 0x18 ) == 0x18 ) score = 2;
-        else if ( chr.props & 0x08 ) score = 1;
-        if ( score > best ) {
-            best = score;
-            picked = &m_chars.at( i );
-        }
-    }
-    m_declHandle = picked->decl;
-    m_charProps = picked->props;
-    m_valueHandle = picked->valueHandle;
-    m_charUuid = picked->uuid;
+    m_pendingTarget.active = false;
+    applyTargetFields( bestSvc, bestPos );
+    emit statusMessage( "Service found handles " + QString::number( m_svcStart ) +
+                        "-" + QString::number( m_svcEnd ) );
     emit statusMessage( "Characteristic found value handle " +
                         QString::number( m_valueHandle ) );
     startDescDiscovery();
+}
+
+void BleChatClient::applyTargetFields( int svc, int pos )
+{
+    const KnownService& service = m_services.at( svc );
+    const KnownChar* chr = charAt( svc, pos );
+    if ( !chr ) return;
+    m_selSvc = svc;
+    m_selChar = pos;
+    m_svcStart = service.start;
+    m_svcEnd = service.end;
+    m_svcUuid = service.uuid;
+    m_declHandle = chr->decl;
+    m_charProps = chr->props;
+    m_valueHandle = chr->valueHandle;
+    m_charUuid = chr->uuid;
+    m_cccdHandle = 0;
+    m_notifyEnabled = false;
+}
+
+void BleChatClient::applyTargetAndDiscover()
+{
+    m_pendingTarget.active = false;
+    applyTargetFields( m_pendingTarget.svc, m_pendingTarget.pos );
+    emit discoveryChanged();
+    startDescDiscovery();
+}
+
+int BleChatClient::bestCharPos( int svc ) const
+{
+    int bestPos = -1;
+    int best = -1;
+    for ( int pos = 0; pos < charCount( svc ); ++pos ) {
+        const KnownChar* chr = charAt( svc, pos );
+        if ( !chr ) continue;
+        int score = 0;
+        if ( ( chr->props & 0x18 ) == 0x18 ) score = 2;
+        else if ( chr->props & 0x08 ) score = 1;
+        if ( score > best ) {
+            best = score;
+            bestPos = pos;
+        }
+    }
+    return bestPos;
+}
+
+const BleChatClient::KnownChar* BleChatClient::charAt( int svc, int pos ) const
+{
+    int seen = -1;
+    for ( int i = 0; i < m_chars.size(); ++i ) {
+        if ( m_chars.at( i ).svcIndex != svc ) continue;
+        ++seen;
+        if ( seen == pos ) return &m_chars.at( i );
+    }
+    return nullptr;
+}
+
+void BleChatClient::selectTarget( int svc, int pos )
+{
+    if ( m_connHandle == 0 ) {
+        emit errorMessage( "Not connected" );
+        return;
+    }
+    if ( svc < 0 || svc >= m_services.size() ) {
+        emit errorMessage( "No such service" );
+        return;
+    }
+    if ( pos < 0 ) pos = bestCharPos( svc );
+    if ( !charAt( svc, pos ) ) {
+        emit errorMessage( "No characteristic" );
+        return;
+    }
+    if ( m_pending.active ) {
+        emit errorMessage( "Busy" );
+        return;
+    }
+    const KnownChar* chr = charAt( svc, pos );
+    if ( svc == m_selSvc && chr->valueHandle == m_valueHandle ) return;
+    m_pendingTarget.active = true;
+    m_pendingTarget.svc = svc;
+    m_pendingTarget.pos = pos;
+    if ( m_notifyEnabled && m_cccdHandle != 0 ) {
+        QByteArray pdu;
+        pdu.append( char( 0x12 ) );
+        pdu.append( char( m_cccdHandle & 0xFF ) );
+        pdu.append( char( ( m_cccdHandle >> 8 ) & 0xFF ) );
+        pdu.append( char( 0x00 ) );
+        pdu.append( char( 0x00 ) );
+        m_pending.active = true;
+        m_pending.opcode = 0x12;
+        m_pending.handle = m_cccdHandle;
+        m_pending.kind = "unswitch";
+        m_subscribeWanted = false;
+        sendAtt( pdu );
+        return;
+    }
+    applyTargetAndDiscover();
+}
+
+QString BleChatClient::uuidText( const QByteArray& uuid )
+{
+    const char hex[] = "0123456789ABCDEF";
+    if ( uuid.size() == 2 ) {
+        const uint16_t value = bleRd16( reinterpret_cast<const uint8_t*>( uuid.constData() ) );
+        QString text = "0x";
+        text += QChar( hex[( value >> 12 ) & 0xF] );
+        text += QChar( hex[( value >> 8 ) & 0xF] );
+        text += QChar( hex[( value >> 4 ) & 0xF] );
+        text += QChar( hex[value & 0xF] );
+        return text;
+    }
+    QString text;
+    for ( int i = 0; i < uuid.size(); ++i ) {
+        if ( i > 0 ) text += ' ';
+        const uint8_t byte = static_cast<uint8_t>( uuid.at( i ) );
+        text += QChar( hex[( byte >> 4 ) & 0xF] );
+        text += QChar( hex[byte & 0xF] );
+    }
+    return text;
+}
+
+QString BleChatClient::propsText( uint8_t props )
+{
+    QString text;
+    if ( props & 0x02 ) text += 'R';
+    if ( props & 0x08 ) text += 'W';
+    if ( props & 0x10 ) text += 'N';
+    const char hex[] = "0123456789ABCDEF";
+    text += " (0x";
+    text += QChar( hex[( props >> 4 ) & 0xF] );
+    text += QChar( hex[props & 0xF] );
+    text += ')';
+    return text;
+}
+
+QString BleChatClient::serviceText( int svc ) const
+{
+    if ( svc < 0 || svc >= m_services.size() ) return QString();
+    const KnownService& service = m_services.at( svc );
+    return "handles " + QString::number( service.start ) + "-" +
+           QString::number( service.end ) + " " + uuidText( service.uuid );
+}
+
+int BleChatClient::charCount( int svc ) const
+{
+    int count = 0;
+    for ( int i = 0; i < m_chars.size(); ++i )
+        if ( m_chars.at( i ).svcIndex == svc ) ++count;
+    return count;
+}
+
+QString BleChatClient::charText( int svc, int pos ) const
+{
+    const KnownChar* chr = charAt( svc, pos );
+    if ( !chr ) return QString();
+    return "value " + QString::number( chr->valueHandle ) + " " +
+           propsText( chr->props ) + " " + uuidText( chr->uuid );
 }
 
 void BleChatClient::finishDiscovery( bool ok, const QString& info )
@@ -811,11 +970,12 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
         (void)req;
         if ( err == 0x0A ) {
             if ( m_pending.kind == "services" ) {
-                if ( !m_services.isEmpty() ) selectServiceAndContinue();
-                else finishDiscovery( false, "Service not found" );
+                if ( !m_services.isEmpty() ) {
+                    m_discSvcIdx = 0;
+                    startCharDiscovery();
+                } else finishDiscovery( false, "Service not found" );
             } else if ( m_pending.kind == "chars" ) {
-                if ( !m_chars.isEmpty() ) selectCharAndContinue();
-                else finishDiscovery( false, "Characteristic not found" );
+                continueCharWalk();
             } else if ( m_pending.kind == "descs" ) {
                 if ( m_valueHandle != 0 ) {
                     m_stage = DiscoverDone;
@@ -825,7 +985,7 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
                 } else {
                     finishDiscovery( false, "Descriptor not found" );
                 }
-            } else if ( m_pending.kind == "read" || m_pending.kind == "write" || m_pending.kind == "subscribe" || m_pending.kind == "unsubscribe" ) {
+            } else if ( m_pending.kind == "read" || m_pending.kind == "write" || m_pending.kind == "subscribe" || m_pending.kind == "unsubscribe" || m_pending.kind == "unswitch" ) {
                 m_pending.active = false;
                 if ( m_pending.kind == "write" ) emit writeDone( false, "Attribute error" );
                 else emit errorMessage( "Attribute error" );
@@ -872,7 +1032,8 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
             next.append( char( 0x28 ) );
             sendAtt( next );
         } else {
-            selectServiceAndContinue();
+            m_discSvcIdx = 0;
+            startCharDiscovery();
         }
         return;
     }
@@ -891,6 +1052,7 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
         for ( int i = 0; i < count; ++i ) {
             const uint8_t* entry = reinterpret_cast<const uint8_t*>( pdu.constData() ) + 2 + i * entryLen;
             KnownChar chr;
+            chr.svcIndex = m_discSvcIdx;
             chr.decl = bleRd16( entry );
             chr.props = entry[2];
             chr.valueHandle = bleRd16( entry + 3 );
@@ -898,18 +1060,21 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
             m_chars.append( chr );
             lastDecl = chr.decl;
         }
-        if ( lastDecl < m_svcEnd && count > 0 ) {
+        uint16_t svcEnd = 0xFFFF;
+        if ( m_discSvcIdx >= 0 && m_discSvcIdx < m_services.size() )
+            svcEnd = m_services.at( m_discSvcIdx ).end;
+        if ( lastDecl < svcEnd && count > 0 ) {
             QByteArray next;
             next.append( char( 0x08 ) );
             next.append( char( ( lastDecl + 1 ) & 0xFF ) );
             next.append( char( ( ( lastDecl + 1 ) >> 8 ) & 0xFF ) );
-            next.append( char( m_svcEnd & 0xFF ) );
-            next.append( char( ( m_svcEnd >> 8 ) & 0xFF ) );
+            next.append( char( svcEnd & 0xFF ) );
+            next.append( char( ( svcEnd >> 8 ) & 0xFF ) );
             next.append( char( 0x03 ) );
             next.append( char( 0x28 ) );
             sendAtt( next );
         } else {
-            selectCharAndContinue();
+            continueCharWalk();
         }
         return;
     }
@@ -995,6 +1160,9 @@ void BleChatClient::handleAttPdu( const QByteArray& pdu )
             m_notifyEnabled = false;
             emit discoveryChanged();
             emit statusMessage( "Unsubscribed" );
+        } else if ( kind == "unswitch" ) {
+            m_notifyEnabled = false;
+            applyTargetAndDiscover();
         } else if ( kind == "write" ) {
             emit writeDone( true, "OK" );
         }

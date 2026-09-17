@@ -42,6 +42,24 @@ BleChatDialog::BleChatDialog( QWidget* parent )
     mainLayout->addWidget( m_statusLabel );
     mainLayout->addWidget( m_attrLabel );
 
+    QHBoxLayout* serviceRow = new QHBoxLayout();
+    QLabel* serviceLabel = new QLabel( tr( "Service:" ), this );
+    m_serviceBox = new QComboBox( this );
+    m_serviceBox->setToolTip( tr( "GATT service to chat with; changing it resubscribes" ) );
+    m_serviceBox->setEnabled( false );
+    serviceRow->addWidget( serviceLabel );
+    serviceRow->addWidget( m_serviceBox, 1 );
+    mainLayout->addLayout( serviceRow );
+
+    QHBoxLayout* charRow = new QHBoxLayout();
+    QLabel* charLabel = new QLabel( tr( "Characteristic:" ), this );
+    m_charBox = new QComboBox( this );
+    m_charBox->setToolTip( tr( "GATT characteristic to read, write and notify" ) );
+    m_charBox->setEnabled( false );
+    charRow->addWidget( charLabel );
+    charRow->addWidget( m_charBox, 1 );
+    mainLayout->addLayout( charRow );
+
     m_log = new QTextEdit( this );
     m_log->setReadOnly( true );
     m_log->setFontFamily( "Courier New" );
@@ -56,6 +74,8 @@ BleChatDialog::BleChatDialog( QWidget* parent )
     m_input->setToolTip( tr( "Value to write to the characteristic" ) );
     m_sendButton = new QPushButton( tr( "Send" ), this );
     m_sendButton->setToolTip( tr( "Write the input value to the characteristic" ) );
+    m_clearButton = new QPushButton( tr( "Clear" ), this );
+    m_clearButton->setToolTip( tr( "Clear the chat log" ) );
     bottomRow->addWidget( m_formatBox );
     bottomRow->addWidget( m_input, 1 );
     bottomRow->addWidget( m_sendButton );
@@ -66,6 +86,10 @@ BleChatDialog::BleChatDialog( QWidget* parent )
     connect( m_connectButton, &QPushButton::clicked, this, &BleChatDialog::onConnectClicked );
     connect( m_disconnectButton, &QPushButton::clicked, this, &BleChatDialog::onDisconnectClicked );
     connect( m_discoverButton, &QPushButton::clicked, this, &BleChatDialog::onDiscoverClicked );
+    connect( m_serviceBox, QOverload<int>::of( &QComboBox::currentIndexChanged ),
+             this, &BleChatDialog::onServiceChanged );
+    connect( m_charBox, QOverload<int>::of( &QComboBox::currentIndexChanged ),
+             this, &BleChatDialog::onCharChanged );
     connect( m_sendButton, &QPushButton::clicked, this, &BleChatDialog::onSendClicked );
     connect( m_clearButton, &QPushButton::clicked, this, &BleChatDialog::onClearClicked );
     connect( m_input, &QLineEdit::returnPressed, this, &BleChatDialog::onSendClicked );
@@ -107,6 +131,11 @@ void BleChatDialog::updateStep()
     m_client->poll();
     if ( Simulator::self() && !Simulator::self()->isRunning() && m_client->scanning() )
         m_client->stopScan();
+    const bool simOn = Simulator::self() && Simulator::self()->isRunning();
+    if ( simOn != m_lastSimOn ) {
+        m_lastSimOn = simOn;
+        onConnectionChanged();
+    }
 }
 
 bool BleChatDialog::hexMode() const
@@ -201,24 +230,78 @@ void BleChatDialog::onDevicesChanged()
     }
     if ( current >= 0 && current < m_deviceList->count() ) m_deviceList->setCurrentRow( current );
     else if ( m_deviceList->count() > 0 ) m_deviceList->setCurrentRow( 0 );
+    onConnectionChanged();
 }
 
 void BleChatDialog::onConnectionChanged()
 {
     m_statusLabel->setText( m_client->connectionText() );
     m_scanButton->setText( m_client->scanning() ? tr( "Stop" ) : tr( "Scan" ) );
+    const bool simOn = Simulator::self() && Simulator::self()->isRunning();
     bool linked = m_client->connected();
     bool busy = m_client->connecting();
-    m_connectButton->setEnabled( !linked && !busy );
+    m_scanButton->setEnabled( simOn );
+    m_connectButton->setEnabled( simOn && !linked && !busy && m_deviceList->count() > 0 );
     m_disconnectButton->setEnabled( linked || busy );
-    m_discoverButton->setEnabled( linked );
-    m_sendButton->setEnabled( m_client->ready() );
+    m_discoverButton->setEnabled( simOn && linked );
+    m_sendButton->setEnabled( simOn && m_client->ready() && m_client->targetWritable() );
 }
 
 void BleChatDialog::onDiscoveryChanged()
 {
     m_attrLabel->setText( m_client->attributeText() );
+    refreshAttributeBoxes();
     onConnectionChanged();
+}
+
+void BleChatDialog::refreshAttributeBoxes()
+{
+    const bool ready = m_client->ready();
+    m_serviceBox->blockSignals( true );
+    m_charBox->blockSignals( true );
+    m_serviceBox->clear();
+    m_charBox->clear();
+    m_serviceBox->setEnabled( ready && m_client->serviceCount() > 0 );
+    m_charBox->setEnabled( false );
+    if ( ready ) {
+        for ( int i = 0; i < m_client->serviceCount(); ++i )
+            m_serviceBox->addItem( m_client->serviceText( i ) );
+        const int svc = m_client->selectedService();
+        if ( svc >= 0 && svc < m_serviceBox->count() ) {
+            m_serviceBox->setCurrentIndex( svc );
+            refreshCharBox( svc );
+        }
+    }
+    m_serviceBox->blockSignals( false );
+    m_charBox->blockSignals( false );
+}
+
+void BleChatDialog::refreshCharBox( int svc )
+{
+    m_charBox->clear();
+    m_charBox->setEnabled( m_client->ready() && m_client->charCount( svc ) > 0 );
+    for ( int i = 0; i < m_client->charCount( svc ); ++i )
+        m_charBox->addItem( m_client->charText( svc, i ) );
+    const int pos = m_client->selectedChar();
+    if ( svc == m_client->selectedService() && pos >= 0 && pos < m_charBox->count() )
+        m_charBox->setCurrentIndex( pos );
+    else if ( m_charBox->count() > 0 )
+        m_charBox->setCurrentIndex( 0 );
+}
+
+void BleChatDialog::onServiceChanged( int index )
+{
+    if ( !m_client->ready() || index < 0 ) return;
+    m_charBox->blockSignals( true );
+    refreshCharBox( index );
+    m_charBox->blockSignals( false );
+    m_client->selectTarget( index, -1 );
+}
+
+void BleChatDialog::onCharChanged( int index )
+{
+    if ( !m_client->ready() || index < 0 ) return;
+    m_client->selectTarget( m_serviceBox->currentIndex(), index );
 }
 
 void BleChatDialog::onValueRead( QByteArray data )

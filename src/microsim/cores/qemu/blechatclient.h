@@ -49,6 +49,14 @@ public:
     void readValue();
     void writeValue( const QByteArray& data );
     void setNotifications( bool enable );
+    int serviceCount() const { return m_services.size(); }
+    QString serviceText( int svc ) const;
+    int charCount( int svc ) const;
+    QString charText( int svc, int pos ) const;
+    int selectedService() const { return m_selSvc; }
+    int selectedChar() const { return m_selChar; }
+    bool targetWritable() const { return m_valueHandle != 0 && ( m_charProps & 0x08 ); }
+    void selectTarget( int svc, int pos );
 
     void poll();
 
@@ -87,10 +95,17 @@ private:
     };
 
     struct KnownChar {
+        int svcIndex = -1;
         uint16_t decl = 0;
         uint8_t props = 0;
         uint16_t valueHandle = 0;
         QByteArray uuid;
+    };
+
+    struct PendingTarget {
+        bool active = false;
+        int svc = -1;
+        int pos = -1;
     };
 
     bool sendCommand( uint16_t opcode, const QByteArray& params );
@@ -105,9 +120,15 @@ private:
     void parseConnectionComplete( const uint8_t* data, int len, bool enhanced );
     void startServiceDiscovery();
     void startCharDiscovery();
+    void continueCharWalk();
     void startDescDiscovery();
-    void selectServiceAndContinue();
-    void selectCharAndContinue();
+    void selectDefaultTarget();
+    void applyTargetFields( int svc, int pos );
+    void applyTargetAndDiscover();
+    int bestCharPos( int svc ) const;
+    const KnownChar* charAt( int svc, int pos ) const;
+    static QString uuidText( const QByteArray& uuid );
+    static QString propsText( uint8_t props );
     void finishDiscovery( bool ok, const QString& info );
     void resetLinkState();
     void setChatReady( bool ready );
@@ -129,8 +150,12 @@ private:
 
     DiscoverStage m_stage = DiscoverNone;
     PendingAtt m_pending;
+    PendingTarget m_pendingTarget;
     QList<KnownService> m_services;
     QList<KnownChar> m_chars;
+    int m_discSvcIdx = 0;
+    int m_selSvc = -1;
+    int m_selChar = -1;
     uint16_t m_svcStart = 0;
     uint16_t m_svcEnd = 0;
     QByteArray m_svcUuid;

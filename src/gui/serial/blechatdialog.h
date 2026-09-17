@@ -30,6 +30,8 @@ private slots:
     void onConnectClicked();
     void onDisconnectClicked();
     void onDiscoverClicked();
+    void onServiceChanged( int index );
+    void onCharChanged( int index );
     void onSendClicked();
     void onClearClicked();
     void onDevicesChanged();
@@ -47,13 +49,18 @@ private:
     QString formatData( const QByteArray& data ) const;
     bool parseInput( QByteArray& out, QString& error ) const;
     bool hexMode() const;
+    void refreshAttributeBoxes();
+    void refreshCharBox( int svc );
 
     BleChatClient* m_client;
     bool m_clientStarted = false;
+    bool m_lastSimOn = false;
 
     QListWidget* m_deviceList;
     QLabel* m_statusLabel;
     QLabel* m_attrLabel;
+    QComboBox* m_serviceBox;
+    QComboBox* m_charBox;
     QTextEdit* m_log;
     QComboBox* m_formatBox;
     QLineEdit* m_input;

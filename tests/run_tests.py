@@ -959,14 +959,16 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
                      "readValue", "writeValue", "setNotifications",
                      "connecting()", "notificationsOn()", "m_connectTimer", "Connect timeout",
                      "Connection request accepted", "Discovering services...",
-                     "selectServiceAndContinue", "selectCharAndContinue",
-                     "m_cancelRequested",
+                     "selectTarget", "selectDefaultTarget", "serviceCount",
+                     "serviceText", "charCount", "charText", "targetWritable",
+                     "KnownService", "KnownChar", "m_cancelRequested",
                      "services", "chars", "descs",
                      "0x0A", "0x12", "0x1B", "0x2902", "char( 0x28 )"):
         if fragment not in chat_client and fragment not in chat_client_header:
             failures.append(f"BLE chat client is missing {fragment!r}")
     for fragment in ("class BleChatDialog", "Updatable", "updateStep",
-                     "String", "HEX", "setToolTip", "m_sendButton"):
+                     "String", "HEX", "setToolTip", "m_sendButton",
+                     "m_serviceBox", "m_charBox", "selectTarget", "simOn"):
         if fragment not in chat_dialog and fragment not in chat_dialog_header:
             failures.append(f"BLE chat dialog is missing {fragment!r}")
     if "m_client->poll()" not in chat_dialog:
