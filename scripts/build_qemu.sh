@@ -34,6 +34,7 @@ HEAD_STAMP="$BUILD_DIR/.simulide-qemu-head"
 # committed to the repository.
 ROM_DIR="$BIN_DIR/esp/rom/bin"
 ROM_FILES=("esp32-v3-rom.bin" "esp32-v3-rom-app.bin" "esp32c3-rom.bin" "esp32s3_rev0_rom.bin")
+ESP8266_ROM_FILES=("esp8266.rom" "esp8266-call-user.rom")
 # macOS: qemu's TCG JIT (MAP_JIT) hangs in the kernel unless the binary carries
 # the com.apple.security.cs.allow-jit entitlement. See esp32-simulide-bridge
 # work: without it the emulators hang at startup (even `--version`) when run
@@ -109,6 +110,12 @@ QEMU_HEAD="$(git -C "$QEMU_DIR" rev-parse HEAD 2>/dev/null || true)"
 EXPECTED_HEAD="$(git -C "$REPO_ROOT" rev-parse HEAD:third_party/qemu-simulide 2>/dev/null || true)"
 INSTALLED_HEAD="$(cat "$HEAD_STAMP" 2>/dev/null || true)"
 ROMS_READY=true
+for rom in "${ESP8266_ROM_FILES[@]}"; do
+    if [ ! -f "$ROM_DIR/$rom" ]; then
+        err "required ESP8266 ROM not found: $ROM_DIR/$rom"
+        exit 1
+    fi
+done
 for rom in "${ROM_FILES[@]}"; do
     if [ ! -f "$ROM_DIR/$rom" ]; then ROMS_READY=false; break; fi
 done
@@ -180,12 +187,6 @@ if ! ninja -C "$BUILD_DIR" "${TARGETS[@]}"; then
 fi
 
 # --- 4. install -------------------------------------------------------------
-# The app bundle data dir is populated by the main build by copying
-# resources/data into the .app. On a first parallel `make` that copy can run
-# while qemu is still compiling, and incremental makes never refresh it
-# (directory mtimes only change for direct children). So in addition to the
-# canonical resources/data/bin location, mirror the emulators + ROMs into the
-# built .app bundle when it already exists.
 install_emulators() {
     local bin_dir="$1"
     local rom_dir="$bin_dir/esp/rom/bin"
@@ -208,11 +209,6 @@ install_emulators() {
 
 info "installing emulators + ROM dumps -> $BIN_DIR"
 install_emulators "$BIN_DIR"
-for bundle_bin_dir in "$REPO_ROOT"/build/executables/*.app/Contents/MacOS/data/bin; do
-    if [ ! -d "$bundle_bin_dir" ]; then continue; fi
-    info "mirroring emulators + ROM dumps -> $bundle_bin_dir"
-    install_emulators "$bundle_bin_dir"
-done
 printf '%s\n' "$(git -C "$QEMU_DIR" rev-parse HEAD)" > "$HEAD_STAMP"
 
 info "done. Emulators installed to $BIN_DIR"

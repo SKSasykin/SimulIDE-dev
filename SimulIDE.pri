@@ -184,14 +184,20 @@ runLrelease.commands = \
 QMAKE_EXTRA_TARGETS += runLrelease
 PRE_TARGETDEPS      += runLrelease
 
-# Build the qemu emulator binaries (third_party/qemu-simulide submodule + patch)
-# if they are missing from resources/data/bin. Runtime-only dependency: a
-# failure here must not break the SimulIDE build, hence `|| true`.
+# Build and install the qemu emulator binaries before linking SimulIDE and
+# before copying resources/data into the application bundle.
 macx|linux {
     runQemuBuild.commands = \
-        bash $$PWD/scripts/build_qemu.sh || true
+        bash $$PWD/scripts/build_qemu.sh
     QMAKE_EXTRA_TARGETS += runQemuBuild
     PRE_TARGETDEPS      += runQemuBuild
+
+    macx {
+        QEMU_BUNDLE_DESTDIR = $$relative_path($$DESTDIR, $$OUT_PWD)
+        qemuBundleData.target = $${QEMU_BUNDLE_DESTDIR}/$${TARGET}.app/Contents/MacOS/data
+        qemuBundleData.depends = runQemuBuild
+        QMAKE_EXTRA_TARGETS += qemuBundleData
+    }
 }
 
 message( "-----------------------------------")
