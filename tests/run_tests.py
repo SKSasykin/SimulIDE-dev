@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -736,6 +737,8 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         qemu_interface = (
             root_dir / "third_party/qemu-simulide/system/simuliface.c"
         ).read_text(encoding="utf-8")
+        qemu_build_script = (root_dir / "scripts/build_qemu.sh").read_text(encoding="utf-8")
+        simulide_pri = (root_dir / "SimulIDE.pri").read_text(encoding="utf-8")
         qemu_rx = cpp_function_body(
             qemu_transport, "static void esp32_ble_hci_rx(Esp32BleHciState *s)"
         )
@@ -792,6 +795,26 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
         failures.append("controller periodic pump hook is not declared")
     if "module->runTick()" not in qemu_device:
         failures.append("QEMU periodic events do not service module queues")
+    for property_name in ("WiFiLinkPort", "BtLinkPort", "HostForwardPort"):
+        if f'new IntProp<QemuDevice>( "{property_name}"' not in qemu_device:
+            failures.append(f"QEMU device Properties panel is missing {property_name}")
+    for fragment in (
+        'BUILD_DIR="$REPO_ROOT/build/qemu-simulide"',
+        'install_emulators "$BIN_DIR"',
+    ):
+        if fragment not in qemu_build_script:
+            failures.append(f"QEMU build script is missing {fragment!r}")
+    if "build/executables/*.app" in qemu_build_script:
+        failures.append("QEMU build script modifies existing application bundles")
+    for fragment in (
+        "bash $$PWD/scripts/build_qemu.sh",
+        "qemuBundleData.depends = runQemuBuild",
+        "PRE_TARGETDEPS      += runQemuBuild",
+    ):
+        if fragment not in simulide_pri:
+            failures.append(f"SimulIDE build ordering is missing {fragment!r}")
+    if "build_qemu.sh || true" in simulide_pri:
+        failures.append("SimulIDE build ignores QEMU build failures")
     for fragment in (
         "static QemuMutex s_signal_mutex",
         "qemu_mutex_init( &s_signal_mutex )",
@@ -865,6 +888,67 @@ def run_ble_controller_regression(root_dir=ROOT_DIR):
             failures.append(f"{name} virtual HCI route is missing")
         if "setBtLinkPort(" in source:
             failures.append(f"{name} still enables default BLE UDP")
+        if "QStandardPaths::CacheLocation" not in source:
+            failures.append(f"{name} firmware padding is not stored in the application cache")
+
+    demo_root = root_dir / "resources/data/bin/esp/examples/ble-gatt"
+    required_demo_sources = (
+        "build.py", "BUILDING.md", "common/virtual_vhci.c",
+        "common/include/virtual_vhci.h", "central/main/main.c",
+        "peripheral/main/main.c",
+    )
+    for path in required_demo_sources:
+        if not (demo_root / path).is_file():
+            failures.append(f"official BLE demo source is missing {path!r}")
+    for generated in ("build", "sdkconfig", "sdkconfig.old", "dependencies.lock"):
+        if any(path.name == generated for path in demo_root.rglob("*")):
+            failures.append(f"official BLE demo source contains generated {generated!r}")
+    demo_targets = (
+        ("esp32", "esp32", "Esp32"),
+        ("esp32-s3", "esp32s3", "Esp32s3"),
+        ("esp32-c3", "esp32c3", "Esp32c3"),
+    )
+    for example_dir, firmware_dir, device_id in demo_targets:
+        firmware_root = root_dir / "resources/data/bin" / firmware_dir
+        for generated in firmware_root.glob(".simulide-*-flash.bin"):
+            failures.append(
+                f"official BLE firmware directory contains generated {generated.name!r}"
+            )
+        if (root_dir / "resources/data/bin/esp" / firmware_dir).exists():
+            failures.append(f"official BLE firmware uses nested path for {firmware_dir}")
+        circuit_path = (root_dir / "resources/data/examples" / example_dir /
+                        f"{example_dir} BLE GATT Demo.sim2")
+        if not circuit_path.is_file():
+            failures.append(f"official BLE circuit is missing for {example_dir}")
+            continue
+        circuit = circuit_path.read_text(encoding="utf-8")
+        for fragment in (
+            f'CircId="{device_id}-1"', f'CircId="{device_id}-2"',
+            f'../../bin/{firmware_dir}/ble_gatt_peripheral.merged.bin',
+            f'../../bin/{firmware_dir}/ble_gatt_central.merged.bin',
+            f'startpinid="{device_id}-2-G04"',
+        ):
+            if fragment not in circuit:
+                failures.append(f"official BLE circuit {example_dir} is missing {fragment!r}")
+
+    building = demo_root / "BUILDING.md"
+    expected_hashes = {}
+    if building.is_file():
+        for line in building.read_text(encoding="utf-8").splitlines():
+            fields = line.split()
+            if len(fields) == 2 and len(fields[0]) == 64 and fields[1].startswith(
+                    "resources/data/bin/"):
+                expected_hashes[fields[1]] = fields[0]
+    if len(expected_hashes) != 6:
+        failures.append("official BLE demo provenance does not list six firmware hashes")
+    for relative, expected in expected_hashes.items():
+        firmware_path = root_dir / relative
+        if not firmware_path.is_file():
+            failures.append(f"official BLE firmware is missing {relative!r}")
+            continue
+        actual = hashlib.sha256(firmware_path.read_bytes()).hexdigest()
+        if actual != expected:
+            failures.append(f"official BLE firmware hash mismatch for {relative!r}")
 
     if failures:
         print("FAIL BLE controller regression")

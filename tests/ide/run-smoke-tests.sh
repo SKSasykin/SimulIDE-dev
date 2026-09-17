@@ -87,6 +87,38 @@ run_http() {
     fi
 }
 
+run_ble() {
+    local name="$1"
+    local circuit="$2"
+    local log="$RESULT_DIR/${name//\//-}.log"
+
+    HOME="$RESULT_DIR" SIMULIDE_TEST_MODE=1 QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-offscreen}" \
+        "$EXECUTABLE" -silent -nogui -smoke-test "$ROOT_DIR/$circuit" 25000 >"$log" 2>&1 &
+    local pid=$!
+    (
+        sleep 40
+        kill "$pid" 2>/dev/null || true
+    ) &
+    local watchdog=$!
+
+    local process_ok=0
+    if wait "$pid" && \
+       grep -q "TEST PASS: smoke run completed" "$log" && \
+       grep -q "BLE_GATT_PERIPHERAL_READY" "$log" && \
+       grep -q "BLE_GATT_E2E_PASS" "$log"; then
+        process_ok=1
+    fi
+    kill "$watchdog" 2>/dev/null || true
+    wait "$watchdog" 2>/dev/null || true
+    if [[ "$process_ok" == "1" ]]; then
+        printf 'PASS ide/%s\n' "$name"
+    else
+        printf 'FAIL ide/%s: expected complete BLE GATT round trip\n' "$name"
+        while IFS= read -r line; do printf '  %s\n' "$line"; done <"$log"
+        FAILED=1
+    fi
+}
+
 printf 'Using SimulIDE: %s\n' "$EXECUTABLE"
 run_smoke "esp8266/boot" "resources/data/examples/esp8266/esp8266 Blink.sim2" 2500
 run_smoke "esp32/boot" "resources/data/examples/esp32/esp32 Blink.sim2" 2500
@@ -101,5 +133,15 @@ else
     run_http "esp32-s3/wifi" "resources/data/examples/esp32-s3/esp32-s3 WiFi HTTP Hello World.sim2"
     run_http "esp32-c3/wifi" "resources/data/examples/esp32-c3/esp32-c3 WiFi HTTP Hello World.sim2"
 fi
+
+run_ble "esp32/ble-gatt" "resources/data/examples/esp32/esp32 BLE GATT Demo.sim2"
+run_ble "esp32-s3/ble-gatt" "resources/data/examples/esp32-s3/esp32-s3 BLE GATT Demo.sim2"
+run_ble "esp32-c3/ble-gatt" "resources/data/examples/esp32-c3/esp32-c3 BLE GATT Demo.sim2"
+
+for generated in "$ROOT_DIR"/resources/data/bin/{esp32,esp32s3,esp32c3}/.simulide-*-flash.bin; do
+    [[ -e "$generated" ]] || continue
+    printf 'FAIL ide/ble-gatt: generated firmware cache leaked into resources: %s\n' "$generated"
+    FAILED=1
+done
 
 exit "$FAILED"

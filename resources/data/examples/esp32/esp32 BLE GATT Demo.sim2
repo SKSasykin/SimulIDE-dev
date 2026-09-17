@@ -1,0 +1,13 @@
+<circuit version="2.0.0-" rev="260916" stepSize="1000000" stepsPS="1000000" NLsteps="100000" reaStep="1000000" animate="0" anicurr="0" ansi="0" width="3200" height="2400" >
+
+<item itemtype="QemuDevice" CircId="Esp32-1" mainComp="true" Show_id="true" Show_Val="false" Pos="-256,0" rotation="0" hflip="1" vflip="1" label="BLE Peripheral" idLabPos="-40,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Program="../../bin/esp32/ble_gatt_peripheral.merged.bin" EmuFreq="auto" />
+
+<item itemtype="QemuDevice" CircId="Esp32-2" mainComp="false" Show_id="true" Show_Val="false" Pos="128,0" rotation="0" hflip="1" vflip="1" label="BLE Central" idLabPos="-40,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Program="../../bin/esp32/ble_gatt_central.merged.bin" EmuFreq="auto" />
+
+<item itemtype="Led" CircId="Led-1" mainComp="false" Show_id="true" Show_Val="false" Pos="280,128" rotation="0" hflip="1" vflip="1" label="GATT SUCCESS - GPIO4" idLabPos="-48,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Color="Green" Grounded="true" Threshold="1.8 V" MaxCurrent="20 mA" Resistance="150 Ohm" />
+
+<item itemtype="TextComponent" CircId="TextComponent-1" mainComp="false" Show_id="false" Show_Val="false" Pos="-64,-112" rotation="0" hflip="1" vflip="1" label="TextComponent-1" idLabPos="-16,-24" labelrot="0" valLabPos="-16,20" valLabRot="0" Margin="0 _px" Border="0 _px" Color="#ffffdc" Opacity="0" Font="Ubuntu" Font_Color="#202020" Font_Size="10 _px" Fixed_Width="false" Text="ESP32 NimBLE GATT demo: the central connects, subscribes, writes 0x19 and verifies notification plus readback. The GPIO4 LED stays on after success. Open Serial Monitor (USART1) for details." />
+
+<item itemtype="Connector" uid="Connector-1" startpinid="Esp32-2-G04" endpinid="Led-1-lPin" pointList="232,128,264,128" />
+
+</circuit>

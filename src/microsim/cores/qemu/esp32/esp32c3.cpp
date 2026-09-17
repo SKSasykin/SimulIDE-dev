@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QPainter>
+#include <QStandardPaths>
 
 #include "circuit.h"
 #include "esp32adc.h"
@@ -117,8 +118,13 @@ bool Esp32c3::createArgs() {
     QString efuses = firmware + ".efuse";
 
     if ( size < 4194304 ) {
-        QString base = QFileInfo( m_firmPath ).baseName();
-        QString padPath = fi.absoluteDir().filePath( ".simulide-esp32c3-" + base + "-flash.bin" );
+        QString cachePath = QStandardPaths::writableLocation( QStandardPaths::CacheLocation ) + "/firmware";
+        if ( !QDir().mkpath( cachePath ) ) {
+            qDebug() << "Error: cannot create firmware cache directory:" << cachePath;
+            return false;
+        }
+        QString base = fi.baseName() + "-" + QString::number( qHash( fi.absoluteFilePath() ), 16 );
+        QString padPath = QDir( cachePath ).filePath( "simulide-esp32c3-" + base + "-flash.bin" );
         QFile pad( padPath );
         if ( pad.exists() )
             pad.remove();
