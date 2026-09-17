@@ -91,8 +91,9 @@ checks for libslirp and configures QEMU with SLIRP enabled.
 
 ## Bluetooth status
 
-Bluetooth Classic and BLE are not exposed as supported user-facing features.
-The current development implementation has:
+BLE GATT between simulated ESP devices is exposed through bundled two-device
+examples for ESP32, ESP32-S3 and ESP32-C3. Bluetooth Classic, host-adapter
+passthrough and RF simulation are not supported. The implementation has:
 
 - `bt_tx` and `bt_rx` rings in the SimulIDE/QEMU shared-memory arena;
 - a descriptor-based H4 transport at `0x3ff52000` on ESP32 and `0x60012000`
@@ -128,7 +129,12 @@ The current development implementation has:
   target-specific two-device circuits for ESP32, ESP32-S3 and ESP32-C3.
   Fixture builds run in Docker with
   artifacts in `./tmp/` and are cleaned up afterwards; they never touch
-  user-facing `resources/data/`.
+   user-facing `resources/data/`.
+- official ESP-IDF 5.5.5 peripheral and central firmware under
+  `resources/data/bin/{esp32,esp32s3,esp32c3}/`, reproducible sources and SHA-256 build
+  provenance under `resources/data/bin/esp/examples/ble-gatt/`, and one
+  controller-specific circuit under each ESP32 family examples directory. The
+  central completes subscribe/write/notify/read and latches GPIO4 on success.
 
 The controller object is compiled directly and its HCI framing is covered by
 exact byte-vector and source-contract tests. A standalone C++ runtime harness
@@ -156,9 +162,9 @@ The current tree does not have:
 - GATT inspection or interaction in the SimulIDE UI;
 - Bluetooth adapter passthrough through CoreBluetooth, BlueZ or WinRT.
 
-For this reason, the former experimental `WiFiLinkPort` and `BtLinkPort`
-settings are not exposed in the Properties panel. They must not be interpreted
-as working Bluetooth support.
+`WiFiLinkPort`, `BtLinkPort` and `HostForwardPort` remain available in the
+Properties panel. The bundled BLE examples use the deterministic in-process
+medium and do not require changing the default link-port settings.
 
 GATT inspection in the SimulIDE UI, security procedures, timed RF behavior and
 host-adapter passthrough remain later stages.

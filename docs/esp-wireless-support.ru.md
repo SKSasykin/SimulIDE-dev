@@ -61,7 +61,7 @@
 
 ## Статус Bluetooth
 
-Bluetooth Classic и BLE не предоставляются как поддерживаемые пользовательские функции. В текущей реализации для разработки есть:
+BLE GATT между симулируемыми ESP доступен пользователю через встроенные двухустройственные примеры для ESP32, ESP32-S3 и ESP32-C3. Bluetooth Classic, проброс адаптера хоста и моделирование RF не поддерживаются. В реализации есть:
 
 - кольца `bt_tx` и `bt_rx` в арене разделяемой памяти SimulIDE/QEMU;
 - descriptor-based H4-транспорт по адресу `0x3ff52000` на ESP32 и `0x60012000` на ESP32-S3/C3 с level IRQ и асинхронной доставкой RX;
@@ -71,6 +71,7 @@ Bluetooth Classic и BLE не предоставляются как поддер
 - одно детерминированное LE-соединение на `QemuBt` с глобально уникальными локальными handle, legacy/enhanced Connection Complete, отменой, отключением и Remote Features Complete;
 - непрозрачная пересылка H4 ACL между соединёнными контроллерами: ACL-фрагменты не разбираются, PB-флаги и локальные handle преобразуются, ограниченные очереди создают backpressure, а Number Of Completed Packets и настроенные host credits обеспечивают flow control;
 - гостевые тестовые фикстуры в `tests/fixtures/ble-gatt-e2e/`: VHCI-прослойка, направляющая stock NimBLE из ESP-IDF 4.4.7, 5.5.5 и 6.1 через виртуальный транспорт, плюс минимальные исходники peripheral (read/write/notify-характеристика) и central (scan/connect/discover/subscribe/write/read) с отдельными двухустройственными схемами для ESP32, ESP32-S3 и ESP32-C3. Сборка фикстур идёт в Docker, артефакты — в `./tmp/` с последующей очисткой; пользовательский `resources/data/` не затрагивается.
+- официальные прошивки ESP-IDF 5.5.5 peripheral и central в `resources/data/bin/{esp32,esp32s3,esp32c3}/`, воспроизводимые исходники и SHA-256 сборки в `resources/data/bin/esp/examples/ble-gatt/`, а также отдельная схема в каталоге примеров каждого семейства ESP32. Central выполняет subscribe/write/notify/read и постоянно включает GPIO4 после успеха.
 
 Объект контроллера компилируется напрямую, а HCI framing проверяется точными byte-vector и source-contract тестами. Отдельный runtime C++ harness создаёт два production-экземпляра `QemuBt` с разными packet arenas и проверяет установление соединения, ACL credits, RX backpressure и удаление peer. Boot-level гостевой smoke-тест собирает обе фикстурные прошивки и запускает их вместе в одной схеме SimulIDE через общую внутрипроцессную среду. Раннер требует sentinel готовности peripheral и полного GATT round trip (`BLE_GATT_E2E_PASS`), включающего subscribe, write, notify и read. По умолчанию собирается IDF 4.4.7 для ESP32. `BLE_IDF_VERSION` и `BLE_IDF_TARGET` выбирают версию и MCU; оба принимают значение `all`, а `BLE_E2E_MATRIX=1` запускает полную матрицу. IDF 4.4.7, 5.5.5 и 6.1 проверены до завершения полного GATT round trip на ESP32, ESP32-S3 и ESP32-C3. Каждая комбинация получает один smoke-запуск без повторов. QEMU сериализует всех производителей единственного mailbox SimulIDE, а `QemuBt` дополнительно обслуживает очереди колец на периодических событиях симуляции, поэтому корректность не зависит от одиночного уведомления.
 
@@ -81,7 +82,7 @@ Bluetooth Classic и BLE не предоставляются как поддер
 - просмотра GATT или взаимодействия с ним в UI SimulIDE;
 - проброса Bluetooth-адаптера через CoreBluetooth, BlueZ или WinRT.
 
-По этой причине прежние экспериментальные настройки `WiFiLinkPort` и `BtLinkPort` не отображаются в панели свойств. Их нельзя трактовать как рабочую поддержку Bluetooth.
+Настройки `WiFiLinkPort`, `BtLinkPort` и `HostForwardPort` доступны в панели свойств. Встроенные BLE-примеры используют детерминированную внутрипроцессную среду и не требуют изменения стандартных настроек link port.
 
 GATT-инспекция в UI SimulIDE, процедуры безопасности, временная RF-модель и проброс адаптера хоста остаются более поздними этапами.
 

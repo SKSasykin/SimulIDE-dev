@@ -169,8 +169,15 @@ examples do not reserve a host port and can run in parallel. The current QEMU
 rule binds to all host IPv4 interfaces; see the security note in the detailed
 documentation.
 
-Bluetooth Classic and BLE are **not supported as user-facing features yet**.
-ESP32, ESP32-S3 and ESP32-C3 expose a development DMA/H4 transport, and the
+BLE GATT communication between simulated ESP devices is available through the
+bundled **BLE GATT Demo** examples for ESP32, ESP32-S3 and ESP32-C3. Each
+example runs a peripheral and central together: the central scans, connects,
+subscribes, writes `0x19`, verifies the notification and readback, then latches
+a success LED on GPIO4. The bundled firmware is built with ESP-IDF 5.5.5;
+reproducible sources and build provenance live under
+`resources/data/bin/esp/examples/ble-gatt/`.
+
+The three MCU families expose a DMA/H4 transport, and the
 controller implements the HCI command profile required by the tested ESP-IDF
 4.4.7, 5.5.5 and 6.1 NimBLE hosts. It also supports legacy advertising and
 passive/active scanning through an activation-driven deterministic medium
@@ -178,8 +185,10 @@ shared by simulated ESP devices.
 That development medium now establishes one deterministic LE connection per
 controller and forwards bounded H4 ACL payloads opaquely with host flow control.
 It does not implement controller ATT/GATT, SMP, encryption, connection timing,
-real RF behavior, or host Bluetooth adapter passthrough. Bluetooth settings remain hidden from the
-Properties panel. See
+real RF behavior, or host Bluetooth adapter passthrough. Bluetooth Classic is
+not supported. `WiFi Link Port`, `BT Link Port`, and `Host Forward Port` are
+available in the Properties panel; the bundled BLE demos work with their
+defaults and require no port changes. See
 [docs/esp-wireless-support.md](docs/esp-wireless-support.md) for the complete
 architecture, setup and limitations.
 
@@ -193,7 +202,9 @@ a single smoke process without retries.
 
 The ESP32 ROM dumps (`data/bin/esp/rom/bin/*.bin`) are copied automatically
 from the fork's `pc-bios/` directory by `scripts/build_qemu.sh` on every
-build, so they do not need to be added or committed manually.
+build, so they do not need to be added or committed manually. The tracked
+ESP8266 boot and call-user ROM files share the same directory with the `.rom`
+extension.
 
 For ESP32 you need a flash image with an exact size of 2, 4, 8 or 16 MB. The
 recommended format is the `merged.bin` produced by Arduino IDE / arduino-cli

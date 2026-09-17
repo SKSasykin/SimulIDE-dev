@@ -8,15 +8,34 @@
 - `build/tests/` must never exist — removed if created by qmake
 
 ### 2. User Examples & Resources (Strict)
-- **Never add artifacts to `resources/data/bin/esp/examples/`** — user-facing examples only
-- **Never add circuits to `resources/data/examples/`** — user-facing examples only
-- **Never add binaries to `resources/data/bin/esp32/`, `esp32s3/`, `esp32c3/`, `esp8266/`** unless they are official user examples
+- Official ESP firmware sources live in `resources/data/bin/esp/examples/`
+- Official merged firmware lives directly in the established MCU directories:
+  - ESP32: `resources/data/bin/esp32/`
+  - ESP32-S3: `resources/data/bin/esp32s3/`
+  - ESP32-C3: `resources/data/bin/esp32c3/`
+- Never create target firmware directories under `resources/data/bin/esp/`; that
+  directory is reserved for shared ESP sources and ROM data
+- All ESP boot ROM resources live in `resources/data/bin/esp/rom/bin/`:
+  tracked ESP8266 `*.rom` files and generated ESP32-family `*.bin` files
+- Official circuits live in `resources/data/examples/<controller-type>/`; use
+  `resources/data/examples/common/` only for a circuit shared unchanged by multiple controllers
+- A controller-specific example must have its circuit in that controller's examples directory
+- **Never add test artifacts to these user-facing example directories**
 - Test artifacts (firmware, circuits, merged bins) go in `./tmp/` or `tests/` only
 - If a test binary must be loaded by SimulIDE, build it in `./tmp/` and reference from there
+- Build official firmware out of tree under `./tmp/`, then copy only the final merged
+  image into the matching direct MCU directory listed above
+- If any tool creates `build/`, `sdkconfig`, dependency caches or other generated files
+  inside `resources/data/bin/esp/examples/`, move the final firmware to its target
+  directory and remove every generated build artifact from the source tree
 
 ### 3. Build & Bundle Size
 - `SimulIDE.pri` copies entire `resources/data/` into `.app` bundle
 - **Never leave test binaries in `resources/data/bin/`** — they bloat the app
+- `make` runs `scripts/build_qemu.sh` first; QEMU builds only in
+  `build/qemu-simulide/`, then installs its binaries and ROMs into
+  `resources/data/bin/`. The subsequent SimulIDE build copies those fresh
+  resources into the new `.app`; the QEMU script must never modify an existing `.app`
 - A correct fresh macOS build must regenerate the Makefile before `make`, otherwise
   an existing timestamped `.app` can be relinked instead of creating a new build:
   ```sh
@@ -27,7 +46,7 @@
   `SIMULIDE_SKIP_TESTS=1 make -C build -j4` after the same `qmake` command
 - To launch the newest build, run `./start.sh` from the repository root
 - Verify bundle size after each build (`du -sh build/executables/*.app`)
-- Target size: ~101 MB for macOS arm64
+- Target size: ~113 MB for macOS arm64 with the bundled BLE GATT firmware matrix
 
 ### 4. Testing
 - Contract tests: `./tests/run-tests.sh --contracts-only`
@@ -91,8 +110,13 @@
 ./build/                        ← Main build output (objects, executables, qemu-simulide)
 ./tests/qemubt-runtime/         ← Runtime harness source (builds in ./tmp/)
 ./tests/ide/run-smoke-tests.sh  ← Smoke tests (uses ./tmp/ for HOME)
-./resources/data/bin/esp/examples/  ← USER EXAMPLES ONLY (blink, wifi-http, common)
-./resources/data/examples/      ← USER CIRCUITS ONLY
+./resources/data/bin/esp/examples/  ← OFFICIAL FIRMWARE SOURCES ONLY
+./resources/data/bin/esp/rom/bin/   ← SHARED ESP BOOT ROM RESOURCES
+./resources/data/bin/esp32/         ← ESP32 MERGED FIRMWARE
+./resources/data/bin/esp32s3/       ← ESP32-S3 MERGED FIRMWARE
+./resources/data/bin/esp32c3/       ← ESP32-C3 MERGED FIRMWARE
+./resources/data/examples/<type>/   ← CONTROLLER-SPECIFIC USER CIRCUITS
+./resources/data/examples/common/   ← CIRCUITS SHARED UNCHANGED BY CONTROLLERS
 ```
 
 ---

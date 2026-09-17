@@ -52,9 +52,15 @@ Use `BLE_IDF_VERSION=5.5.5` or `6.1` and `BLE_IDF_TARGET=esp32-s3` or
 `BLE_E2E_MATRIX=1` runs all nine IDF/MCU pairs. Every pair gets one smoke run;
 the gate does not retry a failed process.
 
+The IDE smoke suite also opens the three bundled BLE GATT Demo circuits and
+requires the peripheral-ready and completed-round-trip UART sentinels. Source
+contracts verify the official circuit paths and the SHA-256 values of all six
+ESP-IDF 5.5.5 merged images.
+
 Normal IDE builds run this suite automatically. For an intentional debug build
 without tests, use:
 
 ```sh
-SIMULIDE_SKIP_TESTS=1 make
+/opt/homebrew/bin/qmake -o build/Makefile build/SimulIDE_Build.pro
+SIMULIDE_SKIP_TESTS=1 make -C build -j4
 ```
