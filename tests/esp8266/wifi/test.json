@@ -2,6 +2,8 @@
   "description": "ESP8266 virtual SLC NIC launch contract",
   "checks": [
     {"name": "NIC launch", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["user,model=esp32.slc", "hostfwd=tcp::%1-:80"]},
+    {"name": "shared ESP ROM directory", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "contains": ["getDataFilePath( \"bin/esp/rom/bin\" )", "./data/bin/esp/rom/bin"]},
+    {"name": "required ESP8266 ROM assets", "path": "scripts/build_qemu.sh", "contains": ["ESP8266_ROM_FILES=(\"esp8266.rom\" \"esp8266-call-user.rom\")", "required ESP8266 ROM not found"]},
     {"name": "SLC backend", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "contains": ["TYPE_ESP32_SLC", "NetClientState"]},
     {"name": "negative source contract: host forwarding requires positive port", "path": "src/microsim/cores/qemu/esp8266/esp8266.cpp", "ordered": ["QString nic = \"user,model=esp32.slc\";", "if ( m_hostForwardPort > 0 )", "hostfwd=tcp::%1-:80"], "within_lines": 3},
     {"name": "negative source contract: unaligned SLC read is rejected", "path": "third_party/qemu-simulide/hw/dma/esp32_slc.c", "ordered": ["if (addr & 0x3)", "unaligned read addr", "return 0;"], "within_lines": 4},

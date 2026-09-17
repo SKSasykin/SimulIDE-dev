@@ -158,13 +158,14 @@ bool Esp8266::createArgs()
     QString nic = "user,model=esp32.slc";
     if ( m_hostForwardPort > 0 )
         nic += QString( ",hostfwd=tcp::%1-:80" ).arg( m_hostForwardPort );
+    QString romBin = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp/rom/bin" ) : "";
     m_arguments << m_shMemKey
                 << "qemu-system-xtensa"
                 << "-M"    << "esp8266-simul"
                 << "-bios" << m_firmPath
                 << "-icount" << "shift=4,align=off,sleep=on"
                 << "-nic" << nic
-                << "-L"    << QFileInfo( m_executable ).absolutePath();
+                << "-L"    << ( romBin.isEmpty() ? "./data/bin/esp/rom/bin" : romBin );
     return true;
 }
 
