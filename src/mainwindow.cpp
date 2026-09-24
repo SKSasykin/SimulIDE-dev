@@ -26,6 +26,7 @@
 #include "filewidget.h"
 #include "installer.h"
 #include "mainwindow.h"
+#include "simulator.h"
 #include "utils.h"
 
 MainWindow* MainWindow::m_pSelf = nullptr;
@@ -85,6 +86,7 @@ MainWindow::MainWindow() : QMainWindow() {
 
     createWidgets();
     m_circuitW->newCircuit();
+    qApp->installEventFilter( this );
     readSettings();
 
     if ( m_autoUpdt && !qEnvironmentVariableIsSet( "SIMULIDE_TEST_MODE" ) ) {
@@ -114,6 +116,17 @@ void MainWindow::hideGui() {
     m_sidepanel->hide();
     m_editor->hide();
     m_circuitW->hideGui();
+}
+
+bool MainWindow::eventFilter( QObject* object, QEvent* event ) {
+    if ( event->type() == QEvent::KeyPress ) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>( event );
+        if ( keyEvent->key() == Qt::Key_Escape && !keyEvent->isAutoRepeat() && Simulator::self()->isRunning() ) {
+            CircuitWidget::self()->powerCircOff();
+            return true;
+        }
+    }
+    return QMainWindow::eventFilter( object, event );
 }
 
 void MainWindow::keyPressEvent( QKeyEvent* event ) {
