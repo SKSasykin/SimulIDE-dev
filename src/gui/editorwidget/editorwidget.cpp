@@ -4,6 +4,7 @@
  ***( see copyright.txt file at root folder )*******************************/
 
 #include <QFileDialog>
+#include <QApplication>
 #include <QGridLayout>
 #include <QMessageBox>
 #include <QMimeData>
@@ -34,6 +35,7 @@ EditorWidget::EditorWidget( QWidget* parent )
     createActions();
     createToolBars();
     createWidgets();
+    qApp->installEventFilter( this );
     updateRecentFileActions();
     readSettings();
 
@@ -71,7 +73,9 @@ EditorWidget::EditorWidget( QWidget* parent )
           },
           0 } );
 }
-EditorWidget::~EditorWidget() { }
+EditorWidget::~EditorWidget() {
+    qApp->removeEventFilter( this );
+}
 
 void EditorWidget::setFontSize( int size ) {
     m_fontSize = size;
@@ -310,6 +314,27 @@ void EditorWidget::keyPressEvent( QKeyEvent* event ) {
                 save();
         }
     }
+}
+
+bool EditorWidget::eventFilter( QObject* object, QEvent* event ) {
+    CodeEditor* editor = getCodeEditor();
+    QWidget* widget = qobject_cast<QWidget*>( object );
+    bool editorChild = editor && ( object == editor || ( widget && editor->isAncestorOf( widget ) ) );
+    if ( editorChild && ( event->type() == QEvent::ShortcutOverride || event->type() == QEvent::KeyPress ) ) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>( event );
+        Qt::KeyboardModifiers closeModifiers = Qt::ControlModifier | Qt::MetaModifier;
+        if ( keyEvent->key() == Qt::Key_W && ( keyEvent->modifiers() & closeModifiers )
+             && !( keyEvent->modifiers() & ( Qt::ShiftModifier | Qt::AltModifier ) ) ) {
+            if ( event->type() == QEvent::ShortcutOverride ) {
+                event->accept();
+                return true;
+            }
+            if ( close() )
+                hide();
+            return true;
+        }
+    }
+    return QWidget::eventFilter( object, event );
 }
 
 void EditorWidget::restoreFile( QString filePath ) {
@@ -717,6 +742,16 @@ void EditorWidget::createActions() {
     saveAsAct->setStatusTip( tr( "Save the document under a new name" ) );
     saveAsAct->setEnabled( false );
     connect( saveAsAct, SIGNAL( triggered() ), this, SLOT( saveAs() ), Qt::UniqueConnection );
+
+    QAction* closeEditorAct = new QAction( tr( "Close Editor\tCtrl+W" ), this );
+    closeEditorAct->setShortcuts( QList<QKeySequence>() << QKeySequence( Qt::CTRL | Qt::Key_W )
+                                                        << QKeySequence( Qt::META | Qt::Key_W ) );
+    closeEditorAct->setShortcutContext( Qt::WidgetWithChildrenShortcut );
+    addAction( closeEditorAct );
+    connect( closeEditorAct, &QAction::triggered, this, [this]() {
+        if ( close() )
+            hide();
+    } );
 
     cutAct = new QAction( QIcon( ":/cut.svg" ), tr( "Cu&t\tCtrl+X" ), this );
     cutAct->setStatusTip( tr( "Cut the current selection's contents to the clipboard" ) );

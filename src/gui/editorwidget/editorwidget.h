@@ -108,6 +108,7 @@ protected:
     void dropEvent( QDropEvent* event );
     void dragEnterEvent( QDragEnterEvent* event );
     void keyPressEvent( QKeyEvent* event );
+    bool eventFilter( QObject* object, QEvent* event );
 
     void createWidgets();
     void createActions();

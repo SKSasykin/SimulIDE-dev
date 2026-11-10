@@ -599,6 +599,15 @@ void CodeEditor::updateScreen() {
 }
 
 void CodeEditor::keyPressEvent( QKeyEvent* event ) {
+    Qt::KeyboardModifiers closeModifiers = Qt::ControlModifier | Qt::MetaModifier;
+    if ( event->key() == Qt::Key_W && ( event->modifiers() & closeModifiers )
+         && !( event->modifiers() & ( Qt::ShiftModifier | Qt::AltModifier ) ) ) {
+        if ( EditorWindow::self()->close() )
+            EditorWindow::self()->hide();
+        event->accept();
+        return;
+    }
+
     if ( m_completer && m_completer->popup()->isVisible() && event->key() == Qt::Key_Return ) {
         event->ignore();
         return;
