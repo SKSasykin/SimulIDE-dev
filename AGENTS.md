@@ -63,6 +63,7 @@
 ### 5. Commits & Git
 - **No commits without explicit user command** — user said: "больше не коммить без соответствующей команды"
 - Local commits only, no push unless asked
+- **Submodule commit order** — when a requested change includes a submodule, commit and push the change inside the submodule first; then update the parent repository's submodule pointer to that pushed commit, commit the pointer update in the parent, and push the parent afterward. Never leave the parent pointing at an old submodule SHA.
 - Keep unrelated user changes (e.g., `src/components/outputs/displays/oledcontroller.cpp/.h`) unstaged and untouched
 
 ### 6. BLE Implementation Scope
