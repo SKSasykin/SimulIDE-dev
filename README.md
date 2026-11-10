@@ -227,6 +227,18 @@ example firmware is used instead, so an empty board still boots and blinks:
 `data/bin/esp32c3/blink.ino.merged.bin` for ESP32-C3. ESP8266 uses the
 bundled `data/bin/esp8266/blink.bin` firmware.
 
+### ESP SPIFFS editor
+
+ESP32, ESP32-S3, ESP32-C3 and ESP8266 flash images include SPIFFS support. Open
+the ESP component context menu and select `Open SPIFFS...` to open the file
+editor. Select a file to view it as text or hexadecimal data; common text and
+source extensions such as `txt`, `csv`, `json`, `xml`, `html`, `c` and `py` use
+text mode by default, while other files use hex mode. Guest flash writes are
+kept in a writable runtime copy, so refreshed contents remain available without
+modifying the original firmware image. The editor can create text and binary
+files, edit both Text and Hex views, import files from the host, export selected
+files to the host, and show used, free and total SPIFFS space.
+
 ### ESP GPIO internal pull resistors
 
 GPIO pull-up and pull-down configuration is forwarded from guest firmware to

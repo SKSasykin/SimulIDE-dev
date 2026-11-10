@@ -154,6 +154,9 @@ bool Esp8266::createArgs()
             return false;
         }
     }
+    m_flashPath = writableFlashCopy( m_firmPath );
+    QString bootFile = m_flashPath.isEmpty() ? m_firmPath : m_flashPath;
+
     m_arguments.clear();
     QString nic = "user,model=esp32.slc";
     if ( m_hostForwardPort > 0 )
@@ -162,7 +165,7 @@ bool Esp8266::createArgs()
     m_arguments << m_shMemKey
                 << "qemu-system-xtensa"
                 << "-M"    << "esp8266-simul"
-                << "-bios" << m_firmPath
+                << "-bios" << bootFile
                 << "-icount" << "shift=4,align=off,sleep=on"
                 << "-nic" << nic
                 << "-L"    << ( romBin.isEmpty() ? "./data/bin/esp/rom/bin" : romBin );

@@ -6,11 +6,13 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QLibrary>
 #include <QMessageBox>
 #include <QProcessEnvironment>
+#include <QStandardPaths>
 #include <QThread>
 #include <qtconcurrentrun.h>
 
@@ -25,6 +27,7 @@
 #endif
 
 #include "blechatdialog.h"
+#include "spiffsdialog.h"
 #include "circuitwidget.h"
 #include "iopin.h"
 #include "itemlibrary.h"
@@ -160,6 +163,11 @@ QemuDevice::~QemuDevice() {
         m_bleChat->close();
         delete m_bleChat;
         m_bleChat = nullptr;
+    }
+    if ( m_spiffsDialog ) {
+        m_spiffsDialog->close();
+        delete m_spiffsDialog;
+        m_spiffsDialog = nullptr;
     }
     initialize();
 #if defined( __linux__ ) || defined( __APPLE__ )
@@ -454,6 +462,54 @@ void QemuDevice::slotOpenBleChat() {
     m_bleChat->activateWindow();
 }
 
+void QemuDevice::slotOpenSpiffs() {
+    if ( m_flashPath.isEmpty() )
+        createArgs();
+    if ( !m_spiffsDialog )
+        m_spiffsDialog = new SpiffsDialog( MainWindow::self(), this );
+    m_spiffsDialog->setWindowTitle( idLabel() + " SPIFFS" );
+    m_spiffsDialog->refresh();
+    m_spiffsDialog->show();
+    m_spiffsDialog->raise();
+    m_spiffsDialog->activateWindow();
+}
+
+QString QemuDevice::writableFlashCopy( const QString& source ) {
+    QFileInfo fi( source );
+    if ( !fi.exists() || !fi.isFile() )
+        return {};
+    if ( fi.fileName().endsWith( "-rw.bin" ) )
+        return source;
+
+    QFile file( source );
+    if ( !file.open( QIODevice::ReadOnly ) )
+        return {};
+    QCryptographicHash hash( QCryptographicHash::Sha1 );
+    if ( !hash.addData( &file ) ) {
+        file.close();
+        return {};
+    }
+    file.close();
+
+    QString cacheDir = QStandardPaths::writableLocation( QStandardPaths::CacheLocation ) + "/firmware";
+    QDir().mkpath( cacheDir );
+
+    QString base = fi.completeBaseName();
+    if ( base.isEmpty() )
+        base = "firmware";
+    QString dest = QDir( cacheDir ).filePath( base + "-" + QString( hash.result().toHex().left( 16 ) ) + "-rw.bin" );
+
+    if ( QFileInfo::exists( dest ) )
+        return dest;
+    if ( !QFile::copy( source, dest ) ) {
+        qDebug() << "QemuDevice::writableFlashCopy: copy failed" << source << dest;
+        return {};
+    }
+    QFile::setPermissions( dest, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ReadUser
+                                 | QFileDevice::WriteUser | QFileDevice::ReadGroup | QFileDevice::ReadOther );
+    return dest;
+}
+
 void QemuDevice::slotLoad() {
     QDir dir( m_lastFirmDir );
     if ( !dir.exists() )
@@ -531,6 +587,11 @@ void QemuDevice::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu
             QObject::connect( act, &QAction::triggered, [=]() { slotOpenTerm( portNumber ); } );
         }
     }
+    if ( supportsSpiffs() ) {
+        QAction* spiffsAction = menu->addAction( QIcon( ":/files.svg" ), tr( "Open SPIFFS..." ) );
+        QObject::connect( spiffsAction, &QAction::triggered, [=]() { slotOpenSpiffs(); } );
+    }
+
     bool hasBt = false;
     for ( QemuModule* module : m_modules ) {
         if ( module->getType() == "bt" ) {

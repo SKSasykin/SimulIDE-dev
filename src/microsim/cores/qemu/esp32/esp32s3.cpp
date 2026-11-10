@@ -152,6 +152,10 @@ bool Esp32s3::createArgs() {
         firmware = padPath.left( padPath.lastIndexOf( "." ) );
     }
 
+    m_flashPath = writableFlashCopy( firmware + ".bin" );
+    if ( !m_flashPath.isEmpty() )
+        firmware = m_flashPath.left( m_flashPath.lastIndexOf( "." ) );
+
     if ( !QFileInfo::exists( efuses ) ) {
         QString path = MainWindow::self() ? MainWindow::self()->getDataFilePath( "bin/esp32s3/esp32s3.efuse" ) : "";
         efuses = path.isEmpty() ? "./data/bin/esp32s3/esp32s3.efuse" : path;

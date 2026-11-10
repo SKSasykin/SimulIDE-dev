@@ -60,6 +60,7 @@ INCLUDEPATH += $$PWD/src \
     $$PWD/src/gui/memory \
     $$PWD/src/gui/properties \
     $$PWD/src/gui/serial \
+    $$PWD/src/gui/spiffs \
     $$PWD/src/gui/testing \
     $$PWD/src/simulator \
     $$PWD/src/simulator/elements \

@@ -25,6 +25,7 @@ public:
     ~Esp32();
 
     void stamp() override;
+    bool supportsSpiffs() const override { return true; }
 
 protected:
     Pin* addPin( QString id, QString type, QString label, int n, int x, int y, int angle, int length = 8,
