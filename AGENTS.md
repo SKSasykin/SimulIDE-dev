@@ -55,6 +55,7 @@
 - Full tests: `./tests/run-tests.sh`
 - Smoke tests: `./tests/ide/run-smoke-tests.sh` (uses `./tmp/` for HOME)
 - Runtime harness: `./tests/qemubt-runtime/run.sh` (builds in `./tmp/qemubt-runtime/`)
+- Do not modify or delete existing tests without explicit user confirmation. Tests for new functionality may be added at the agent's discretion, but existing tests must not be edited or removed.
 - All test working directories must be under `./tmp/`
 - Test firmware/examples/circuits: source in `./tests/fixtures/`, builds in `./tmp/`, cleaned after
 - **Never leave build artifacts in `./tmp/` after test completion**
