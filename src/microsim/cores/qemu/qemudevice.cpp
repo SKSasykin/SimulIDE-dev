@@ -578,17 +578,16 @@ void QemuDevice::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu
     //QObject::connect( openRamTab, &QAction::triggered, [=](){ slotOpenMcuMonitor(); } );
 
     if ( m_usarts.size() ) {
-        QMenu* serMonMenu = menu->addMenu( QIcon( ":/serialterm.png" ), tr( "Open Serial Monitor." ) );
-
         for ( uint i = 0; i < m_usarts.size(); ++i ) {
             const int portNumber = i + 1;
 
-            QAction* act = serMonMenu->addAction( "USART" + QString::number( portNumber ) );
+            QAction* act = menu->addAction( QIcon( ":/serialterm.png" ),
+                                            tr( "Monitor USART " ) + QString::number( portNumber ) );
             QObject::connect( act, &QAction::triggered, [=]() { slotOpenTerm( portNumber ); } );
         }
     }
     if ( supportsSpiffs() ) {
-        QAction* spiffsAction = menu->addAction( QIcon( ":/files.svg" ), tr( "Open SPIFFS..." ) );
+        QAction* spiffsAction = menu->addAction( QIcon( ":/files.svg" ), tr( "SPIFFS..." ) );
         QObject::connect( spiffsAction, &QAction::triggered, [=]() { slotOpenSpiffs(); } );
     }
 
@@ -600,7 +599,7 @@ void QemuDevice::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu
         }
     }
     if ( hasBt ) {
-        QAction* bleChatAction = menu->addAction( QIcon( ":/terminal.svg" ), tr( "Open BLE Chat..." ) );
+        QAction* bleChatAction = menu->addAction( QIcon( ":/terminal.svg" ), tr( "BLE Chat..." ) );
         QObject::connect( bleChatAction, &QAction::triggered, [=]() { slotOpenBleChat(); } );
     }
     menu->addSeparator();

@@ -592,14 +592,17 @@ void Mcu::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) {
     }
     menu->addSeparator();
 
-    QAction* openRamTab = menu->addAction( QIcon( ":/terminal.svg" ), tr( "Open Mcu Monitor." ) );
+    QAction* openRamTab = menu->addAction( QIcon( ":/terminal.svg" ), tr( "Mcu Monitor." ) );
     QObject::connect( openRamTab, &QAction::triggered, [=]() { slotOpenMcuMonitor(); } );
 
     if ( m_eMcu.m_transModules.size() ) {
-        QMenu* serMonMenu = menu->addMenu( QIcon( ":/serialterm.png" ), tr( "Open Monitor." ) );
-
+        int usartNumber = 1;
         for ( uint i = 0; i < m_eMcu.m_transModules.size(); ++i ) {
-            QAction* act = serMonMenu->addAction( m_eMcu.m_transModules.at( i )->moduleName() );
+            if ( !dynamic_cast<McuUsart*>( m_eMcu.m_transModules.at( i ) ) )
+                continue;
+
+            QAction* act = menu->addAction( QIcon( ":/serialterm.png" ),
+                                            tr( "Monitor USART " ) + QString::number( usartNumber++ ) );
             QObject::connect( act, &QAction::triggered, [=]() { slotOpenTerm( i ); } );
         }
     }
