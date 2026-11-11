@@ -150,7 +150,7 @@ void Ssd1306::proccessCommand() {
             m_readBytes = 1;
             break; // Multiplex Ratio
         case 0xAE:
-            reset();
+            m_dispOn = false;
             break; // Display OFF
         case 0xAF:
             m_dispOn = true;

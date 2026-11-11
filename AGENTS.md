@@ -82,7 +82,11 @@
 - **No GATT/ATT in controller** — stays in NimBLE host
 - **No controller-side encryption/SMP** — not implemented
 
-### 7. ESP-IDF Firmware Builds
+### 7. OLED/SSD1306 Behavior
+- SSD1306 command `0xAE` (Display OFF) must only disable display output; it must not call the controller's full `reset()` because that resets orientation and DDRAM addressing state.
+- Keep OLED frame rendering synchronized through `OledController::updateStep()`; do not read live DDRAM from `paint()`.
+
+### 8. ESP-IDF Firmware Builds
 - Pinned Docker images (multi-IDF BLE requirement):
   - v4.4.7: `espressif/idf@sha256:52bc81e7f212b6cc63b31ea57b8270badb3236e44df8567a57e2d1a6c74c5000`
   - v5.5.5: `espressif/idf@sha256:a9231d0697ab8f7517cc072e93b7c83e04907bfbfba80b6440d7dbbf90665cf2`
@@ -92,16 +96,16 @@
 - Build in `./tmp/` or project example dirs, never pollute `resources/data/`
 - Merged binaries via `esptool.py merge_bin --fill-flash-size 2MB`
 
-### 8. Code Style
+### 9. Code Style
 - No comments unless asked
 - C++11 (gnu++11), Qt5
 - Follow existing patterns in `src/microsim/cores/qemu/`
 
-### 9. Documentation
+### 10. Documentation
 - Update `README.md`, `README.ru.md`, `docs/esp-wireless-support.md`, `docs/esp-wireless-support.ru.md` after each phase
 - Update `third_party/qemu-simulide/README.rst` for QEMU-side changes
 
-### 10. Memory (Engram)
+### 11. Memory (Engram)
 - Save observations after significant work: `mem_save`
 - Save session summary at end: `mem_session_summary`
 - Tag observations with `topic_key` for upserts (e.g., `architecture/esp-ble-phaseN`)
