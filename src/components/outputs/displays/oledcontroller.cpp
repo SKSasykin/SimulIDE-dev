@@ -176,15 +176,30 @@ void OledController::startWrite() {
     m_start = 1;
 }
 
+void OledController::I2Cstop() {
+    TwiModule::I2Cstop();
+    m_start = 0;
+    m_Co = 0;
+    m_data = 0;
+    m_readBytes = 0;
+}
+
 void OledController::readByte() {
     TwiModule::readByte();
+
+    if ( m_start == 2 )
+        return;
 
     if ( m_start ) // Read Control byte
     {
         m_start = 0;
         if ( ( m_rxReg & 0b00111111 ) != 0 ) {
             qDebug() << "OledController::readByte Control Byte Error";
-            //return;
+            m_start = 2;
+            m_Co = 0;
+            m_data = 0;
+            m_readBytes = 0;
+            return;
         }
         m_Co = m_rxReg & 0b10000000;
         m_data = m_rxReg & 0b01000000;
