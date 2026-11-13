@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QPlainTextEdit>
 #include <QVector>
 
 #include "spiffsimage.h"
@@ -12,6 +13,27 @@ class QPushButton;
 class QTreeWidget;
 class QTreeWidgetItem;
 class QemuDevice;
+class QKeyEvent;
+
+class SpiffsHexEditor : public QPlainTextEdit {
+public:
+    explicit SpiffsHexEditor( QWidget* parent = nullptr );
+
+    void setHexData( const QByteArray& data );
+    QByteArray hexData() const { return m_data; }
+    void setHexMode( bool enabled ) { m_hexMode = enabled; }
+
+protected:
+    void keyPressEvent( QKeyEvent* event ) override;
+
+private:
+    bool editHexNibble( int line, int column, QChar value );
+    bool editAsciiByte( int line, int column, QChar value );
+    void updateData( int cursorPosition );
+
+    QByteArray m_data;
+    bool m_hexMode = false;
+};
 
 class SpiffsDialog : public QDialog {
     Q_OBJECT
@@ -35,7 +57,7 @@ private:
 
     QemuDevice* m_device;
     QTreeWidget* m_fileTree;
-    QPlainTextEdit* m_viewer;
+    SpiffsHexEditor* m_viewer;
     QLabel* m_status;
     QPushButton* m_refreshButton;
     QPushButton* m_newTextButton;

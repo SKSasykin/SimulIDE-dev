@@ -1,0 +1,99 @@
+{
+  "description": "SPIFFS hex editor keeps byte views synchronized and preserves the selected mode",
+  "checks": [
+    {
+      "name": "hex editor owns a single byte model",
+      "path": "src/gui/spiffs/spiffsdialog.h",
+      "contains": [
+        "class SpiffsHexEditor : public QPlainTextEdit",
+        "QByteArray hexData() const { return m_data; }",
+        "void setHexMode( bool enabled )"
+      ]
+    },
+    {
+      "name": "hex dump renders exactly two digits per byte",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "contains": [
+        "QString( \"%1  \" ).arg( offset, 8, 16, QChar( '0' ) )",
+        "QString( \"%1 \" ).arg( quint8( data.at( offset + i ) ), 2, 16, QChar( '0' ) )",
+        "for ( int i = 0; i < 16; ++i )"
+      ]
+    },
+    {
+      "name": "hex and ASCII edits update the shared byte model",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "bool SpiffsHexEditor::editHexNibble",
+        "m_data[offset + byte] = char( current );",
+        "bool SpiffsHexEditor::editAsciiByte",
+        "m_data[offset] = char( value.toLatin1() );"
+      ],
+      "within_lines": 45
+    },
+    {
+      "name": "hex editor accepts only fixed byte positions",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "contains": [
+        "if ( column >= 10 && column < 59 )",
+        "else if ( column >= 61 && column < 77 )",
+        "if ( changed ) {",
+        "updateData( cursor.position() - column + nextColumn );"
+      ],
+      "not_contains": [
+        "parseHexDump",
+        "m_viewer = new QPlainTextEdit"
+      ]
+    },
+    {
+      "name": "hex key handling rejects malformed insertion",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "if ( !m_hexMode || isReadOnly() )",
+        "if ( event->text().isEmpty() ) return;",
+        "if ( changed ) {",
+        "updateData( cursor.position() - column + nextColumn );"
+      ],
+      "within_lines": 40
+    },
+    {
+      "name": "text and hex modes use the same current bytes",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "m_currentData = m_textMode ? m_viewer->toPlainText().toUtf8() : m_viewer->hexData();",
+        "m_viewer->setHexMode( !text );",
+        "renderCurrent();"
+      ],
+      "within_lines": 18
+    },
+    {
+      "name": "hex view is rendered from the current bytes",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "void SpiffsDialog::renderCurrent()",
+        "m_viewer->setHexData( data );",
+        "if ( m_truncated ) m_viewer->appendPlainText"
+      ],
+      "within_lines": 100
+    },
+    {
+      "name": "saving preserves the selected file and view mode",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "const QString savedPath = m_currentPath;",
+        "const bool savedTextMode = m_textMode;",
+        "refresh();",
+        "if ( m_textMode != savedTextMode ) setTextMode( savedTextMode );"
+      ],
+      "within_lines": 45
+    },
+    {
+      "name": "hex save uses the editor byte model",
+      "path": "src/gui/spiffs/spiffsdialog.cpp",
+      "ordered": [
+        "if ( m_textMode ) data = m_viewer->toPlainText().toUtf8();",
+        "else data = m_viewer->hexData();"
+      ],
+      "within_lines": 3
+    }
+  ]
+}

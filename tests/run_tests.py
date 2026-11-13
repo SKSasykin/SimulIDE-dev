@@ -19,6 +19,7 @@ COMPONENT_CONTRACTS = (
     "components/heater/test.json",
     "components/max31855/test.json",
 )
+SPIFFS_CONTRACTS = ("spiffs/test.json",)
 SPI_SOURCE = "src/microsim/cores/qemu/esp32/esp32spi.cpp"
 BT_SOURCE = "src/microsim/cores/qemu/qemubt.cpp"
 BT_HEADER = "src/microsim/cores/qemu/qemubt.h"
@@ -1313,6 +1314,15 @@ def main():
                 else:
                     failed += 1
         for relative in COMPONENT_CONTRACTS:
+            manifest = (TESTS_DIR / relative).resolve()
+            if not manifest.is_file():
+                print(f"FAIL {relative}: missing test.json")
+                failed += 1
+            elif run_contract(manifest):
+                passed += 1
+            else:
+                failed += 1
+        for relative in SPIFFS_CONTRACTS:
             manifest = (TESTS_DIR / relative).resolve()
             if not manifest.is_file():
                 print(f"FAIL {relative}: missing test.json")

@@ -11,6 +11,7 @@
 #include <QHeaderView>
 #include <QIcon>
 #include <QInputDialog>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QLabel>
 #include <QPlainTextEdit>
@@ -78,40 +79,107 @@ QString hexDump( const QByteArray& data ) {
     return out;
 }
 
+} // namespace
+
+SpiffsHexEditor::SpiffsHexEditor( QWidget* parent )
+    : QPlainTextEdit( parent ) {}
+
+void SpiffsHexEditor::setHexData( const QByteArray& data ) {
+    m_data = data;
+    setPlainText( hexDump( m_data ) );
+}
+
+void SpiffsHexEditor::updateData( int cursorPosition ) {
+    setPlainText( hexDump( m_data ) );
+    QTextCursor cursor = textCursor();
+    cursor.setPosition( qBound( 0, cursorPosition, document()->characterCount() - 1 ) );
+    setTextCursor( cursor );
+}
+
+bool SpiffsHexEditor::editHexNibble( int line, int column, QChar value ) {
+    const int offset = line * 16;
+    if ( offset >= m_data.size() ) return false;
+
+    int byte = -1;
+    int nibble = 0;
+    for ( int i = 0; i < 16; ++i ) {
+        int start = 10 + i * 3 + ( i >= 8 ? 1 : 0 );
+        if ( column == start || column == start + 1 ) {
+            byte = i;
+            nibble = column == start ? 1 : 0;
+            break;
+        }
+    }
+    if ( byte < 0 || offset + byte >= m_data.size() ) return false;
+
+    int digit = value.digitValue();
+    if ( digit < 0 || digit > 15 ) {
+        value = value.toUpper();
+        if ( value < QChar( 'A' ) || value > QChar( 'F' ) ) return false;
+        digit = value.unicode() - QChar( 'A' ).unicode() + 10;
+    }
+    uchar current = uchar( m_data.at( offset + byte ) );
+    current = nibble ? uchar( ( current & 0x0f ) | ( digit << 4 ) )
+                     : uchar( ( current & 0xf0 ) | digit );
+    m_data[offset + byte] = char( current );
+    return true;
+}
+
+bool SpiffsHexEditor::editAsciiByte( int line, int column, QChar value ) {
+    const int byte = column - 61;
+    const int offset = line * 16 + byte;
+    if ( byte < 0 || byte >= 16 || offset >= m_data.size() || !value.isPrint() ) return false;
+    m_data[offset] = char( value.toLatin1() );
+    return true;
+}
+
+void SpiffsHexEditor::keyPressEvent( QKeyEvent* event ) {
+    if ( !m_hexMode || isReadOnly() ) {
+        QPlainTextEdit::keyPressEvent( event );
+        return;
+    }
+
+    if ( event->matches( QKeySequence::Copy ) || event->matches( QKeySequence::SelectAll )
+         || event->key() == Qt::Key_Left || event->key() == Qt::Key_Right
+         || event->key() == Qt::Key_Up || event->key() == Qt::Key_Down
+         || event->key() == Qt::Key_Home || event->key() == Qt::Key_End
+         || event->key() == Qt::Key_PageUp || event->key() == Qt::Key_PageDown ) {
+        QPlainTextEdit::keyPressEvent( event );
+        return;
+    }
+
+    if ( event->text().isEmpty() ) return;
+    QTextCursor cursor = textCursor();
+    const int line = cursor.blockNumber();
+    const int column = cursor.positionInBlock();
+    const QChar value = event->text().at( 0 );
+    bool changed = false;
+    if ( column >= 10 && column < 59 )
+        changed = editHexNibble( line, column, value );
+    else if ( column >= 61 && column < 77 )
+        changed = editAsciiByte( line, column, value );
+    if ( changed ) {
+        int nextColumn = column + 1;
+        if ( column >= 10 && column < 59 && ( column == 11 || column == 14 || column == 17
+                                               || column == 20 || column == 23 || column == 26
+                                               || column == 29 || column == 32 || column == 36
+                                               || column == 39 || column == 42 || column == 45
+                                               || column == 48 || column == 51 || column == 54
+                                               || column == 57 ) ) {
+            nextColumn = column + ( column == 32 ? 3 : 2 );
+        }
+        updateData( cursor.position() - column + nextColumn );
+    }
+}
+
+namespace {
+
 QString normalizedPath( QString path ) {
     path = path.trimmed();
     if ( !path.startsWith( '/' ) ) path.prepend( '/' );
     while ( path.contains( "//" ) ) path.replace( "//", "/" );
     if ( path.endsWith( '/' ) ) path.chop( 1 );
     return path;
-}
-
-bool parseHexDump( const QString& text, QByteArray* data, QString* error ) {
-    QByteArray result;
-    const QStringList lines = text.split( '\n' );
-    for ( const QString& line : lines ) {
-        int separator = line.indexOf( '|' );
-        QString hex = separator >= 0 ? line.left( separator ) : line;
-        if ( hex.trimmed().isEmpty() ) continue;
-        int firstSpace = hex.indexOf( ' ' );
-        if ( firstSpace < 0 ) {
-            if ( error ) *error = QObject::tr( "Invalid hex dump line" );
-            return false;
-        }
-        QStringList bytes = hex.mid( firstSpace ).split( ' ', Qt::SkipEmptyParts );
-        if ( bytes.size() > 16 ) bytes = bytes.mid( 0, 16 );
-        for ( const QString& byte : bytes ) {
-            bool ok = false;
-            uint value = byte.toUInt( &ok, 16 );
-            if ( !ok || byte.size() != 2 || value > 0xff ) {
-                if ( error ) *error = QObject::tr( "Invalid byte in hex dump: %1" ).arg( byte );
-                return false;
-            }
-            result.append( char( value ) );
-        }
-    }
-    *data = result;
-    return true;
 }
 
 } // namespace
@@ -176,7 +244,7 @@ SpiffsDialog::SpiffsDialog( QWidget* parent, QemuDevice* device )
     m_fileTree->header()->setSectionResizeMode( 0, QHeaderView::Stretch );
     m_fileTree->header()->setSectionResizeMode( 1, QHeaderView::ResizeToContents );
 
-    m_viewer = new QPlainTextEdit( this );
+    m_viewer = new SpiffsHexEditor( this );
     m_viewer->setReadOnly( false );
     m_viewer->setLineWrapMode( QPlainTextEdit::NoWrap );
     m_viewer->setFont( QFontDatabase::systemFont( QFontDatabase::FixedFont ) );
@@ -306,6 +374,7 @@ void SpiffsDialog::selectItem( QTreeWidgetItem* item ) {
         m_hexButton->setChecked( !text );
     }
     m_textMode = text;
+    m_viewer->setHexMode( !text );
     bool writable = !writablePath().isEmpty();
     m_viewer->setReadOnly( !writable );
     m_saveButton->setEnabled( writable );
@@ -317,7 +386,10 @@ void SpiffsDialog::selectItem( QTreeWidgetItem* item ) {
 void SpiffsDialog::setTextMode( bool text ) {
     if ( m_textMode == text )
         return;
+    if ( !m_truncated )
+        m_currentData = m_textMode ? m_viewer->toPlainText().toUtf8() : m_viewer->hexData();
     m_textMode = text;
+    m_viewer->setHexMode( !text );
     QSignalBlocker textBlocker( m_textButton );
     QSignalBlocker hexBlocker( m_hexButton );
     m_textButton->setChecked( text );
@@ -329,6 +401,8 @@ void SpiffsDialog::setTextMode( bool text ) {
 
 void SpiffsDialog::saveCurrent() {
     if ( m_currentPath.isEmpty() ) return;
+    const QString savedPath = m_currentPath;
+    const bool savedTextMode = m_textMode;
     QString path = writablePath();
     if ( path.isEmpty() || m_truncated ) {
         QMessageBox::warning( this, tr( "SPIFFS" ), tr( "The flash image is not writable" ) );
@@ -337,15 +411,20 @@ void SpiffsDialog::saveCurrent() {
     QByteArray data;
     QString error;
     if ( m_textMode ) data = m_viewer->toPlainText().toUtf8();
-    else if ( !parseHexDump( m_viewer->toPlainText(), &data, &error ) ) {
-        QMessageBox::warning( this, tr( "SPIFFS" ), error );
-        return;
-    }
+    else data = m_viewer->hexData();
     if ( !SpiffsImage::writeFile( path, m_currentPath, data, &error ) ) {
         QMessageBox::warning( this, tr( "SPIFFS" ), error );
         return;
     }
     refresh();
+    for ( int i = 0; i < m_fileTree->topLevelItemCount(); ++i ) {
+        QTreeWidgetItem* item = m_fileTree->topLevelItem( i );
+        if ( item->text( 0 ) == savedPath ) {
+            m_fileTree->setCurrentItem( item );
+            break;
+        }
+    }
+    if ( m_textMode != savedTextMode ) setTextMode( savedTextMode );
 }
 
 void SpiffsDialog::createFile( bool text ) {
@@ -460,10 +539,8 @@ void SpiffsDialog::renderCurrent() {
             data.truncate( limit );
             m_truncated = true;
         }
-        QString text = hexDump( data );
-        if ( m_truncated )
-            text += tr( "\n... truncated ...\n" );
-        m_viewer->setPlainText( text );
+        m_viewer->setHexData( data );
+        if ( m_truncated ) m_viewer->appendPlainText( tr( "... truncated ..." ) );
     }
     m_saveButton->setEnabled( !m_currentPath.isEmpty() && !m_truncated && !writablePath().isEmpty() );
     m_viewer->moveCursor( QTextCursor::Start );
