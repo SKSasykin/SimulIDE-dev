@@ -26,6 +26,7 @@ OledController::OledController( QString type, QString id ) : Component( type, id
     m_rotate = false;
     m_displayDirty = true;
     m_pendingWriteCount = 0;
+    m_framePending = false;
     m_lastBusUpdate = 0;
 
     m_pin.resize( 2 );
@@ -61,11 +62,12 @@ void OledController::updateStep() {
     uint64_t circTime = Simulator::self()->circTime();
     bool frameComplete = m_pendingWriteCount == m_width * m_rows;
     bool busSettled = !m_lastBusUpdate || circTime - m_lastBusUpdate >= DISPLAY_SETTLE_TIME;
-    if ( m_displayDirty && ( frameComplete || busSettled ) ) {
+    if ( m_displayDirty && ( frameComplete || ( !m_framePending && busSettled ) ) ) {
         renderDisplay();
         for ( std::vector<bool>& column : m_pendingWrites )
             std::fill( column.begin(), column.end(), false );
         m_pendingWriteCount = 0;
+        m_framePending = false;
     }
     update();
     if ( !m_scrollSingle && !m_scroll )
@@ -166,6 +168,7 @@ void OledController::reset() {
 
     m_addrMode = PAGE_ADDR_MODE;
     m_displayDirty = true;
+    m_framePending = false;
     for ( std::vector<bool>& column : m_pendingWrites )
         std::fill( column.begin(), column.end(), false );
     m_pendingWriteCount = 0;
@@ -193,8 +196,8 @@ void OledController::readByte() {
     if ( m_start ) // Read Control byte
     {
         m_start = 0;
-        if ( ( m_rxReg & 0b00111111 ) != 0 ) {
-            qDebug() << "OledController::readByte Control Byte Error";
+        if ( m_rxReg & 0b00111111 ) {
+            startDisplayFrame();
             m_start = 2;
             m_Co = 0;
             m_data = 0;
@@ -251,6 +254,13 @@ void OledController::clearDDRAM() {
         for ( int row = 0; row < m_rows; row++ )
             m_DDRAM[col][row] = 0;
     m_displayDirty = true;
+}
+
+void OledController::startDisplayFrame() {
+    for ( std::vector<bool>& column : m_pendingWrites )
+        std::fill( column.begin(), column.end(), false );
+    m_pendingWriteCount = 0;
+    m_framePending = true;
 }
 
 void OledController::setColorStr( QString color ) {

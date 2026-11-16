@@ -55,6 +55,7 @@ protected:
     virtual void writeData();
     void reset();
     void clearDDRAM();
+    void startDisplayFrame();
     void renderDisplay();
     void setSize( int w, int h );
     void updateSize();
@@ -65,6 +66,7 @@ protected:
     bool m_displayDirty;
     std::vector<std::vector<bool>> m_pendingWrites;
     uint16_t m_pendingWriteCount;
+    bool m_framePending;
     uint64_t m_lastBusUpdate;
 
     IoPin* m_pinSda;

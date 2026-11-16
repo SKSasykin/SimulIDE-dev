@@ -68,6 +68,9 @@ void Ssd1306::proccessCommand() {
     m_readIndex = 0;
     m_readBytes = 0;
 
+    if ( m_rxReg == 0xB0 )
+        startDisplayFrame();
+
     if ( m_rxReg < 0x20 ) {
         if ( m_addrMode != PAGE_ADDR_MODE )
             return;
