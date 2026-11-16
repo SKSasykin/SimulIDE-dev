@@ -19,6 +19,7 @@ class SubPackage;
 class Simulator;
 class SubCircuit;
 class Node;
+class CanvasGroup;
 
 class Circuit : public QGraphicsScene {
     friend class SubCircuit;
@@ -61,6 +62,10 @@ public:
     void compRemoved( bool removed ) { m_compRemoved = removed; }
     void removeNode( Node* node );
     void removeConnector( Connector* conn );
+    bool canGroupSelection();
+    void groupSelectedItems();
+    void ungroup( CanvasGroup* group );
+    void removeFromGroup( Component* comp );
     void clearCircuit();
 
     //--- Undo/Redo ----------------------------------

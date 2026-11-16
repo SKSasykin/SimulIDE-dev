@@ -364,6 +364,12 @@ void Connector::move( QPointF delta ) {
     m_endPin->isMoved();
 }
 
+void Connector::translate( QPointF delta ) {
+    for ( ConnectorLine* line : m_conLineList )
+        line->translate( delta );
+    refreshPointList();
+}
+
 void Connector::isMoved() {
     if ( m_startPin )
         m_startPin->isMoved();

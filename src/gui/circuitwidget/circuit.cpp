@@ -14,6 +14,7 @@
 #include "circuitwidget.h"
 #include "componentlist.h"
 #include "comproperty.h"
+#include "canvasgroup.h"
 #include "connectorline.h"
 #include "currentwidget.h"
 #include "e-node.h"
@@ -87,6 +88,11 @@ Circuit::~Circuit() {
     // Plain deletes are used (no connector bookkeeping) since the whole circuit is
     // being torn down: deleting a component/connector removes it from the scene and
     // its Pin/Connector destructors only touch the still-valid maps above.
+    for ( Component* comp : m_compList ) {
+        CanvasGroup* group = dynamic_cast<CanvasGroup*>( comp );
+        if ( group )
+            group->detachMembers();
+    }
     while ( !m_connList.isEmpty() ) {
         Connector* conn = m_connList.takeFirst();
         conn->remLines();
@@ -459,6 +465,12 @@ void Circuit::loadStrDoc( QString& doc ) {
         m_compList += compList;
     }
 
+    for ( Component* comp : compList ) {
+        CanvasGroup* group = dynamic_cast<CanvasGroup*>( comp );
+        if ( group )
+            group->resolveMembers();
+    }
+
     m_nodeList += nodeList;
     m_connList += connList;
 
@@ -598,11 +610,64 @@ Component* Circuit::createComponent( QString type, QString name, QPoint pos, boo
 }
 
 Component* Circuit::createItem( QString type, QString id, bool map ) {
-    Component* comp = ItemLibrary::self()->createItem( type, id );
+    Component* comp = type == "CanvasGroup" ? new CanvasGroup( type, id ) : ItemLibrary::self()->createItem( type, id );
     if ( comp && map )
         m_compMap[id] = comp;
 
     return comp;
+}
+
+bool Circuit::canGroupSelection() {
+    int count = 0;
+    for ( QGraphicsItem* item : selectedItems() ) {
+        if ( item->type() != QGraphicsItem::UserType + 1 )
+            continue;
+        Component* comp = qgraphicsitem_cast<Component*>( item );
+        if ( !comp || comp->parentItem() || comp->canvasGroup() || comp->itemType() == "CanvasGroup" )
+            continue;
+        count++;
+    }
+    return count > 1;
+}
+
+void Circuit::groupSelectedItems() {
+    if ( !canGroupSelection() )
+        return;
+
+    QList<Component*> members;
+    for ( QGraphicsItem* item : selectedItems() ) {
+        if ( item->type() != QGraphicsItem::UserType + 1 )
+            continue;
+        Component* comp = qgraphicsitem_cast<Component*>( item );
+        if ( comp && !comp->parentItem() && !comp->canvasGroup() && comp->itemType() != "CanvasGroup" )
+            members.append( comp );
+    }
+
+    beginUndoStep();
+    CanvasGroup* group = new CanvasGroup( "CanvasGroup", "CanvasGroup-" + newSceneId() );
+    m_compMap[group->getUid()] = group;
+    group->setMembers( members );
+    addComponent( group );
+    clearSelection();
+    group->setSelected( true );
+    endUndoStep();
+}
+
+void Circuit::ungroup( CanvasGroup* group ) {
+    if ( !group || !m_compList.contains( group ) )
+        return;
+    beginUndoStep();
+    group->detachMembers();
+    removeComp( group );
+    endUndoStep();
+}
+
+void Circuit::removeFromGroup( Component* comp ) {
+    if ( !comp || !comp->canvasGroup() )
+        return;
+    CanvasGroup* group = dynamic_cast<CanvasGroup*>( comp->canvasGroup() );
+    if ( group )
+        group->removeMember( comp );
 }
 
 void Circuit::removeItems() // Remove Selected items
@@ -951,7 +1016,21 @@ void Circuit::copy( QPointF eventpoint ) {
         if ( item->type() == QGraphicsItem::UserType + 1 ) // Component
         {
             Component* comp = qgraphicsitem_cast<Component*>( item );
-            if ( comp && !comp->isHidden() && !comp->parentItem() )
+            CanvasGroup* group = dynamic_cast<CanvasGroup*>( comp );
+            if ( group ) {
+                for ( Component* member : group->members() )
+                    if ( !complist.contains( member ) )
+                        complist.append( member );
+                if ( !complist.contains( group ) )
+                    complist.append( group );
+
+                for ( Connector* connector : m_connList ) {
+                    Component* start = connector->startPin() ? connector->startPin()->component() : nullptr;
+                    Component* end = connector->endPin() ? connector->endPin()->component() : nullptr;
+                    if ( group->hasMember( start ) && group->hasMember( end ) && !conlist.contains( connector ) )
+                        conlist.append( connector );
+                }
+            } else if ( comp && !comp->isHidden() && !comp->parentItem() && !complist.contains( comp ) )
                 complist.append( comp );
         } else if ( item->type() == QGraphicsItem::UserType + 2 ) // ConnectorLine
         {

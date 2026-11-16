@@ -37,10 +37,10 @@ public:
     int type() const override { return Type; }
 
     QPointF position() { return pos(); }
-    void setPosition( QPointF pos ) { setPos( pos ); }
+    virtual void setPosition( QPointF pos );
 
     double getAngle() { return rotation(); }
-    virtual void setAngle( double angle ) { setRotation( angle ); }
+    virtual void setAngle( double angle );
 
     QString idLabel();
     virtual void setIdLabel( QString id );
@@ -76,6 +76,9 @@ public:
     void setShowProp( QString prop );
 
     bool isGraphical() { return m_graphical; }
+
+    Component* canvasGroup() { return m_canvasGroup; }
+    void setCanvasGroup( Component* group );
 
     QPointF boardPos() { return m_boardPos; }
     void setBoardPos( QPointF pos ) { m_boardPos = pos; }
@@ -130,14 +133,8 @@ public:
 
     virtual void pinMessage( int ) { ; }
 
-    virtual void move( QPointF delta ) {
-        setPos( pos() + delta );
-        moveSignal();
-    } //emit moved(); }
-    void moveTo( QPointF pos ) {
-        setPos( pos );
-        moveSignal();
-    } //emit moved(); }
+    virtual void move( QPointF delta );
+    void moveTo( QPointF pos );
 
     virtual void moveSignal();
 
@@ -204,6 +201,8 @@ protected:
     bool m_moveFree;
     bool m_ansiSymbol;
 
+    void updateCanvasGroup();
+
     QPointF m_boardPos;
     QPointF m_circPos;
     double m_boardRot;
@@ -223,6 +222,7 @@ protected:
     static int m_error;
 
     Linker* m_linkedTo;
+    Component* m_canvasGroup;
 
     QString m_background; // BackGround Image path
     QPixmap* m_backPixmap; // Background Pixmap

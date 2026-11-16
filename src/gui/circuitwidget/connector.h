@@ -65,6 +65,7 @@ public:
     bool isBus() { return m_isBus; }
 
     void move( QPointF delta );
+    void translate( QPointF delta );
     void isMoved();
 
     void remove();

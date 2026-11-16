@@ -141,6 +141,15 @@ void ConnectorLine::move( QPointF delta ) {
     m_pConnector->refreshPointList();
 }
 
+void ConnectorLine::translate( QPointF delta ) {
+    prepareGeometryChange();
+    m_p1X += delta.x();
+    m_p1Y += delta.y();
+    m_p2X += delta.x();
+    m_p2Y += delta.y();
+    updatePos();
+}
+
 void ConnectorLine::moveLine( QPoint delta ) {
     prepareGeometryChange();
 

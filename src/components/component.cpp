@@ -8,6 +8,7 @@
 
 #include "circuit.h"
 #include "circuitwidget.h"
+#include "canvasgroup.h"
 #include "component.h"
 #include "connector.h"
 #include "connectorline.h"
@@ -48,6 +49,7 @@ Component::Component( QString type, QString id ) : CompBase( type, id ), QGraphi
     m_graphical = false;
     m_isLinker = false;
     m_linkedTo = nullptr;
+    m_canvasGroup = nullptr;
     m_background = "";
     m_showProperty = "";
     m_linkNumber = -1;
@@ -159,6 +161,8 @@ void Component::setup() {
 }
 
 QVariant Component::itemChange( GraphicsItemChange change, const QVariant& value ) {
+    if ( m_canvasGroup && change == QGraphicsItem::ItemSelectedChange && value.toBool() )
+        m_canvasGroup->setSelected( false );
     if ( m_isLinker && change == QGraphicsItem::ItemSelectedChange && value == false ) // Hide linked Components
     {
         Linker* linker = dynamic_cast<Linker*>( this );
@@ -345,8 +349,10 @@ void Component::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu 
     QAction* removeAction = menu->addAction( QIcon( ":/remove.svg" ), tr( "Remove" ) + "\tDel" );
     QObject::connect( removeAction, &QAction::triggered, [=]() { slotRemove(); } );
 
-    /*QAction* groupAction = menu->addAction( QIcon( ":/group.png"),tr("Group") );
-    QObject::connect( groupAction, &QAction::triggered, [=](){ slotGroup())(); } );*/
+    if ( Circuit::self()->canGroupSelection() ) {
+        QAction* groupAction = menu->addAction( QIcon( ":/link.png" ), tr( "Group selected" ) );
+        QObject::connect( groupAction, &QAction::triggered, [=]() { slotGroup(); } );
+    }
 
     QAction* propertiesAction = menu->addAction( QIcon( ":/properties.svg" ), tr( "Properties" ) );
     QObject::connect( propertiesAction, &QAction::triggered, [=]() { slotProperties(); } );
@@ -394,13 +400,13 @@ void Component::slotRemove() {
 }
 
 void Component::slotGroup() {
-    /*if( !m_group )
-    {
-        m_group = Circuit::self()->createItemGroup(Circuit::self()->selectedItems());
-    }*/
+    Circuit::self()->groupSelectedItems();
 }
 
 void Component::remove() {
+    if ( m_canvasGroup )
+        Circuit::self()->removeFromGroup( this );
+
     for ( uint i = 0; i < m_pin.size(); i++ )
         if ( m_pin[i] )
             m_pin[i]->removeConnector();
@@ -409,6 +415,38 @@ void Component::remove() {
         m_linkedTo->removeLinked( this );
 
     Circuit::self()->compRemoved( true );
+}
+
+void Component::setCanvasGroup( Component* group ) {
+    m_canvasGroup = group;
+}
+
+void Component::setPosition( QPointF pos ) {
+    setPos( pos );
+    updateCanvasGroup();
+}
+
+void Component::setAngle( double angle ) {
+    setRotation( angle );
+    updateCanvasGroup();
+}
+
+void Component::move( QPointF delta ) {
+    setPos( pos() + delta );
+    moveSignal();
+    updateCanvasGroup();
+}
+
+void Component::moveTo( QPointF pos ) {
+    setPos( pos );
+    moveSignal();
+    updateCanvasGroup();
+}
+
+void Component::updateCanvasGroup() {
+    CanvasGroup* group = dynamic_cast<CanvasGroup*>( m_canvasGroup );
+    if ( group )
+        group->refreshFrame();
 }
 
 void Component::deletePin( Pin* pin ) {
@@ -495,6 +533,7 @@ void Component::setflip() {
 
     if ( !m_hidden )
         moveSignal(); // Used by sockets
+    updateCanvasGroup();
 }
 
 void Component::rotateCW() {
@@ -513,6 +552,7 @@ void Component::rotateAngle( double a ) {
     Component::setRotation( rotation() + a * m_Hflip * m_Vflip );
     if ( !m_hidden )
         moveSignal();
+    updateCanvasGroup();
 }
 
 QString Component::findIdLabel() /// FIXME: move to Component??

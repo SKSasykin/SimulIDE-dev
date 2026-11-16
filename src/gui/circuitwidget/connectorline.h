@@ -49,6 +49,7 @@ public:
     bool isDiagonal();
 
     void move( QPointF delta );
+    void translate( QPointF delta );
     void moveLine( QPoint delta );
     void moveSimple( QPointF delta );
 
