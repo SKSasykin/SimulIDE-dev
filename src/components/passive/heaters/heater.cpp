@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include <QCheckBox>
+#include <QContextMenuEvent>
 #include <QDoubleSpinBox>
 #include <QFontMetrics>
 #include <QGraphicsSceneMouseEvent>
@@ -44,15 +45,23 @@ double boundedPositive( double value, double minimum ) {
 HeaterPlot::HeaterPlot( QWidget* parent ) : QWidget( parent ) {
     m_windowSeconds = 60;
     m_viewEnd = 0;
+    m_showBodyTemp = true;
+    m_showSensorTemp = true;
+    m_showPower1 = true;
+    m_showPower2 = true;
     setMinimumSize( 620, 340 );
     setMouseTracking( true );
+    setContextMenuPolicy( Qt::DefaultContextMenu );
 }
 
 void HeaterPlot::setData( const QVector<double>& time, const QVector<double>& bodyTemp,
-                          const QVector<double>& sensorTemp ) {
+                           const QVector<double>& sensorTemp, const QVector<double>& power1,
+                           const QVector<double>& power2 ) {
     m_time = time;
     m_bodyTemp = bodyTemp;
     m_sensorTemp = sensorTemp;
+    m_power1 = power1;
+    m_power2 = power2;
     update();
 }
 
@@ -66,12 +75,32 @@ void HeaterPlot::setViewEnd( double seconds ) {
     update();
 }
 
+void HeaterPlot::contextMenuEvent( QContextMenuEvent* event ) {
+    QMenu menu( this );
+    auto addCurveAction = [&]( const QString& text, bool& visible ) {
+        QAction* action = menu.addAction( text );
+        action->setCheckable( true );
+        action->setChecked( visible );
+        bool* visibleState = &visible;
+        QObject::connect( action, &QAction::toggled, this, [=]( bool checked ) {
+            *visibleState = checked;
+            update();
+        } );
+    };
+    addCurveAction( tr( "Body temperature" ), m_showBodyTemp );
+    addCurveAction( tr( "Thermocouple temperature" ), m_showSensorTemp );
+    menu.addSeparator();
+    addCurveAction( tr( "Heater 1 power" ), m_showPower1 );
+    addCurveAction( tr( "Heater 2 power" ), m_showPower2 );
+    menu.exec( event->globalPos() );
+}
+
 void HeaterPlot::paintEvent( QPaintEvent* ) {
     QPainter painter( this );
     painter.setRenderHint( QPainter::Antialiasing );
     painter.fillRect( rect(), QColor( 12, 17, 24 ) );
 
-    const QRectF graph( 58, 24, width() - 78, height() - 72 );
+    const QRectF graph( 58, 24, width() - 132, height() - 72 );
     painter.setPen( QPen( QColor( 58, 68, 80 ), 1 ) );
     for ( int i = 0; i <= 10; ++i ) {
         const double x = graph.left() + graph.width() * i / 10.0;
@@ -92,6 +121,7 @@ void HeaterPlot::paintEvent( QPaintEvent* ) {
     const double start = end - m_windowSeconds;
     double minTemp = 1e12;
     double maxTemp = -1e12;
+    double maxPower = 0;
     int first = 0;
     while ( first + 1 < m_time.size() && m_time.at( first + 1 ) < start )
         ++first;
@@ -99,31 +129,44 @@ void HeaterPlot::paintEvent( QPaintEvent* ) {
     int last = first;
     for ( int i = first; i < m_time.size() && m_time.at( i ) <= end; ++i ) {
         last = i;
-        minTemp = std::min( minTemp, std::min( m_bodyTemp.at( i ), m_sensorTemp.at( i ) ) );
-        maxTemp = std::max( maxTemp, std::max( m_bodyTemp.at( i ), m_sensorTemp.at( i ) ) );
+        if ( m_showBodyTemp ) {
+            minTemp = std::min( minTemp, m_bodyTemp.at( i ) );
+            maxTemp = std::max( maxTemp, m_bodyTemp.at( i ) );
+        }
+        if ( m_showSensorTemp ) {
+            minTemp = std::min( minTemp, m_sensorTemp.at( i ) );
+            maxTemp = std::max( maxTemp, m_sensorTemp.at( i ) );
+        }
+        if ( m_showPower1 )
+            maxPower = std::max( maxPower, m_power1.at( i ) );
+        if ( m_showPower2 )
+            maxPower = std::max( maxPower, m_power2.at( i ) );
     }
-    if ( minTemp > maxTemp ) {
+    const bool showTemperature = m_showBodyTemp || m_showSensorTemp;
+    const bool showPower = m_showPower1 || m_showPower2;
+    if ( showTemperature && minTemp > maxTemp ) {
         minTemp = m_sensorTemp.last() - 1;
         maxTemp = m_sensorTemp.last() + 1;
     }
     double range = maxTemp - minTemp;
-    if ( range < 2 ) {
+    if ( showTemperature && range < 2 ) {
         const double middle = ( maxTemp + minTemp ) / 2;
         minTemp = middle - 1;
         maxTemp = middle + 1;
         range = 2;
-    } else {
+    } else if ( showTemperature ) {
         minTemp -= range * 0.08;
         maxTemp += range * 0.08;
         range = maxTemp - minTemp;
     }
+    maxPower = maxPower > 0 ? maxPower * 1.08 : 1;
 
-    auto makePath = [&]( const QVector<double>& values ) {
+    auto makePath = [&]( const QVector<double>& values, double minimum, double valueRange ) {
         QPainterPath path;
         bool started = false;
         for ( int i = first; i <= last; ++i ) {
             const double x = graph.left() + ( m_time.at( i ) - start ) * graph.width() / m_windowSeconds;
-            const double y = graph.bottom() - ( values.at( i ) - minTemp ) * graph.height() / range;
+            const double y = graph.bottom() - ( values.at( i ) - minimum ) * graph.height() / valueRange;
             if ( !started ) {
                 path.moveTo( x, y );
                 started = true;
@@ -134,30 +177,57 @@ void HeaterPlot::paintEvent( QPaintEvent* ) {
     };
 
     painter.setClipRect( graph );
-    painter.setPen( QPen( QColor( 255, 132, 48 ), 2 ) );
-    painter.drawPath( makePath( m_bodyTemp ) );
-    painter.setPen( QPen( QColor( 56, 214, 225 ), 2 ) );
-    painter.drawPath( makePath( m_sensorTemp ) );
+    if ( m_showBodyTemp ) {
+        painter.setPen( QPen( QColor( 255, 132, 48 ), 2 ) );
+        painter.drawPath( makePath( m_bodyTemp, minTemp, range ) );
+    }
+    if ( m_showSensorTemp ) {
+        painter.setPen( QPen( QColor( 56, 214, 225 ), 2 ) );
+        painter.drawPath( makePath( m_sensorTemp, minTemp, range ) );
+    }
+    if ( m_showPower1 ) {
+        painter.setPen( QPen( QColor( 255, 215, 64 ), 2 ) );
+        painter.drawPath( makePath( m_power1, 0, maxPower ) );
+    }
+    if ( m_showPower2 ) {
+        painter.setPen( QPen( QColor( 174, 112, 255 ), 2 ) );
+        painter.drawPath( makePath( m_power2, 0, maxPower ) );
+    }
     painter.setClipping( false );
 
     painter.setPen( QColor( 210, 218, 226 ) );
-    painter.drawText( QRectF( 4, graph.top() - 8, 50, 20 ), Qt::AlignRight | Qt::AlignVCenter,
-                      QString::number( maxTemp, 'f', 1 ) + " C" );
-    painter.drawText( QRectF( 4, graph.bottom() - 10, 50, 20 ), Qt::AlignRight | Qt::AlignVCenter,
-                      QString::number( minTemp, 'f', 1 ) + " C" );
+    if ( showTemperature ) {
+        painter.drawText( QRectF( 4, graph.top() - 8, 50, 20 ), Qt::AlignRight | Qt::AlignVCenter,
+                          QString::number( maxTemp, 'f', 1 ) + " C" );
+        painter.drawText( QRectF( 4, graph.bottom() - 10, 50, 20 ), Qt::AlignRight | Qt::AlignVCenter,
+                          QString::number( minTemp, 'f', 1 ) + " C" );
+    }
+    if ( showPower ) {
+        painter.drawText( QRectF( graph.right() + 4, graph.top() - 8, 70, 20 ),
+                          Qt::AlignLeft | Qt::AlignVCenter,
+                          QString::number( maxPower, 'f', 1 ) + " W" );
+        painter.drawText( QRectF( graph.right() + 4, graph.bottom() - 10, 70, 20 ),
+                          Qt::AlignLeft | Qt::AlignVCenter, "0 W" );
+    }
     painter.drawText( QRectF( graph.left(), graph.bottom() + 8, 100, 20 ), Qt::AlignLeft,
                       QString::number( start, 'f', 2 ) + " s" );
     painter.drawText( QRectF( graph.right() - 100, graph.bottom() + 8, 100, 20 ), Qt::AlignRight,
                       QString::number( end, 'f', 2 ) + " s" );
 
-    painter.setPen( QPen( QColor( 255, 132, 48 ), 2 ) );
-    painter.drawLine( graph.left(), 12, graph.left() + 18, 12 );
-    painter.setPen( QColor( 230, 230, 230 ) );
-    painter.drawText( graph.left() + 24, 17, tr( "Body" ) );
-    painter.setPen( QPen( QColor( 56, 214, 225 ), 2 ) );
-    painter.drawLine( graph.left() + 90, 12, graph.left() + 108, 12 );
-    painter.setPen( QColor( 230, 230, 230 ) );
-    painter.drawText( graph.left() + 114, 17, tr( "Thermocouple" ) );
+    double legendX = graph.left();
+    auto drawLegend = [&]( const QColor& color, const QString& text, bool visible ) {
+        if ( !visible )
+            return;
+        painter.setPen( QPen( color, 2 ) );
+        painter.drawLine( legendX, 12, legendX + 18, 12 );
+        painter.setPen( QColor( 230, 230, 230 ) );
+        painter.drawText( legendX + 24, 17, text );
+        legendX += 30 + painter.fontMetrics().horizontalAdvance( text );
+    };
+    drawLegend( QColor( 255, 132, 48 ), tr( "Body" ), m_showBodyTemp );
+    drawLegend( QColor( 56, 214, 225 ), tr( "Thermocouple" ), m_showSensorTemp );
+    drawLegend( QColor( 255, 215, 64 ), tr( "Heater 1 power" ), m_showPower1 );
+    drawLegend( QColor( 174, 112, 255 ), tr( "Heater 2 power" ), m_showPower2 );
 }
 
 HeaterDialog::HeaterDialog( QWidget* parent, Heater* heater ) : QDialog( parent ) {
@@ -223,9 +293,11 @@ void HeaterDialog::setWindowSeconds( double seconds ) {
 }
 
 void HeaterDialog::updateData( const QVector<double>& time, const QVector<double>& bodyTemp,
-                               const QVector<double>& sensorTemp, double power1, double power2,
-                               double capacity, double loss, double sensorTau ) {
-    m_plot->setData( time, bodyTemp, sensorTemp );
+                               const QVector<double>& sensorTemp,
+                               const QVector<double>& powerHistory1,
+                               const QVector<double>& powerHistory2, double power1,
+                               double power2, double capacity, double loss, double sensorTau ) {
+    m_plot->setData( time, bodyTemp, sensorTemp, powerHistory1, powerHistory2 );
     if ( !time.isEmpty() ) {
         m_firstTime = time.first();
         m_lastTime = time.last();
@@ -334,6 +406,9 @@ Heater::Heater( QString type, QString id )
     m_lastThermalTime = 0;
     m_lastPower1 = 0;
     m_lastPower2 = 0;
+    m_historyEnergy1 = 0;
+    m_historyEnergy2 = 0;
+    m_lastHistoryTime = 0;
     m_plotWindow = 60;
     m_historySize = 100000;
     m_tcConnected = false;
@@ -351,7 +426,7 @@ Heater::Heater( QString type, QString id )
                     -28, 0 );
 
     m_dialog = new HeaterDialog( CircuitWidget::self(), this );
-    m_dialog->setWindowTitle( idLabel() + " - " + tr( "Temperature" ) );
+    m_dialog->setWindowTitle( idLabel() + " - " + tr( "Temperature and power" ) );
     m_dialog->setWindowSeconds( m_plotWindow );
     Simulator::self()->addToUpdateList( this );
 
@@ -435,8 +510,11 @@ void Heater::initialize() {
     m_electricalDirty = false;
     m_lastPower1 = 0;
     m_lastPower2 = 0;
+    m_historyEnergy1 = 0;
+    m_historyEnergy2 = 0;
     m_rescheduleEvent = false;
     m_lastThermalTime = Simulator::self()->circTime();
+    m_lastHistoryTime = m_lastThermalTime;
     m_tcConnected = false;
     if ( Simulator::self()->simState() == SIM_STARTING ) {
         m_bodyTemp = m_initialTemp;
@@ -444,6 +522,8 @@ void Heater::initialize() {
         m_historyTime.clear();
         m_historyBody.clear();
         m_historySensor.clear();
+        m_historyPower1.clear();
+        m_historyPower2.clear();
         appendHistory( m_lastThermalTime );
     }
     // Loaded property values and initial temperature must reach the solver before its first stamp.
@@ -490,6 +570,8 @@ void Heater::advanceThermal( uint64_t time, bool stampOutput ) {
         return;
     const double dt = ( time - m_lastThermalTime ) * 1e-12;
     m_lastThermalTime = time;
+    m_historyEnergy1 += m_lastPower1 * dt;
+    m_historyEnergy2 += m_lastPower2 * dt;
 
     const double capacity = thermalCapacity();
     const double conductance = heatLossCoefficient();
@@ -556,16 +638,26 @@ void Heater::appendHistory( uint64_t time ) {
         m_historyTime.remove( 0, removeCount );
         m_historyBody.remove( 0, removeCount );
         m_historySensor.remove( 0, removeCount );
+        m_historyPower1.remove( 0, removeCount );
+        m_historyPower2.remove( 0, removeCount );
     }
     m_historyTime.append( time * 1e-12 );
     m_historyBody.append( m_bodyTemp );
     m_historySensor.append( m_sensorTemp );
+    const double interval = ( time - m_lastHistoryTime ) * 1e-12;
+    m_historyPower1.append( interval > 0 ? m_historyEnergy1 / interval : m_lastPower1 );
+    m_historyPower2.append( interval > 0 ? m_historyEnergy2 / interval : m_lastPower2 );
+    m_historyEnergy1 = 0;
+    m_historyEnergy2 = 0;
+    m_lastHistoryTime = time;
 }
 
 void Heater::updateStep() {
     QVector<double> time;
     QVector<double> bodyTemp;
     QVector<double> sensorTemp;
+    QVector<double> powerHistory1;
+    QVector<double> powerHistory2;
     double power1 = 0;
     double power2 = 0;
     double capacity = 0;
@@ -611,11 +703,15 @@ void Heater::updateStep() {
                 time.append( m_historyTime.at( i ) );
                 bodyTemp.append( m_historyBody.at( i ) );
                 sensorTemp.append( m_historySensor.at( i ) );
+                powerHistory1.append( m_historyPower1.at( i ) );
+                powerHistory2.append( m_historyPower2.at( i ) );
             }
             if ( !m_historyTime.isEmpty() && time.last() != m_historyTime.last() ) {
                 time.append( m_historyTime.last() );
                 bodyTemp.append( m_historyBody.last() );
                 sensorTemp.append( m_historySensor.last() );
+                powerHistory1.append( m_historyPower1.last() );
+                powerHistory2.append( m_historyPower2.last() );
             }
             power1 = m_lastPower1;
             power2 = m_lastPower2;
@@ -629,7 +725,8 @@ void Heater::updateStep() {
     setValLabelPos( -QFontMetrics( m_valLabel->font() ).horizontalAdvance( temperatureText ) / 2.0,
                     -28, 0 );
     if ( plotVisible )
-        m_dialog->updateData( time, bodyTemp, sensorTemp, power1, power2, capacity, loss, sensorTau );
+        m_dialog->updateData( time, bodyTemp, sensorTemp, powerHistory1, powerHistory2,
+                              power1, power2, capacity, loss, sensorTau );
     update();
 }
 
@@ -796,6 +893,8 @@ void Heater::setHistorySize( int size ) {
         m_historyTime.remove( 0, removeCount );
         m_historyBody.remove( 0, removeCount );
         m_historySensor.remove( 0, removeCount );
+        m_historyPower1.remove( 0, removeCount );
+        m_historyPower2.remove( 0, removeCount );
     }
 }
 
@@ -830,11 +929,12 @@ double Heater::resistanceAtTemperature( double referenceResistance ) const {
 }
 
 void Heater::openPlot() {
-    m_dialog->setWindowTitle( idLabel() + " - " + tr( "Temperature" ) );
+    m_dialog->setWindowTitle( idLabel() + " - " + tr( "Temperature and power" ) );
     {
         QMutexLocker locker( &m_stateMutex );
-        m_dialog->updateData( m_historyTime, m_historyBody, m_historySensor, m_lastPower1,
-                              m_lastPower2, thermalCapacity(), heatLossCoefficient(), sensorTimeConstant() );
+        m_dialog->updateData( m_historyTime, m_historyBody, m_historySensor, m_historyPower1,
+                              m_historyPower2, m_lastPower1, m_lastPower2, thermalCapacity(),
+                              heatLossCoefficient(), sensorTimeConstant() );
         m_guiDirty = true;
     }
     m_dialog->show();
@@ -843,7 +943,7 @@ void Heater::openPlot() {
 }
 
 void Heater::contextMenu( QGraphicsSceneContextMenuEvent* event, QMenu* menu ) {
-    QAction* plotAction = menu->addAction( tr( "Open temperature plot" ) );
+    QAction* plotAction = menu->addAction( tr( "Open temperature and power plot" ) );
     QObject::connect( plotAction, &QAction::triggered, [=]() { openPlot(); } );
     menu->addSeparator();
     Component::contextMenu( event, menu );

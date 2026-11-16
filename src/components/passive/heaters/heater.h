@@ -17,6 +17,7 @@
 #include "pin.h"
 
 class QCheckBox;
+class QContextMenuEvent;
 class QDoubleSpinBox;
 class QLabel;
 class QMenu;
@@ -30,19 +31,27 @@ public:
     explicit HeaterPlot( QWidget* parent = nullptr );
 
     void setData( const QVector<double>& time, const QVector<double>& bodyTemp,
-                  const QVector<double>& sensorTemp );
+                  const QVector<double>& sensorTemp, const QVector<double>& power1,
+                  const QVector<double>& power2 );
     void setWindowSeconds( double seconds );
     void setViewEnd( double seconds );
 
 protected:
+    void contextMenuEvent( QContextMenuEvent* event ) override;
     void paintEvent( QPaintEvent* event ) override;
 
 private:
     QVector<double> m_time;
     QVector<double> m_bodyTemp;
     QVector<double> m_sensorTemp;
+    QVector<double> m_power1;
+    QVector<double> m_power2;
     double m_windowSeconds;
     double m_viewEnd;
+    bool m_showBodyTemp;
+    bool m_showSensorTemp;
+    bool m_showPower1;
+    bool m_showPower2;
 };
 
 class HeaterDialog : public QDialog {
@@ -51,7 +60,8 @@ public:
 
     void setWindowSeconds( double seconds );
     void updateData( const QVector<double>& time, const QVector<double>& bodyTemp,
-                     const QVector<double>& sensorTemp, double power1, double power2,
+                     const QVector<double>& sensorTemp, const QVector<double>& powerHistory1,
+                     const QVector<double>& powerHistory2, double power1, double power2,
                      double capacity, double loss, double sensorTau );
 
 private:
@@ -201,15 +211,20 @@ private:
     double m_thermalStep;
     double m_lastPower1;
     double m_lastPower2;
+    double m_historyEnergy1;
+    double m_historyEnergy2;
     double m_plotWindow;
 
     uint64_t m_lastThermalTime;
+    uint64_t m_lastHistoryTime;
     uint64_t m_thermalPeriod;
 
     int m_historySize;
     QVector<double> m_historyTime;
     QVector<double> m_historyBody;
     QVector<double> m_historySensor;
+    QVector<double> m_historyPower1;
+    QVector<double> m_historyPower2;
 
     bool m_tcConnected;
     bool m_electricalDirty;
